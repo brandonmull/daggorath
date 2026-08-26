@@ -1,6 +1,6 @@
 # Screen Reading Module
 
-_See [overview.md](../overview.md) for project context and architecture._
+_See [overview.md](../../../../docs/overview.md) for project context and architecture._
 
 This document addresses two design questions:
 
@@ -57,7 +57,7 @@ The decoder walks each of the 32 character columns in a text row, reads 7 bytes 
 
 ## Capture
 
-The capture logic lives in `state.lua` as part of the per-frame state sampler. It reads `comStart` and `comColor` each frame and copies the 1024-byte region, then hands those bytes to the same change-detection snapshot used for the numeric state (see `docs/plans/state/plan.md`).
+The capture logic lives in `state.lua` as part of the per-frame state sampler. It reads `comStart` and `comColor` each frame and copies the 1024-byte region, then hands those bytes to the same change-detection snapshot used for the numeric state (see `gym/docs/plans/state/plan.md`).
 
 ```
 readCommandAreaPixels()
@@ -70,7 +70,7 @@ Capture is gated by live play (`displayFunction` is `0xCE66` LOOK or `0xD495` EX
 
 ## Decoding
 
-The decoder lives in Python in a new module, `daggorath_gym/screen.py`. It is ported from the validated `sandbox/screen-reading/shared.py`.
+The decoder lives in Python in a new module, `daggorath_gym/screen.py`. It is ported from the validated `gym/sandbox/screen-reading/shared.py`.
 
 Its public surface is small:
 
@@ -106,12 +106,12 @@ The decoder is validated end-to-end against a known trigger, reusing the sandbox
 - Decode the `pull-left-torch` log and confirm `PULL LEFT TORCH` appears — the happy path with known ground truth
 - Decode a `BOGUS\r` capture and confirm `???` appears — the invalid-command path
 
-Both cases already passed in `sandbox/screen-reading/`; they become regression tests when the decoder moves into production.
+Both cases already passed in `gym/sandbox/screen-reading/`; they become regression tests when the decoder moves into production.
 
 ## Reference Documents
 
 | Document | What It Contains |
 |----------|-----------------|
-| `sandbox/screen-reading/` | Validated capture + decode pipeline (`shared.lua`, `shared.py`, two experiments) |
-| `docs/references/game/code.md` | `PrintRegChar` disassembly and the font table |
-| `docs/plans/state/plan.md` | How the captured pixels flow into the state wire format |
+| `gym/sandbox/screen-reading/` | Validated capture + decode pipeline (`shared.lua`, `shared.py`, two experiments) |
+| `gym/docs/references/game/code.md` | `PrintRegChar` disassembly and the font table |
+| `gym/docs/plans/state/plan.md` | How the captured pixels flow into the state wire format |

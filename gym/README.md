@@ -100,21 +100,22 @@ Daggorath ROM (daggorath.zip — Shield Fix) + CoCo 3 ROM (coco3.zip)
 
 ## Reference Documentation
 
-Project docs follow a four-phase pipeline:
+Project docs follow a three-phase design pipeline:
 
 | Phase | Directory | Description |
 |-------|-----------|-------------|
 | **Plans** | `docs/plans/` | Pre-build design specifications |
 | **Reviews** | `docs/reviews/` | Post-build critique — observations, deferred items |
 | **Decisions** | `docs/decisions/` | Implemented changes |
-| **Findings** | `docs/findings/` | Hard-won discoveries (IPC transport, RAM signals) |
+
+Two further categories sit beside the pipeline: **findings** (`docs/findings/`) — hard-won discoveries — and **references** (`docs/references/`) — external source material.
 
 External source material:
 
 - **Code Disassembly**: [docs/references/game/code.md](docs/references/game/code.md)
 - **RAM Memory Map**: [docs/references/game/ram.md](docs/references/game/ram.md)
-- **Command Grammar**: [docs/references/game/commands.md](docs/references/game/commands.md)
-- **CoCo Hardware**: [docs/references/mame/hardware.md](docs/references/mame/hardware.md)
+- **Command Grammar**: [docs/game/commands.md](../docs/game/commands.md)
+- **CoCo Hardware**: [docs/references/coco/hardware.md](docs/references/coco/hardware.md)
 - **Emulator Setup Notes**: [docs/references/mame/setup.md](docs/references/mame/setup.md)
 - **Original Source**: https://www.computerarcheology.com/CoCo/Daggorath/
 - **MAME Lua Scripting**: https://docs.mamedev.org/luascript/index.html

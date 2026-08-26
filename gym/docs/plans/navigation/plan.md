@@ -1,6 +1,6 @@
 # Navigation
 
-_See [overview.md](../overview.md) for project context and architecture._
+_See [overview.md](../../../../docs/overview.md) for project context and architecture._
 
 This document records what we know and don't know about the dungeon's layout — walls, doors, holes, ladders — and the open questions that must be answered before any design work begins. Navigation is the prerequisite for sight-gating: knowing what the player sees down a corridor requires knowing the maze.
 
@@ -43,7 +43,7 @@ The sight-gate's reach is a corridor walk mirroring the 3D renderer (`NormalDisp
 
 The visible set is the corridor plus its **open lateral neighbors**: at each cell on the walk, the two cells perpendicular to the facing direction are included only when the connecting edge is open (value `00`). A 2-cell-wide hall is seen; a door — normal or magic, both of which block sight — hides what lies beyond it, and a wall (value `11`) does too. This is one step laterally, not a flood-fill.
 
-The `−7` offset in the renderer's dot-frequency math cancels out for the binary seen/not-seen boundary, so only `N < light` matters, not solid-vs-dotted. This lateral rule is the POC approximation; `sandbox/line-of-sight/` remains to confirm the renderer's exact geometry.
+The `−7` offset in the renderer's dot-frequency math cancels out for the binary seen/not-seen boundary, so only `N < light` matters, not solid-vs-dotted. This lateral rule is the POC approximation; `gym/sandbox/line-of-sight/` remains to confirm the renderer's exact geometry.
 
 ## Wire
 
@@ -60,7 +60,7 @@ The perceived map — the observation's `map` channel — is two planes stacked 
 - **True state vs. perceived state.** Navigation decodes the true maze — the bytes are ground truth, held internally for line-of-sight and reward. The visible corridor is perception, and the two diverge only for magic doors: the byte says "magic door" regardless of light, but the player perceives a triangle only under magic light and a wall under a physical-only torch. So the perception exposes the perceived type (light-gated); the true value stays internal.
 - **Two light channels, two reaches.** Sight is not one number. The corridor walk gates on the effective physical light (`effective_light_physical`, `m026E`) with reach `min(effective_light_physical, 10)`; magic doors and magical creatures gate on the effective magic light (`effective_light_magical`, `m026F`) with reach `min(effective_light_magical, 10)`. `effective_light_physical == 0` is the blackout.
 - **Magic doors are a distinct edge value, rewritten in perception.** The edge byte already distinguishes normal (01) from magic (10) doors, so the wire and the true map need nothing. The perceived map rewrites a magic-door edge to wall (11) when the door is beyond the magic reach (under a physical-only torch a magic door reads as a wall), and reports it as a magic door (10) otherwise.
-- **The static trace is the POC rule.** The corridor walk, `N < light`, and the one-step open lateral neighbor are accepted as the sight approximation; `sandbox/line-of-sight/` stays deferred. Cheating a little around corners is acceptable for the POC.
+- **The static trace is the POC rule.** The corridor walk, `N < light`, and the one-step open lateral neighbor are accepted as the sight approximation; `gym/sandbox/line-of-sight/` stays deferred. Cheating a little around corners is acceptable for the POC.
 - **Direction convention follows the disassembly.** `at_heading` uses the maze's direction numbering — 0 = Up (North), 1 = Right (East), 2 = Down (South), 3 = Left (West) — matching the `CDA6` bit-position table.
 - **Holes and ladders are a second plane of the map image, not a separate channel.** They are static per-level geometry (the `currentHoles` table, `0x0286` → `CFFD`), not edge-encoded, so they ride a per-cell feature byte — 0 none, 1 hole in ceiling, 2 ladder in ceiling, 3 hole in floor, 4 ladder in floor — stacked beside the edge bytes as plane 1 of one `Box(2, 32, 32)` image, gated by the same corridor walk, `0xFF` unseen. Co-locating them with the edges keeps a ladder spatially aligned with the walls the CNN already sees; a separate Dict key would force the MLP to learn that correspondence with no spatial bias. They ship as the `H` record (see Wire).
 
@@ -88,7 +88,7 @@ walk_corridor(maze, x, y, heading, physical_light)
 
 | Document | What It Contains |
 |----------|-----------------|
-| `docs/references/game/code.md` | `MakeMazeLevel`, `GetCellPointer`, `IsValidCell`, holes/ladders table |
-| `docs/references/game/ram.md` | Memory map — the maze at 0x05F4, `currentHoles` |
-| `docs/references/game/levels.md` | The published per-level maps — the decoder's validation fixture |
+| `gym/docs/references/game/code.md` | `MakeMazeLevel`, `GetCellPointer`, `IsValidCell`, holes/ladders table |
+| `gym/docs/references/game/ram.md` | Memory map — the maze at 0x05F4, `currentHoles` |
+| `docs/game/levels.md` | The published per-level maps — the decoder's validation fixture |
 | `conversation.md` | The "maze in a byte" and "cell, not room" threads |

@@ -50,7 +50,7 @@ MAME lets us attach **Lua scripts** that run alongside the emulated machine. The
 
 ## Key Design Choices
 
-- **Hybrid IPC** — a named pipe (FIFO) for game state (MAME → Python, high-throughput write-only) and a TCP socket on port 15001 for commands (Python → MAME, low-throughput read-only). The state channel uses standard Lua `io.open("w")` to bypass `emu.file`'s fragility under sustained write load; the command channel stays on `emu.file("r")` which is documented as stable and provides the non-blocking reads that FIFOs can't do. See `docs/findings/ipc.md` for the evaluation of alternatives.
+- **Hybrid IPC** — a named pipe (FIFO) for game state (MAME → Python, high-throughput write-only) and a TCP socket on port 15001 for commands (Python → MAME, low-throughput read-only). The state channel uses standard Lua `io.open("w")` to bypass `emu.file`'s fragility under sustained write load; the command channel stays on `emu.file("r")` which is documented as stable and provides the non-blocking reads that FIFOs can't do. See `gym/docs/findings/ipc.md` for the evaluation of alternatives.
 - **No external Lua dependencies** — MAME ships its own embedded Lua interpreter. LuaRocks packages cannot be loaded. All Lua scripts use only MAME's built-in APIs and the standard Lua `io` library.
 - **Raw byte wire format** — no JSON on either channel. Compact, fast, and avoids serialization overhead on the emulated CPU.
 - **Change detection, not frame-by-frame** — the state channel emits a record only when something meaningful changes (numeric state or command-area text), not every frame. Identical frames are dropped in Lua against a snapshot.
@@ -64,7 +64,7 @@ These govern what the agent perceives — the answer to "what does the player pe
 
 > Position + heading + body state, with no walls, no creatures, no goal, reduces to a random walk with a sparse death penalty.
 
-Perception has to give the agent something to act on. Self-state alone — position, heading, body — leaves nothing to navigate toward, avoid, or seek: no gradient, no goal, nothing to learn. The trainable core is the *world* (the maze, the creatures, the light) plus self-state. How fairly the agent's access to that world mirrors a real player's is a later curriculum concern, not a prerequisite for the first working environment — act first, fairness later. The discussion lives in [`perception/conversation.md`](perception/conversation.md).
+Perception has to give the agent something to act on. Self-state alone — position, heading, body — leaves nothing to navigate toward, avoid, or seek: no gradient, no goal, nothing to learn. The trainable core is the *world* (the maze, the creatures, the light) plus self-state. How fairly the agent's access to that world mirrors a real player's is a later curriculum concern, not a prerequisite for the first working environment — act first, fairness later. The discussion lives in [`perception/conversation.md`](../gym/docs/plans/perception/conversation.md).
 
 ### Perception vs. proprioception.
 
@@ -108,52 +108,52 @@ Lua uses `local` for privacy, Python uses a `_` prefix. The root names are ident
 
 ## Documentation Structure
 
-The project uses a three-phase documentation pipeline:
+Project docs follow a three-phase design pipeline:
 
 | Phase | Directory | Description |
 |-------|-----------|-------------|
-| **Plans** | `docs/plans/` | Pre-build design specifications — what we intended to build |
-| **Reviews** | `docs/reviews/` | Post-build critique — observations, alternatives, and deferred items |
-| **Decisions** | `docs/decisions/` | Implemented changes — concrete code-level outcomes from each review |
-| **References** | `docs/references/` | External source material from the game manual, disassembly, and hardware docs |
+| **Plans** | `gym/docs/plans/` | Pre-build design specifications — what we intended to build |
+| **Reviews** | `gym/docs/reviews/` | Post-build critique — observations, alternatives, and deferred items |
+| **Decisions** | `gym/docs/decisions/` | Implemented changes — concrete code-level outcomes from each review |
+
+Two further categories sit beside the pipeline: **findings** (`gym/docs/findings/`) — hard-won discoveries from reverse-engineering — and **references** (`gym/docs/references/`) — external source material from the game manual, disassembly, and hardware docs.
 
 ## Reference Documents
 
 | Document | What It Contains |
 |----------|-----------------|
-| `docs/plans/state/plan.md` | Game state reporting module plan |
-| `docs/plans/commands/plan.md` | Command dispatch module plan |
-| `docs/plans/screen/plan.md` | Screen reading module plan — capture and decode of command-area text |
-| `docs/plans/creatures/plan.md` | Creature detection — knowns, unknowns, and open questions |
-| `docs/plans/objects/plan.md` | Object detection — knowns, unknowns, and open questions |
-| `docs/plans/reward/plan.md` | Reward — potential-based shaping over player-perceived state |
-| `docs/plans/sound/plan.md` | Sound — the auditory observation channel |
-| `docs/plans/navigation/plan.md` | Navigation — maze decoding and line-of-sight |
-| `docs/plans/events/plan.md` | Events — the deferred event channel and its candidate catalog |
-| `docs/plans/perception/plan.md` | Perception — the perceptible state and how the channels combine into one array |
-| `docs/plans/curriculum/plan.md` | Curriculum — staged removal of scaffolding |
-| `docs/reviews/environment.py.md` | environment.py design review (observations, deferred items) |
-| `docs/reviews/emulator.py.md` | emulator.py design review (observations, deferred items) |
-| `docs/reviews/state.py.md` | state.py design review (observations, deferred items) |
-| `docs/reviews/commands.py.md` | commands.py design review (observations, deferred items) |
-| `docs/reviews/state.lua.md` | state.lua design review (observations, deferred items) |
-| `docs/reviews/commands.lua.md` | commands.lua design review (observations, deferred items) |
-| `docs/decisions/environment.py.md` | environment.py implemented decisions |
-| `docs/decisions/emulator.py.md` | emulator.py implemented decisions |
-| `docs/decisions/state.lua.md` | state.lua implemented decisions |
-| `docs/decisions/commands.lua.md` | commands.lua implemented decisions |
-| `docs/decisions/plugin-conversion.md` | MAME plugin conversion |
-| `docs/decisions/ipc-hybrid.md` | Hybrid IPC — FIFO state channel + TCP command channel |
-| `docs/decisions/gc-autounsubscribe.md` | Saving notifier subscriptions to prevent GC auto-unsubscribe |
-| `docs/decisions/readiness-gating.md` | Gating RAM reads on `displayFunction == 0xCE66` before sampling |
-| `docs/findings/ipc.md` | IPC transport evaluation — FIFO vs TCP vs Unix sockets |
-| `docs/findings/ram-signals.md` | RAM signal catalog — readiness and command-acceptance signals |
-| `docs/findings/memory-reads.md` | Safe RAM reads + segfault debugging in MAME Lua |
-| `docs/findings/combat-model.md` | The strength-vs-damage combat model and the sound proximity channel |
-| `docs/references/game/commands.md` | Original game manual + ROM-derived command grammar, object tables, incantation words |
-| `docs/references/game/ram.md` | Memory map — every known RAM address and what it stores |
-| `docs/references/game/code.md` | Full 6809 disassembly of the game |
-| `docs/references/mame/hardware.md` | CoCo hardware reference |
-| `docs/references/mame/setup.md` | Emulator architecture notes, lite MAME build plans |
-| `sandbox/README.md` | Sandbox validation: TCP sockets, natkeyboard delivery, command buffering |
-| `README.md` | Project overview, milestones, setup instructions |
+| `gym/docs/plans/state/plan.md` | Game state reporting module plan |
+| `gym/docs/plans/commands/plan.md` | Command dispatch module plan |
+| `gym/docs/plans/screen/plan.md` | Screen reading module plan — capture and decode of command-area text |
+| `gym/docs/plans/creatures/plan.md` | Creature detection — knowns, unknowns, and open questions |
+| `gym/docs/plans/objects/plan.md` | Object detection — knowns, unknowns, and open questions |
+| `gym/docs/plans/reward/plan.md` | Reward — potential-based shaping over player-perceived state |
+| `gym/docs/plans/sound/plan.md` | Sound — the auditory observation channel |
+| `gym/docs/plans/navigation/plan.md` | Navigation — maze decoding and line-of-sight |
+| `gym/docs/plans/events/plan.md` | Events — the deferred event channel and its candidate catalog |
+| `gym/docs/plans/perception/plan.md` | Perception — the perceptible state and how the channels combine into one array |
+| `gym/docs/reviews/environment.py.md` | environment.py design review (observations, deferred items) |
+| `gym/docs/reviews/emulator.py.md` | emulator.py design review (observations, deferred items) |
+| `gym/docs/reviews/state.py.md` | state.py design review (observations, deferred items) |
+| `gym/docs/reviews/commands.py.md` | commands.py design review (observations, deferred items) |
+| `gym/docs/reviews/state.lua.md` | state.lua design review (observations, deferred items) |
+| `gym/docs/reviews/commands.lua.md` | commands.lua design review (observations, deferred items) |
+| `gym/docs/decisions/environment.py.md` | environment.py implemented decisions |
+| `gym/docs/decisions/emulator.py.md` | emulator.py implemented decisions |
+| `gym/docs/decisions/state.lua.md` | state.lua implemented decisions |
+| `gym/docs/decisions/commands.lua.md` | commands.lua implemented decisions |
+| `gym/docs/decisions/plugin-conversion.md` | MAME plugin conversion |
+| `gym/docs/decisions/ipc-hybrid.md` | Hybrid IPC — FIFO state channel + TCP command channel |
+| `gym/docs/decisions/gc-autounsubscribe.md` | Saving notifier subscriptions to prevent GC auto-unsubscribe |
+| `gym/docs/decisions/readiness-gating.md` | Gating RAM reads on `displayFunction == 0xCE66` before sampling |
+| `gym/docs/findings/ipc.md` | IPC transport evaluation — FIFO vs TCP vs Unix sockets |
+| `gym/docs/findings/ram-signals.md` | RAM signal catalog — readiness and command-acceptance signals |
+| `gym/docs/findings/memory-reads.md` | Safe RAM reads + segfault debugging in MAME Lua |
+| `docs/game/combat-model.md` | The strength-vs-damage combat model and the sound proximity channel |
+| `docs/game/commands.md` | Original game manual + ROM-derived command grammar, object tables, incantation words |
+| `gym/docs/references/game/ram.md` | Memory map — every known RAM address and what it stores |
+| `gym/docs/references/game/code.md` | Full 6809 disassembly of the game |
+| `gym/docs/references/coco/hardware.md` | CoCo hardware reference |
+| `gym/docs/references/mame/setup.md` | Emulator architecture notes, lite MAME build plans |
+| `gym/sandbox/README.md` | Sandbox validation: TCP sockets, natkeyboard delivery, command buffering |
+| `gym/README.md` | Project overview, milestones, setup instructions |

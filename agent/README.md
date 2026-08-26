@@ -61,7 +61,7 @@ The tests verify the `train()` wiring without launching MAME — they build the 
 | `docs/considerations.md` | Ideas and design considerations, not yet decided |
 | `docs/plans/watch-training.md` | Feature plan — the `--watch` training interface and checkpoint persistence |
 | `docs/plans/persist-learning.md` | Feature plan — checkpoint format, the load contract, `--resume` |
-| `docs/plans/curriculum.md` | Feature plan — `--stage`, command masking, stage composition with `--resume` |
+| `docs/plans/curriculum.md` | Curriculum plan — the staged ladder, reward channels, and command masking |
 
 ## Why the wrappers and extractor live here
 
@@ -79,6 +79,6 @@ Documentation lives under `docs/`:
 - **`docs/design.md`** — the design reference: the `train()` pipeline, the feature extractor and observation wrapper, the environment-vs-trainer boundary, and the deferred joint-mask policy. It records *what we use and a brief why*.
 - **`docs/learnings.md`** — the expanded concepts and operating lessons behind those choices: what `VecEnv` is, why activations exist, what a wheel is, and the mistakes worth not repeating. It will grow as more is learned.
 - **`docs/considerations.md`** — ideas and observations from working with the project that are not yet decided.
-- **`docs/plans/`** — feature plans, including `watch-training.md` (the `--watch` interface), `persist-learning.md` (checkpoint format, the load contract, and `--resume`), and `curriculum.md` (staged command masking and `--stage`).
+- **`docs/plans/`** — feature plans, including `watch-training.md` (the `--watch` interface), `persist-learning.md` (checkpoint format, the load contract, and `--resume`), and `curriculum.md` (the staged ladder and command masking).
 
 This is intentionally lighter than the gym package's four-phase docs (`plans/`, `reviews/`, `decisions/`, `findings/`), which reflect months of reverse-engineering. The harness documents itself in these files, and `docs/plans/` grows as new features are scoped.

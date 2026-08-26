@@ -1,6 +1,6 @@
 # Reward
 
-_See [overview.md](../overview.md) for project context and architecture._
+_See [overview.md](../../../../docs/overview.md) for project context and architecture._
 
 This document describes the reward — an agent-side component, separate from the environment, that turns game state into a training signal. It follows the perception principle from the object and creature modules — the agent perceives what the player perceives — and shapes reward from that same state.
 
@@ -123,10 +123,10 @@ The scale rule is *terminal ≫ discovery ≫ advance*: terminal events dominate
 
 | Document | What It Contains |
 |----------|-----------------|
-| `docs/plans/state/plan.md` | The player fields the potentials draw from |
-| `docs/plans/objects/plan.md` | Object attainment, the reveal field, and the win's second stage |
-| `docs/plans/creatures/plan.md` | The creature array — type tokens, slots, and kill detection |
-| `docs/plans/navigation/plan.md` | Line-of-sight and the visible corridor the cell milestone draws from |
-| `docs/plans/sound/plan.md` | The approach sound that marks the type-heard milestone |
-| `docs/plans/perception/plan.md` | The perception, which carries no novelty flags |
-| `docs/findings/combat-model.md` | The survival margin `player_strength − m0221` |
+| `gym/docs/plans/state/plan.md` | The player fields the potentials draw from |
+| `gym/docs/plans/objects/plan.md` | Object attainment, the reveal field, and the win's second stage |
+| `gym/docs/plans/creatures/plan.md` | The creature array — type tokens, slots, and kill detection |
+| `gym/docs/plans/navigation/plan.md` | Line-of-sight and the visible corridor the cell milestone draws from |
+| `gym/docs/plans/sound/plan.md` | The approach sound that marks the type-heard milestone |
+| `gym/docs/plans/perception/plan.md` | The perception, which carries no novelty flags |
+| `docs/game/combat-model.md` | The survival margin `player_strength − m0221` |

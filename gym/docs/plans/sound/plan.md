@@ -1,6 +1,6 @@
 # Sound
 
-_See [overview.md](../overview.md) for project context and architecture._
+_See [overview.md](../../../../docs/overview.md) for project context and architecture._
 
 This document records what we know and don't know about the game's sound system, and the open questions that must be answered before any design work begins. It applies the perception principle — the agent perceives what the player perceives — to the ears rather than the eyes.
 
@@ -22,7 +22,7 @@ The game synthesizes sound through a 6-bit DAC and plays one of 23 named effects
 | 0x15 | Creature dying |
 
 - Effects play through SWI_1B (full volume) or SWI_1C (volume in B, stored to `m0261` at 0x0261, then output to PIA1_DA at 0xFF20). Playback is transient — the DAC is cleared after each effect.
-- **The approach sound is distance-scaled** (already recorded in `docs/findings/combat-model.md`): a creature announces itself as "type T, N cells away on my line" — Chebyshev distance ≤ 8, within a 2-cell corridor, 50% of the time, volume 255 − 31×distance.
+- **The approach sound is distance-scaled** (already recorded in `docs/game/combat-model.md`): a creature announces itself as "type T, N cells away on my line" — Chebyshev distance ≤ 8, within a 2-cell corridor, 50% of the time, volume 255 − 31×distance.
 - **The heartbeat is always audible** (`hearHeart`, 0x02B1) and its rate is the heart rate already sampled as `heart_beat_interval`.
 - The wizard's beam toggles a square wave (`beamSound` 0x029C, `beamSoundVal` 0x029D) during cut scenes.
 
@@ -49,6 +49,6 @@ The key property: the DAC carries a *mixed, transient* waveform. What a player a
 
 | Document | What It Contains |
 |----------|-----------------|
-| `docs/references/game/code.md` | Disassembly — sound dispatch, effect table, approach-sound math |
-| `docs/findings/combat-model.md` | The distance-scaled approach sound model |
-| `docs/plans/creatures/plan.md` | The "sound as proximity" question this module answers |
+| `gym/docs/references/game/code.md` | Disassembly — sound dispatch, effect table, approach-sound math |
+| `docs/game/combat-model.md` | The distance-scaled approach sound model |
+| `gym/docs/plans/creatures/plan.md` | The "sound as proximity" question this module answers |

@@ -1,6 +1,6 @@
 # Deployment
 
-_See [overview.md](../overview.md) for project context and architecture._
+_See [overview.md](../../../../docs/overview.md) for project context and architecture._
 
 ## Purpose
 
@@ -68,6 +68,6 @@ consume()
 | Document | What It Contains |
 |----------|-----------------|
 | `gym/README.md` | Installation, known issues, layout |
-| `docs/plans/reward/plan.md` | The reward wrapper and the fact-vs-valuation split |
-| `docs/plans/perception/plan.md` | The observation channels and the CNN + MLP split |
-| `docs/plans/overview.md` | Project context and architecture |
+| `gym/docs/plans/reward/plan.md` | The reward wrapper and the fact-vs-valuation split |
+| `gym/docs/plans/perception/plan.md` | The observation channels and the CNN + MLP split |
+| `docs/overview.md` | Project context and architecture |

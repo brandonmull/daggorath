@@ -1,6 +1,6 @@
 # Events
 
-_See [overview.md](../overview.md) for project context and architecture._
+_See [overview.md](../../../../docs/overview.md) for project context and architecture._
 
 This document records the event-based architecture — deferred, not built for the prototype — and the catalog of candidate events it would carry.
 

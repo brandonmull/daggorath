@@ -1,6 +1,6 @@
 # Perception
 
-_See [overview.md](../overview.md) for project context and architecture._
+_See [overview.md](../../../../docs/overview.md) for project context and architecture._
 
 This document specifies perception — the perceptible state: what the player can perceive at a single instant, gated by sight and by the display mode. Perception is the source of the observation (the policy's input array) and the reference for the project's "the agent perceives what the player perceives" principle. It is instantaneous and stateless: the environment reports only what is visible *now*; memory is the agent's job, built in a wrapper, never held by the environment.
 
@@ -41,6 +41,10 @@ The mode gate needs `displayFunction` on the wire: it is read by the readiness g
 
 Perception is instantaneous. The environment holds no "visited cell," no "seen creature," no explored-vs-unexplored flags — nothing persists across steps. Memory is the agent's job, built in a wrapper that accumulates whatever the policy wants. For the POC the bar is immediate responsiveness — the agent must see the monster ahead and the wall ahead — even if it repeats itself; memory and action-space masking are deferred training-quality work, not correctness.
 
+## Scaffolding
+
+Perception is the environment's lever for *scaffolding*: some fields are exposed now to bootstrap a skill and removed later once the agent has internalized it — the agent must then reconstruct the signal from raw perception. The scaffolded items are the player's strength, the reveal threshold, the sound→source cue, and the map memory; each is "exposed now, removed later." Scaffolding is the environment's half of the curriculum; the trainer's half — staging reward channels and masking commands — lives in the agent package's `plans/curriculum.md`.
+
 ## Encoding
 
 The observation is a fixed-shape `Dict` of six channels, defined in code as `PERCEIVED_SPACE` in `state.py`. Every channel is absolute and gated; agent-side wrappers translate to relative.
@@ -71,9 +75,9 @@ The map is static geometry; the entity tables and the scalars are explicit value
 
 | Document | What It Contains |
 |----------|-----------------|
-| `docs/plans/state/plan.md` | The nineteen raw state fields |
-| `docs/plans/creatures/plan.md` | The creature array — slots, types, and positions |
-| `docs/plans/objects/plan.md` | Hands, pack, and the reveal distinction |
-| `docs/plans/sound/plan.md` | The auditory cue list — distance, sound type, source |
-| `docs/plans/navigation/plan.md` | The 32×32 maze and the line-of-sight walk |
-| `docs/plans/reward/plan.md` | The reward and its novelty memory |
+| `gym/docs/plans/state/plan.md` | The nineteen raw state fields |
+| `gym/docs/plans/creatures/plan.md` | The creature array — slots, types, and positions |
+| `gym/docs/plans/objects/plan.md` | Hands, pack, and the reveal distinction |
+| `gym/docs/plans/sound/plan.md` | The auditory cue list — distance, sound type, source |
+| `gym/docs/plans/navigation/plan.md` | The 32×32 maze and the line-of-sight walk |
+| `gym/docs/plans/reward/plan.md` | The reward and its novelty memory |

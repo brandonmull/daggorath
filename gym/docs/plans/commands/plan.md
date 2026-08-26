@@ -1,6 +1,6 @@
 # Commands Module
 
-_See [plans/overview.md](../overview.md) for project context and architecture._
+_See [overview.md](../../../../docs/overview.md) for project context and architecture._
 
 > **Status:** In progress — sandbox validation complete, implementation exists.
 
@@ -79,7 +79,7 @@ sends 1 byte ──────────────→  1 byte ──→  fr
 
 ### The Game's Command Grammar
 
-Dungeons of Daggorath is a text parser — every command is typed as words followed by ENTER. There are no directional or joystick inputs. The full grammar is documented in Appendix C of `emulation/docs/commands.md` and produces **154** valid command phrases.
+Dungeons of Daggorath is a text parser — every command is typed as words followed by ENTER. There are no directional or joystick inputs. The full grammar is documented in Appendix C of `docs/game/commands.md` and produces **154** valid command phrases.
 
 ```
 command_phrase  = <command_word> ( <command_direction> ) ( <object_specifier> )
@@ -280,9 +280,9 @@ The module defines the same grammar constants as the Lua side: object classes, p
 
 | Document | What It Contains |
 |----------|-----------------|
-| `emulation/docs/commands.md` | Original game manual + ROM-derived command grammar, object tables, incantation words |
-| `docs/plans/state/plan.md` | Companion plan for the game state module |
-| `docs/plans/overview.md` | Project context and architecture |
-| `docs/findings/ipc.md` | IPC transport evaluation — FIFO for state, TCP for commands |
-| `sandbox/typing-timing/` | Validated natkeyboard:post() delivery |
-| `sandbox/command-buffering/` | Validated no Lua-side buffering needed |
+| `docs/game/commands.md` | Original game manual + ROM-derived command grammar, object tables, incantation words |
+| `gym/docs/plans/state/plan.md` | Companion plan for the game state module |
+| `docs/overview.md` | Project context and architecture |
+| `gym/docs/findings/ipc.md` | IPC transport evaluation — FIFO for state, TCP for commands |
+| `gym/sandbox/typing-timing/` | Validated natkeyboard:post() delivery |
+| `gym/sandbox/command-buffering/` | Validated no Lua-side buffering needed |

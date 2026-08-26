@@ -1,6 +1,6 @@
 # Game State Module
 
-_See [overview.md](../overview.md) for project context and architecture._
+_See [overview.md](../../../../docs/overview.md) for project context and architecture._
 
 This document addresses four design questions:
 
@@ -336,7 +336,7 @@ Testing happens at two levels:
 - `heart_rate` derivation → `60 / interval`, and 0 when the interval is zero
 - Record dispatch → `S`, `T`, and `B` kinds each route correctly
 
-**Screen decode tests** live with the screen module (see `docs/plans/screen/plan.md`): known pixel blocks decode to `PULL LEFT TORCH` and `???`.
+**Screen decode tests** live with the screen module (see `gym/docs/plans/screen/plan.md`): known pixel blocks decode to `PULL LEFT TORCH` and `???`.
 
 ---
 
@@ -400,14 +400,14 @@ as_perceived()
 
 | Document | What It Contains |
 |----------|-----------------|
-| `docs/references/game/commands.md` | Original game manual + ROM-derived command grammar, object tables, incantation words |
-| `docs/references/game/ram.md` | Memory map — every known RAM address and what it stores |
-| `docs/references/game/code.md` | Full 6809 disassembly of the game |
-| `docs/plans/screen/plan.md` | Screen-reading plan — capture and decode of command-area text |
-| `docs/plans/creatures/plan.md` | Creature detection — knowns, unknowns, and open questions |
-| `docs/plans/objects/plan.md` | Object detection — knowns, unknowns, and open questions |
-| `docs/plans/reward/plan.md` | Reward — potential-based shaping over player-perceived state |
-| `docs/findings/ipc.md` | IPC transport evaluation — FIFO for state, TCP for commands |
-| `docs/findings/combat-model.md` | The strength-vs-damage combat model and the sound proximity channel |
-| `docs/plans/overview.md` | Project context and architecture |
-| `docs/plans/commands/plan.md` | Companion plan for the commands module |
+| `docs/game/commands.md` | Original game manual + ROM-derived command grammar, object tables, incantation words |
+| `gym/docs/references/game/ram.md` | Memory map — every known RAM address and what it stores |
+| `gym/docs/references/game/code.md` | Full 6809 disassembly of the game |
+| `gym/docs/plans/screen/plan.md` | Screen-reading plan — capture and decode of command-area text |
+| `gym/docs/plans/creatures/plan.md` | Creature detection — knowns, unknowns, and open questions |
+| `gym/docs/plans/objects/plan.md` | Object detection — knowns, unknowns, and open questions |
+| `gym/docs/plans/reward/plan.md` | Reward — potential-based shaping over player-perceived state |
+| `gym/docs/findings/ipc.md` | IPC transport evaluation — FIFO for state, TCP for commands |
+| `docs/game/combat-model.md` | The strength-vs-damage combat model and the sound proximity channel |
+| `docs/overview.md` | Project context and architecture |
+| `gym/docs/plans/commands/plan.md` | Companion plan for the commands module |

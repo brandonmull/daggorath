@@ -15,7 +15,7 @@ Growth plan:
       object properties become relevant.
     - End goal: every phrase that a competent agent needs at the current
       training stage is verified present. Reference grammar:
-      docs/references/game/commands.md
+      docs/game/commands.md
 """
 
 import pytest

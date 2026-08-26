@@ -1,6 +1,6 @@
 # Object Detection
 
-_See [overview.md](../overview.md) for project context and architecture._
+_See [overview.md](../../../../docs/overview.md) for project context and architecture._
 
 This document records what we know and don't know about the game's object system, and the open questions that must be answered before any design work begins. It is deliberately not a design spec — architecture and wire format are deferred until the questions below are settled.
 
@@ -94,7 +94,7 @@ derive_specifier_index(class_byte, proper_token, reveal_threshold)
 
 | Document | What It Contains |
 |----------|-----------------|
-| `docs/references/game/ram.md` | Memory map — the object structure and pointers |
-| `docs/references/game/code.md` | Disassembly — object commands, reveal, incant, torch, object tables |
-| `docs/references/game/commands.md` | Command grammar — object classes and proper names |
-| `docs/findings/combat-model.md` | How object magic/physical power feeds the combat damage formula |
+| `gym/docs/references/game/ram.md` | Memory map — the object structure and pointers |
+| `gym/docs/references/game/code.md` | Disassembly — object commands, reveal, incant, torch, object tables |
+| `docs/game/commands.md` | Command grammar — object classes and proper names |
+| `docs/game/combat-model.md` | How object magic/physical power feeds the combat damage formula |
