@@ -2,24 +2,29 @@
 
 Scratchpad for big-picture decisions, continued across sessions. Not a spec.
 
-## Monorepo direction
+## Settled
 
-Replace the two-repo structure (`daggorath-gym` + `daggorath-agent`) with one
-`daggorath` repo holding both packages — no sync burden. The environment/
-trainer split survives because it is an *import* boundary (`daggorath_gym`
-imports only gymnasium+numpy), not a folder boundary.
+One `daggorath` repo holds two packages, side by side at the root:
 
-Open:
-- repo name and package naming
-- distribution: is `daggorath_gym` still a standalone installable library?
-- git history: fresh vs. graft one repo onto the other (user handles git)
+- `gym/` → the `daggorath-gym` distribution, imported as `daggorath_gym`
+- `agent/` → the `daggorath-agent` distribution, imported as `daggorath_agent`
+
+The environment/trainer split survives as an *import* boundary — `daggorath_gym`
+imports only gymnasium+numpy — not a folder or repo boundary. The repo root was
+hoisted so the whole workspace is the project, and git history was preserved
+(the agent was never its own repo, so it entered as new files).
+
+Both packages install editable from the root: `pip install -e gym`, then
+`pip install -e agent`.
 
 ## Audiences / front doors
 
-One core, several audiences, each wants a different first impression:
-RL novices (learn), Daggorath fans (the game), library consumers (pip install).
+One core, several audiences. The root `README.md` gives each a labeled door
+rather than picking a winner:
 
-Open: which gets the top of the README?
+1. **Learn RL** — the trainer as a worked example.
+2. **Play Daggorath** — the emulated game world.
+3. **Build on the library** — `daggorath-gym` as an installable environment.
 
 ## Portfolio positioning
 
@@ -32,8 +37,8 @@ that demonstrate strategic thinking:
 3. Reward the margin, not heart rate (exertion rewards combat, not a penalty)
 4. Fidelity over convenience (real MAME/6809 world, not a toy grid)
 
-Open: which one (or cluster) opens the README?
+Open: which one (or cluster) leads the narrative.
 
 ## Next
 
-Settle the front-door decision, then the monorepo layout and distribution.
+Settle the portfolio-spine pick.
