@@ -2,6 +2,7 @@
 logs/
 *.log
 log.txt
+.mame/
 
 # Virtual Environment
 .venv/
