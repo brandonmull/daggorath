@@ -1,8 +1,8 @@
-# Project: Daggorath Gym
+# Project: Daggorath
 
 Training an RL bot to play Dungeons of Daggorath (1982) in MAME + Gymnasium.
 
-**⚠️ READ README.md first** — it contains the full project overview, architecture, milestones, and directory structure. This file provides supplemental AI-specific constraints.
+**⚠️ READ `gym/README.md` first** — it contains the full project overview, architecture, milestones, and directory structure. This file provides supplemental AI-specific constraints.
 
 ## Platform
 - Windows 11 + WSL (Ubuntu)
@@ -15,10 +15,10 @@ Training an RL bot to play Dungeons of Daggorath (1982) in MAME + Gymnasium.
 - **Commit messages stay terse and conventional** — when suggesting one, give a short summary line and a brief body at most. Do not suggest commit messages that resemble documentation (no bulleted change-lists or long explanatory prose).
 
 ## MAME & Lua
-- **MAME uses its own embedded Lua** — not the system Lua. LuaRocks packages cannot be loaded. The rockspec (`emu/daggorath.rockspec`) is dead. Don't suggest LuaRocks.
+- **MAME uses its own embedded Lua** — not the system Lua. LuaRocks packages cannot be loaded. Don't suggest LuaRocks.
 
 ## Coding Conventions
-- **README naming conventions are binding.** Lua uses camelCase; Python uses snake_case. Always use `socket` (not `sock`). Multi-word names follow adjective-then-noun order (`state_socket`, not `socket_state`). The README is the authority — check it before choosing any name.
+- **README naming conventions are binding.** Lua uses camelCase; Python uses snake_case. Always use `socket` (not `sock`). Multi-word names follow adjective-then-noun order (`state_socket`, not `socket_state`). `gym/README.md` is the authority — check it before choosing any name.
 - **No abbreviated names in Python.** `_state_connection`, not `_state_conn`. `_receive_buffer`, not `_recv_buf`.
 - **Verb+object method names.** Methods that do work should name what they act on: `_create_listening_socket(port)`, not `_bind()` or `_create_server()`.
 - **`local` all Lua variables.** Including module requires: `local state = require("state")`.
@@ -28,9 +28,9 @@ Training an RL bot to play Dungeons of Daggorath (1982) in MAME + Gymnasium.
 
 ## AI Implementation Constraints
 - **Implement only what the plan specifies.** Do not add configurability, defaults, extra exports, or structural abstractions that the plan does not ask for. The plan is the specification — build to it, not past it.
-- **`__init__.py` exports only what the known consumer needs.** Today that's StableBaselines3, which requires only `DaggorathEnv`.
+- **`gym/daggorath_gym/__init__.py` exports only what the known consumer needs.** Today that's StableBaselines3, which requires only `DaggorathEnv`.
 
-## Reference Docs (in docs/references/)
+## Reference Docs (in `gym/docs/references/`)
 - `game/commands.md` — original game manual + ROM-derived command grammar
 - `game/ram.md` — RAM memory map
 - `game/code.md` — full 6809 disassembly
@@ -67,20 +67,20 @@ When writing or revising README files:
 
 ## Plan Doc Writing Principles
 
-When writing or revising files in `plans/`:
+When writing or revising files in `gym/docs/plans/` or `agent/docs/plans/`:
 
 1. **Be specific about scope.**
    Every instruction should define what it applies to. Instead of "use `command` everywhere," say what domain the rule governs: "components related to how the player issues commands." The reader shouldn't have to guess where the boundary is.
 
 **Naming and Terminology**
 
-2. **Follow the coding conventions in README.md.**
+2. **Follow the coding conventions in `gym/README.md`.**
    The README documents the project's coding conventions, including naming. Plan docs must use the names prescribed there.
 
 **Document Structure**
 
 3. **Implementation details live in module docs, not in the overview.**
-   `overview.md` sets project-wide conventions and principles. Per-module specifics — constants, function signatures, class attributes — belong in that module's own plan doc.
+   `gym/docs/plans/overview.md` sets project-wide conventions and principles. Per-module specifics — constants, function signatures, class attributes — belong in that module's own plan doc.
 
 4. **No source code in plan docs.**
    A plan is a design document, not an implementation. Describe what the code should do, name the important constants/classes/functions, but never paste Lua or Python source. Code blocks are for architecture diagrams, pseudo-code, and data flow — not executable code.
@@ -119,13 +119,3 @@ When writing or revising files in `plans/`:
     This is easier to scan than prose paragraphs and avoids the symbol-index problem
     (walls of `_BACKTICKED_IDENTIFIERS`). Every arrowed item is plain English;
     code symbols live in the block title, not the body.
-
-## Directory Quick Reference
-- `docs/plans/` — pre-build design specifications
-- `docs/reviews/` — post-build design reviews (observations, decisions, deferred items)
-- `docs/references/` — external source material (game manuals, memory maps, disassembly)
-- `daggorath_gym/` — Python Gymnasium env (env.py, bridge.py, state.py, commands.py, paths.py)
-- `emulation/` — Lua scripts (autoboot.lua, state.lua, commands.lua)
-- `emulation/hash/` — MAME hash files (coco_cart.xml with Shield Fix)
-- `emulation/roms/` — coco3.zip, daggorath.zip
-- `sandbox/` — TCP socket sandbox (validated communication, see sandbox/README.md)
