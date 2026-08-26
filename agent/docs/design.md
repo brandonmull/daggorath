@@ -1,12 +1,10 @@
 # Daggorath Agent — Design Reference
 
-_What this harness is, why it's built this way, and what remains deferred. The audience is someone reading `daggorath-agent` as the reference trainer for the Daggorath Gym environment. For the expanded concepts behind these choices (what `VecEnv` is, why activations exist, what a wheel is), see [learnings.md](learnings.md)._
+_What this package is, why it's built this way, and what remains deferred. The audience is someone reading `daggorath-agent` as the reference trainer for the Daggorath Gym environment. For the expanded concepts behind these choices (what `VecEnv` is, why activations exist, what a wheel is), see [learnings.md](learnings.md)._
 
 ## Purpose
 
-`daggorath-agent` is the **reference implementation** of a trainer for the `daggorath_gym` environment. It answers the question the environment deliberately leaves open: *how do I actually train against this thing?* The environment exposes a `Dict` observation and a factored `MultiDiscrete` action; this harness wires those into a working Stable-Baselines3 PPO run that an external user can read and adapt to their own stack.
-
-It is a **harness, not a library**. Nobody installs it as a dependency; it is run directly. That is why it declares its dependencies in a `requirements.txt` and is not packaged with setuptools, while the environment is packaged and installed normally.
+`daggorath-agent` is an installable package, but it is a **reference implementation, not a general-purpose library**. It answers the question the environment deliberately leaves open: *how do I actually train against this thing?* The environment exposes a `Dict` observation and a factored `MultiDiscrete` action; this package wires those into a working Stable-Baselines3 PPO run that an external user can read and adapt to their own stack. It is editable-installed alongside `daggorath-gym` so the two develop together, and it declares its dependencies in `pyproject.toml` rather than a `requirements.txt` — but its purpose is still to be read and adapted, not to serve as an install-anything dependency of a larger system.
 
 ## The training pipeline
 

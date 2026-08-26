@@ -11,7 +11,7 @@ Assembles the pipeline the deployment plan prescribes:
 
 The observation's uint16 scalars are widened to int32 at the outermost layer
 so torch can ingest them (see wrappers.py); the environment itself is
-unchanged, and the environment repo imports no training library.
+unchanged, and the environment package imports no training library.
 
 "Watch training" is the windowed mode: run with --watch to see the agent act
 in the MAME window as it learns (see docs/plans/watch-training.md).

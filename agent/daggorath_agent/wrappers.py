@@ -5,7 +5,7 @@ dtypes. One channel — the scalars — is uint16, which torch cannot ingest (to
 has no uint16 tensor type). Stable-Baselines3 therefore crashes on it before
 the features extractor ever runs. This wrapper downcasts that channel to int32,
 the torch-supported lossless width, and mirrors the change in the observation
-space. It lives here, in the training repo, because it adapts the environment
+space. It lives here, in the agent package, because it adapts the environment
 to a specific trainer — the environment itself stays trainer-agnostic.
 """
 

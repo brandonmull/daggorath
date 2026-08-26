@@ -1,6 +1,6 @@
 # Curriculum — Agent Orchestration Plan
 
-_How the training harness drives the curriculum staged in the environment repo's `curriculum/plan.md`. This is the trainer half: selecting a stage and masking commands. Not yet implemented._
+_How the training harness drives the curriculum staged in the gym package's `curriculum/plan.md`. This is the trainer half: selecting a stage and masking commands. Not yet implemented._
 
 ## Purpose
 
