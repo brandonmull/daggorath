@@ -17,6 +17,12 @@ Training an RL bot to play Dungeons of Daggorath (1982) in MAME + Gymnasium.
 ## MAME & Lua
 - **MAME uses its own embedded Lua** — not the system Lua. LuaRocks packages cannot be loaded. Don't suggest LuaRocks.
 
+## Package Boundary
+- **The import boundary is the split.** `daggorath_gym` imports only `gymnasium` and `numpy`; only `daggorath_agent` imports the training stack (`stable-baselines3`, `torch`, `sb3-contrib`). Never add a training import to the environment.
+- **Fact vs. valuation.** The environment reports facts and returns reward 0.0; reward is an agent-side valuation. The agent reads true state through the environment's `current_state` property — never through RAM addresses or disassembly. It consumes the interface, not the internals.
+- **Checkpoint policy.** Trained weights land in `agent/checkpoints/` (gitignored); never commit them.
+- **Docs tiers.** Game knowledge and shared principles live in `docs/`; observation machinery and the environment's design live in `gym/docs/`; the trainer's design lives in `agent/docs/`.
+
 ## Coding Conventions
 - **README naming conventions are binding.** Lua uses camelCase; Python uses snake_case. Always use `socket` (not `sock`). Multi-word names follow adjective-then-noun order (`state_socket`, not `socket_state`). `gym/README.md` is the authority — check it before choosing any name.
 - **No abbreviated names in Python.** `_state_connection`, not `_state_conn`. `_receive_buffer`, not `_recv_buf`.
@@ -28,16 +34,11 @@ Training an RL bot to play Dungeons of Daggorath (1982) in MAME + Gymnasium.
 
 ## AI Implementation Constraints
 - **Implement only what the plan specifies.** Do not add configurability, defaults, extra exports, or structural abstractions that the plan does not ask for. The plan is the specification — build to it, not past it.
-- **`gym/daggorath_gym/__init__.py` exports only what the known consumer needs.** Today that's StableBaselines3, which requires only `DaggorathEnv`.
+- **Each package's `__init__.py` exports only what its known consumer needs.** `daggorath_gym` exports `DaggorathEnv` (what Stable-Baselines3 requires); `daggorath_agent` exports nothing — it is run, not imported.
 
-## Reference Docs (in `gym/docs/references/`)
-- `game/commands.md` — original game manual + ROM-derived command grammar
-- `game/ram.md` — RAM memory map
-- `game/code.md` — full 6809 disassembly
-- `coco/hardware.md` — CoCo hardware reference
-- `mame/setup.md` — emulator architecture notes, lite MAME build plans
-- `mame/lua-common.md` — MAME Lua common types and globals (faithful transcription of ref-common.html)
-- `mame/lua-core.md` — MAME Lua core classes (faithful transcription of ref-core.html)
+## Reference Docs
+- **Game knowledge lives in `docs/game/`** — `commands.md` (command grammar), `levels.md` (level maps), `combat-model.md` (strength-vs-damage).
+- **Observation machinery lives in `gym/docs/references/`** — `game/ram.md` (RAM map), `game/code.md` (6809 disassembly), `coco/hardware.md`, `mame/setup.md`, `mame/lua-common.md`, `mame/lua-core.md`, `mame/keyboard.md`.
 - **Reference docs are faithful transcriptions of the original source material.** When converting external documentation (MAME docs, hardware specs, game manuals) to markdown, transcribe the full content exactly as published. Do not filter, summarize, editorialize, or add project-specific commentary. Do not omit sections. The purpose of a reference doc is to mirror the original — the reader expects the complete source, not a curated subset.
 
 ## README Writing Principles
@@ -80,7 +81,7 @@ When writing or revising files in `gym/docs/plans/` or `agent/docs/plans/`:
 **Document Structure**
 
 3. **Implementation details live in module docs, not in the overview.**
-   `gym/docs/plans/overview.md` sets project-wide conventions and principles. Per-module specifics — constants, function signatures, class attributes — belong in that module's own plan doc.
+   `docs/overview.md` sets project-wide conventions and principles. Per-module specifics — constants, function signatures, class attributes — belong in that module's own plan doc.
 
 4. **No source code in plan docs.**
    A plan is a design document, not an implementation. Describe what the code should do, name the important constants/classes/functions, but never paste Lua or Python source. Code blocks are for architecture diagrams, pseudo-code, and data flow — not executable code.
