@@ -132,6 +132,7 @@ Two further categories sit beside the pipeline: **findings** (`gym/docs/findings
 | `gym/docs/plans/navigation/plan.md` | Navigation — maze decoding and line-of-sight |
 | `gym/docs/plans/events/plan.md` | Events — the deferred event channel and its candidate catalog |
 | `gym/docs/plans/perception/plan.md` | Perception — the perceptible state and how the channels combine into one array |
+| `gym/docs/plans/cpp-port/plan.md` | C++ port — replacing the MAME backend with a faithful port |
 | `gym/docs/reviews/environment.py.md` | environment.py design review (observations, deferred items) |
 | `gym/docs/reviews/emulator.py.md` | emulator.py design review (observations, deferred items) |
 | `gym/docs/reviews/state.py.md` | state.py design review (observations, deferred items) |
@@ -146,10 +147,12 @@ Two further categories sit beside the pipeline: **findings** (`gym/docs/findings
 | `gym/docs/decisions/ipc-hybrid.md` | Hybrid IPC — FIFO state channel + TCP command channel |
 | `gym/docs/decisions/gc-autounsubscribe.md` | Saving notifier subscriptions to prevent GC auto-unsubscribe |
 | `gym/docs/decisions/readiness-gating.md` | Gating RAM reads on `displayFunction == 0xCE66` before sampling |
+| `gym/docs/decisions/roms-in-repo.md` | ROMs stay in the repo — verify-only, never download |
 | `gym/docs/findings/ipc.md` | IPC transport evaluation — FIFO vs TCP vs Unix sockets |
 | `gym/docs/findings/ram-signals.md` | RAM signal catalog — readiness and command-acceptance signals |
 | `gym/docs/findings/memory-reads.md` | Safe RAM reads + segfault debugging in MAME Lua |
 | `gym/docs/findings/deterministic-maze.md` | Deterministic maze — the dungeon is fixed by a per-level seed table in ROM |
+| `docs/portfolio.md` | Portfolio positioning — the value claim and the README's binding rules |
 | `docs/game/combat-model.md` | The strength-vs-damage combat model and the sound proximity channel |
 | `docs/game/commands.md` | Original game manual + ROM-derived command grammar, object tables, incantation words |
 | `gym/docs/references/game/ram.md` | Memory map — every known RAM address and what it stores |

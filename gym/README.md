@@ -34,9 +34,8 @@ Usage tips:
 
 | # | Severity | Issue |
 |---|---|---|
-| 1 | P1 | `step()` is unusable — reward and termination/truncation raise `NotImplementedError` (no reward or termination plan yet) |
-| 2 | P2 | No gym environment registration: `gymnasium.make('Daggorath-v0')` won't resolve |
-| 3 | P2 | WSLg audio has intermittent jitter on synthesized sounds (use `-sound sdl` + update SDL2) |
+| 1 | P2 | No gym environment registration: `gymnasium.make('Daggorath-v0')` won't resolve |
+| 2 | P2 | WSLg audio has intermittent jitter on synthesized sounds (use `-sound sdl` + update SDL2) |
 
 ## Milestones
 

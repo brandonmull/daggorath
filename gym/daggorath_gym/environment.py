@@ -21,7 +21,8 @@ class DaggorathEnv(gym.Env):
     Observation space: Dict — the perceived state (scalars + world channels).
     Lifecycle: owns a MameOperator; creates it on reset(), stops on close().
     Status: reward is a placeholder 0.0 (the reward wrapper computes the real
-    value); termination/truncation still raise NotImplementedError.
+    value); termination is detected (death and the win); truncation is delegated
+    to TimeLimit.
     """
 
     def __init__(self, mame_config=None, ipc_config=None):
