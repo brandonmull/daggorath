@@ -1,121 +1,105 @@
 #!/usr/bin/env python3
-import os
-import zipfile
+"""Verify the ROMs the Daggorath environment needs.
+
+The Daggorath cartridge ROM is checked against the hashes in coco_cart.xml.
+The CoCo 3 system ROMs (coco3.rom, disk11.rom) have no hash source in this
+repo, so they are verified by presence inside coco3.zip.
+
+Verify-only: this script never downloads anything.
+"""
 import hashlib
+import os
+import sys
+import zipfile
 import xml.etree.ElementTree as ET
 import zlib
-import sys
 
-def calculate_crc32(file_path):
-    """Calculate CRC32 of a file"""
-    with open(file_path, 'rb') as f:
-        # Read the file in chunks to handle large files
-        crc = 0
-        for chunk in iter(lambda: f.read(8192), b''):
-            crc = zlib.crc32(chunk, crc)
-        return "%08x" % (crc & 0xFFFFFFFF)
+REPO_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+ROM_DIR = os.path.join(REPO_DIR, "gym", "emulation", "roms")
+HASH_FILE = os.path.join(REPO_DIR, "gym", "emulation", "hash", "coco_cart.xml")
 
-def calculate_sha1(file_path):
-    """Calculate SHA1 hash of a file"""
-    sha1 = hashlib.sha1()
-    with open(file_path, 'rb') as f:
-        # Read the file in chunks
-        for chunk in iter(lambda: f.read(8192), b''):
-            sha1.update(chunk)
-    return sha1.hexdigest()
+DAGGORATH_ROM = "Dungeons of Daggorath (shield fix).rom"
+COCO3_ROMS = ("coco3.rom", "disk11.rom")
 
-def extract_and_verify_rom(zip_path, xml_path, temp_dir='temp'):
-    """Extract the ROM and verify against expected values from XML"""
-    # Create temp directory if it doesn't exist
-    if not os.path.exists(temp_dir):
-        os.makedirs(temp_dir)
-    
-    # Parse the XML to get expected values
-    tree = ET.parse(xml_path)
-    root = tree.getroot()
-    
-    expected_values = {}
-    for software in root.findall('.//software'):
-        for rom in software.findall('.//rom'):
-            rom_name = rom.get('name')
-            expected_values[rom_name] = {
-                'size': int(rom.get('size')),
-                'crc': rom.get('crc').lower(),
-                'sha1': rom.get('sha1').lower()
-            }
-    
-    if not expected_values:
-        print("No ROM information found in the XML file.")
+
+def _expected_hashes():
+    """Map rom filename -> (size, crc, sha1) from coco_cart.xml."""
+    expected = {}
+    for rom in ET.parse(HASH_FILE).iter("rom"):
+        name = rom.get("name")
+        if name and rom.get("size") and rom.get("crc") and rom.get("sha1"):
+            expected[name] = (
+                int(rom.get("size")),
+                rom.get("crc").lower(),
+                rom.get("sha1").lower(),
+            )
+    return expected
+
+
+def _sha1(data):
+    return hashlib.sha1(data).hexdigest()
+
+
+def _crc32(data):
+    return "%08x" % (zlib.crc32(data) & 0xFFFFFFFF)
+
+
+def verify_daggorath():
+    zpath = os.path.join(ROM_DIR, "daggorath.zip")
+    if not os.path.exists(zpath):
+        print(f"MISSING: {zpath}")
+        print("Supply the Daggorath ROM; it is not downloaded here.")
         return False
-    
-    # Extract ROM from zip
-    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-        file_list = zip_ref.namelist()
-        print(f"Files in the ZIP archive: {file_list}")
-        
-        # Extract all files
-        zip_ref.extractall(temp_dir)
-    
-    # Verify each extracted file against expected values
-    matched_any = False
-    
-    for root_dir, _, files in os.walk(temp_dir):
-        for filename in files:
-            file_path = os.path.join(root_dir, filename)
-            file_size = os.path.getsize(file_path)
-            
-            # Try to match with any expected ROM
-            for expected_name, expected_data in expected_values.items():
-                if file_size == expected_data['size']:
-                    print(f"Checking {filename} (size matches {expected_name})...")
-                    
-                    # Calculate actual hashes
-                    actual_crc = calculate_crc32(file_path)
-                    actual_sha1 = calculate_sha1(file_path)
-                    
-                    print(f"  Expected CRC: {expected_data['crc']}")
-                    print(f"  Actual CRC:   {actual_crc}")
-                    print(f"  CRC Match:    {expected_data['crc'] == actual_crc}")
-                    
-                    print(f"  Expected SHA1: {expected_data['sha1']}")
-                    print(f"  Actual SHA1:   {actual_sha1}")
-                    print(f"  SHA1 Match:    {expected_data['sha1'] == actual_sha1}")
-                    
-                    if expected_data['crc'] == actual_crc and expected_data['sha1'] == actual_sha1:
-                        print(f"SUCCESS: {filename} matches the expected ROM '{expected_name}'")
-                        matched_any = True
-                    else:
-                        print(f"MISMATCH: {filename} has different hash values than expected for '{expected_name}'")
-    
-    if not matched_any:
-        print("WARNING: No files in the ZIP archive matched the expected hash values.")
-    
-    return matched_any
 
-if __name__ == '__main__':
-    rom_zip = 'emu/roms/daggorath.zip'
-    xml_file = '/usr/share/games/mame/hash/coco_cart.xml'
-    
-    if len(sys.argv) > 1:
-        rom_zip = sys.argv[1]
-    if len(sys.argv) > 2:
-        xml_file = sys.argv[2]
-    
-    print(f"Verifying ROM: {rom_zip}")
-    print(f"Using XML file: {xml_file}")
-    
-    if not os.path.exists(rom_zip):
-        print(f"ERROR: ROM file not found: {rom_zip}")
+    expected = _expected_hashes().get(DAGGORATH_ROM)
+    if expected is None:
+        print(f"No expected hash for {DAGGORATH_ROM} in coco_cart.xml.")
+        return False
+
+    with zipfile.ZipFile(zpath) as zf:
+        if DAGGORATH_ROM not in zf.namelist():
+            print(f"MISSING inside daggorath.zip: {DAGGORATH_ROM}")
+            return False
+        data = zf.read(DAGGORATH_ROM)
+
+    exp_size, exp_crc, exp_sha1 = expected
+    if len(data) == exp_size and _crc32(data) == exp_crc and _sha1(data) == exp_sha1:
+        print(f"OK: {DAGGORATH_ROM} (crc {exp_crc})")
+        return True
+
+    print(f"MISMATCH: {DAGGORATH_ROM}")
+    print(f"  expected crc  {exp_crc}  sha1 {exp_sha1}")
+    print(f"  actual   crc  {_crc32(data)}  sha1 {_sha1(data)}")
+    return False
+
+
+def verify_coco3():
+    zpath = os.path.join(ROM_DIR, "coco3.zip")
+    if not os.path.exists(zpath):
+        print(f"MISSING: {zpath}")
+        print("Supply the CoCo 3 system ROMs; they are not downloaded here.")
+        return False
+
+    with zipfile.ZipFile(zpath) as zf:
+        names = zf.namelist()
+        for rom in COCO3_ROMS:
+            if rom not in names:
+                print(f"MISSING inside coco3.zip: {rom}")
+                return False
+
+    print(f"OK: coco3.zip contains {', '.join(COCO3_ROMS)}")
+    return True
+
+
+def main():
+    ok = True
+    ok &= verify_daggorath()
+    ok &= verify_coco3()
+    if not ok:
+        print("\nVerification FAILED — the environment will not run without the ROMs.")
         sys.exit(1)
-    
-    if not os.path.exists(xml_file):
-        print(f"ERROR: XML file not found: {xml_file}")
-        sys.exit(1)
-    
-    success = extract_and_verify_rom(rom_zip, xml_file)
-    if success:
-        print("\nVerification PASSED: The ROM matches the expected values.")
-        sys.exit(0)
-    else:
-        print("\nVerification FAILED: The ROM does not match the expected values.")
-        sys.exit(1) 
+    print("\nVerification PASSED.")
+
+
+if __name__ == "__main__":
+    main()

@@ -4,15 +4,27 @@ A Gymnasium environment for training an RL agent to play **Dungeons of Daggorath
 
 ## Installation
 
-1. Install MAME 0.289 — built from source under WSL and installed to `/usr/local` (see `docs/references/mame/setup.md`).
-2. Put the ROMs and hash files in place:
-   - `emulation/roms/` — `coco3.zip`, `daggorath.zip`
-   - `emulation/hash/` — `coco_cart.xml` (Shield Fix)
-3. Install the Python package:
+The root `setup.sh` handles all of this interactively. To do it by hand instead:
+
+1. Build MAME 0.289 — the packaged version (0.264) is too old, so it's built from source:
+
+   ```bash
+   sudo apt-get install git build-essential python3 libsdl2-dev libsdl2-ttf-dev libfontconfig-dev libpulse-dev qt6-base-dev qt6-base-dev-tools qtchooser
+   git clone https://github.com/mamedev/mame.git
+   cd mame && git checkout mame0289
+   make -j$(nproc)
+   sudo make install
    ```
+
+2. Install the two packages from the repo root:
+
+   ```bash
    source .venv/bin/activate
-   pip install -e .
+   pip install -e gym
+   pip install -e agent
    ```
+
+3. The ROMs and hash files ship in the repo (`emulation/roms/`, `emulation/hash/`), so no placement is needed. To confirm they're intact, run `python gym/tools/verify_rom.py`.
 
 Usage tips:
 - **Headless training**: `-video none -sound none` (pass `MameConfig(window=False, sound="none")` to MameOperator)
@@ -24,9 +36,8 @@ Usage tips:
 |---|---|---|
 | 1 | P1 | `step()` is unusable — reward and termination/truncation raise `NotImplementedError` (no reward or termination plan yet) |
 | 2 | P2 | No gym environment registration: `gymnasium.make('Daggorath-v0')` won't resolve |
-| 3 | P2 | `setup.sh` is stale — installs MAME via apt paths; the project now builds from source into `/usr/local` |
-| 4 | P2 | WSLg audio has intermittent jitter on synthesized sounds (use `-sound sdl` + update SDL2) |
-| 5 | P3 | `reset(seed=...)` ignores the seed (no RNG wired yet) |
+| 3 | P2 | WSLg audio has intermittent jitter on synthesized sounds (use `-sound sdl` + update SDL2) |
+| 4 | P3 | `reset(seed=...)` ignores the seed (no RNG wired yet) |
 
 ## Milestones
 
@@ -77,7 +88,6 @@ Daggorath ROM (daggorath.zip — Shield Fix) + CoCo 3 ROM (coco3.zip)
 | `docs/plans/`, `docs/reviews/`, `docs/decisions/`, `docs/findings/` | Design, review, decision, and findings docs |
 | `docs/references/` | 6809 disassembly, RAM map, command grammar, hardware ref |
 | `sandbox/` | Validated experiments (see its README) |
-| `setup.sh` | One-shot installer (stale — see Known Issues) |
 | `pyproject.toml` | Pip package config |
 
 ## Coding Conventions

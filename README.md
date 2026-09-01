@@ -8,24 +8,29 @@ Getting there meant finishing a memory map others had started, reconstructing th
 
 ## Quick start
 
-Requires Linux, macOS, or WSL; Python 3.12; MAME 0.289; and the CoCo 3 + Daggorath ROMs. MAME is built from source and the ROMs are placed by hand — see [`gym/README.md`](gym/README.md#installation).
+Runs on Debian/Ubuntu Linux, or Windows via WSL. Run `./setup.sh` — it's interactive and tells you exactly what it's doing: it pauses before each step so you can approve or skip any of them, and it never does anything you haven't said yes to.
+
+1. **Build MAME 0.289 from source.** The version matters — the packaged MAME (0.264) is too old for this environment. Skip this if you already have 0.289.
+2. **Create the Python virtual environment** (`.venv`).
+3. **Install the two packages** — `daggorath-gym` (the environment) and `daggorath-agent` (the trainer).
+4. **Verify the game ROMs** (`coco3.zip`, `daggorath.zip`) — they ship with the repo. Verify-only: the script never downloads; it just confirms the files are intact.
+
+Then:
 
 ```bash
-source .venv/bin/activate
-pip install -e gym
-pip install -e agent
-python -m daggorath_agent.train --watch
+.venv/bin/python -m daggorath_agent.train --watch
 ```
 
-`--watch` opens the MAME window with sound, so you can watch the agent act as it learns; drop it to train headless. Checkpoints land in `agent/checkpoints/`.
+`--watch` opens the game window with sound so you can watch it train; leave it off to run silently. Saved weights land in `agent/checkpoints/`.
+
+Prefer to do it by hand? The full manual steps are in the [environment's install guide](gym/README.md#installation).
 
 ## Status
 
-The environment runs: MAME boots the game, the Lua plugin streams state, and the training loop executes end to end. What isn't done:
+The game boots and reports its state, and the training loop runs end to end. What isn't done:
 
 - **No trained agent.** The reward is a first pass; no run has produced competent play.
-- **No curriculum.** Staged rewards and command masking are designed but not built ([`agent/docs/plans/curriculum.md`](agent/docs/plans/curriculum.md)).
-- **No `gymnasium.make("Daggorath-v0")`.** The environment is constructed directly.
+- **No curriculum.** Staged rewards and command masking are still being scoped ([`agent/docs/plans/curriculum.md`](agent/docs/plans/curriculum.md)).
 
 The environment's full issue list is in [`gym/README.md`](gym/README.md#known-issues).
 

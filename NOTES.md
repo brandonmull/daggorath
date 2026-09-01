@@ -299,12 +299,53 @@ what's broken, why is it interesting, where do I go deeper — moved four things
 - **The `Repo map` table is gone.** Three rows, two of which the doors already
   covered.
 
+## C++ port — direction
+
+The MAME path is being re-examined. The project's value is producing a trainable
+environment, not the reverse-engineering; MAME and the RAM archaeology were the
+expensive means the black box forced, not the point. A faithful C++ port is a
+simpler path to the same value, so a branch will explore it.
+
+What was found:
+
+- `gondur/dungeons-of-daggorath` — the Linux port v0.5.1 of Richard Hunerlach's
+  Windows C port. C++ source, `src/` present. Not a reimplementation: the original
+  6809 assembly translated line-for-line, so the hard mechanics (heartbeat combat,
+  darkness, sound-before-sight, 806 commands, long descent) are the real mechanics.
+- `MichaelSpencerJr/DungeonsOfDaggorath` — the original 6809 `.ASM` source, with
+  `grant_of_license.png` checked in alongside it. The license is Douglas Morgan's
+  grant, matching iloveglory.freehostia.com/daggorath/license.html.
+
+What survives the swap: the observation design, the factored action space,
+fact-vs-valuation, the reward wrapper, the trainer. What disappears: MAME, the Lua
+plugin, the FIFO/TCP bridge, the RAM archaeology, the firmware, the ROMs — and with
+them the setup and legal friction around the CoCo 3 firmware.
+
+Open questions before any integration:
+
+- Does the port's source build, and is the checked-in source actually v0.5.1 (the
+  README describes v0.3)?
+- What do the state classes look like, and is the game loop clean enough to hang an
+  observation/action interface on?
+- Does the port preserve the mechanics faithfully enough that the "brutally hard
+  testbed" claim stays true?
+
+## ROMs
+
+The ROMs stay in the repo for now (`gym/emulation/roms/`), and the docs say so —
+they ship with the repo, so no placement is needed. The setup script and
+`verify_rom.py` are verify-only: they check hashes and never download. If the
+files are ever removed from the repo and history, the README wording flips to
+"you supply them," and the verify step becomes the gate it already is.
+
 ## Next
 
-1. Correct the stale P1 row in `gym/README.md`: `step()` is no longer unusable —
+1. Start a `cpp-port` branch and map `gondur/dungeons-of-daggorath`'s `src/` before
+   writing any integration code.
+2. Correct the stale P1 row in `gym/README.md`: `step()` is no longer unusable —
    reward returns `0.0` rather than raising, `_check_terminated` is implemented,
    and `_check_truncated` deliberately returns `False` because `TimeLimit` is
    external. The `environment.py` class docstring is stale the same way.
-2. Implement the curriculum's first stage — `--stage`, `MaskablePPO`, and the
+3. Implement the curriculum's first stage — `--stage`, `MaskablePPO`, and the
    command mask (`agent/docs/plans/curriculum.md`).
 
