@@ -48,11 +48,9 @@ Getting an agent to play once is a demo. Whether anyone else can use the result 
 | Correct episode boundaries | Termination read from the game's own death test, not a proxy |
 | To decide the objective themselves | The environment returns reward `0.0`; reward is a swappable wrapper |
 | True state for reward, without cheating the policy | A `current_state` property — never through `info` or the observation |
-| Throughput, and the ability to watch | Headless by default; `--watch` opens the window with sound |
+| Throughput, and the ability to watch | Headless by default — no window, training runs in the background; `--watch` opens the window with sound |
 
 The one that matters most is the fifth. The environment holds no opinion about what the agent should want — it reports what is true and returns `0.0`, so the objective belongs to whoever is training. Bring your own reward; nothing argues with you.
-
-Two needs are still unmet: environment registration and seeding (see [Status](#status)).
 
 ### What it took
 

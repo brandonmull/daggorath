@@ -149,6 +149,7 @@ Two further categories sit beside the pipeline: **findings** (`gym/docs/findings
 | `gym/docs/findings/ipc.md` | IPC transport evaluation — FIFO vs TCP vs Unix sockets |
 | `gym/docs/findings/ram-signals.md` | RAM signal catalog — readiness and command-acceptance signals |
 | `gym/docs/findings/memory-reads.md` | Safe RAM reads + segfault debugging in MAME Lua |
+| `gym/docs/findings/deterministic-maze.md` | Deterministic maze — the dungeon is fixed by a per-level seed table in ROM |
 | `docs/game/combat-model.md` | The strength-vs-damage combat model and the sound proximity channel |
 | `docs/game/commands.md` | Original game manual + ROM-derived command grammar, object tables, incantation words |
 | `gym/docs/references/game/ram.md` | Memory map — every known RAM address and what it stores |
