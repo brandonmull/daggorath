@@ -41,7 +41,7 @@ train()
 
 **Observation handling.** The observation is a Dict of a two-plane image (`map`) and flat entity and scalar arrays. A custom feature extractor routes the map plane through a convolutional network and the remaining channels through a multi-layer perceptron, then concatenates — the "CNN + MLP" split the perception plan describes.
 
-**Action masking.** The factored action space (26 templates × 31 object specifiers) carries a joint constraint: the INCANT template accepts only the nine ring specifiers. SB3's per-axis masking cannot express a joint constraint, so a joint-mask policy belongs here, in the agent package. The environment keeps a no-op fallback, so a trainer that does not mask still runs correctly — it just wastes the occasional step. The first trainer may rely on that fallback with plain PPO, adding the joint-mask policy as its first refinement.
+**Action masking.** The factored action space (26 verb forms × 31 object specifiers) carries a joint constraint: the INCANT verb form accepts only the nine ring specifiers. SB3's per-axis masking cannot express a joint constraint, so a joint-mask policy belongs here, in the agent package. The environment keeps a no-op fallback, so a trainer that does not mask still runs correctly — it just wastes the occasional step. The first trainer may rely on that fallback with plain PPO, adding the joint-mask policy as its first refinement.
 
 **Role.** The agent package is the reference implementation: a working end-to-end trainer that an external user reads and adapts to their own stack.
 

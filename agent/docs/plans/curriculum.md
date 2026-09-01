@@ -4,7 +4,7 @@ _How the agent is taught: the staged path from a fresh agent to one that plays c
 
 ## Purpose
 
-A fresh agent confronts 806 commands, a dark dungeon, and a reward that only pays after the action that earns it. There is no gradient toward lighting a torch before the agent has lit it, nor toward examining a pack before the agent has examined it. The curriculum resolves this by staging the objective: at each stage the agent is rewarded for one thing and the commands that do not serve that thing are locked behind it.
+A fresh agent confronts 154 command phrases, a dark dungeon, and a reward that only pays after the action that earns it. There is no gradient toward lighting a torch before the agent has lit it, nor toward examining a pack before the agent has examined it. The curriculum resolves this by staging the objective: at each stage the agent is rewarded for one thing and the commands that do not serve that thing are locked behind it.
 
 ## The core mechanism — the novelty flag
 
@@ -90,7 +90,7 @@ Because the action space never changes shape, a stage transition is not a policy
 ## Deferred
 
 - **Automatic graduation.** Advancing stages is manual in the first trainer (`--stage`). A trigger — e.g. the unlock spike for the current stage's flags decaying, or a fixed step budget — is a follow-up.
-- **Joint masking.** The INCANT + ring-only constraint is per-object joint masking, not the per-axis template gating of this plan. It remains the separate, already-deferred joint-mask policy.
+- **Joint masking.** The INCANT + ring-only constraint is per-object joint masking, not the per-axis verb-form gating of this plan. It remains the separate, already-deferred joint-mask policy.
 
 ## Decisions
 

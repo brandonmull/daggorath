@@ -2,8 +2,10 @@
 
 Builds the ordered list of 154 valid command phrases at import time.
 The phrase list's order is the shared contract with Lua's COMMAND_PHRASES.
-Also builds the factored action space — 26 command templates × 31 object
-specifier indices — and maps a (template, object) pair to a wire index.
+Also builds the factored action space — 26 verb forms × 31 object specifiers
+— and maps a (verb form, object specifier) pair to a wire index. Those 806
+potential choices yield only 154 commands: 21 verb forms are object-less,
+four take an object, and INCANT takes only the nine ring names.
 """
 
 from dataclasses import dataclass
@@ -92,7 +94,7 @@ _SPECIFIER_INDEX_BY_TOKEN = {
 
 # Built at import: specifier index → incantation word, for the ring proper
 # names only. Only these nine object indices are syntactically valid INCANT
-# targets; any other index is invalid for that template.
+# targets; any other index is invalid for that verb form.
 _RING_NAME_BY_SPECIFIER_INDEX = {
     _OBJECT_SPECIFIER_INDEX.index(f"{name} RING"): name
     for name in _OBJECT_PROPER_NAMES["RING"]
@@ -162,11 +164,11 @@ NUM_COMMANDS = len(_COMMAND_PHRASES)
 
 
 @dataclass(frozen=True)
-class _CommandTemplate:
-    """One slot of the factored action space's template axis.
+class _CommandVerbForm:
+    """One slot of the factored action space's verb-form axis.
 
-    An object-less template carries its full ``phrase``; a specifier
-    template carries a ``word`` and optional ``direction`` and fills its
+    An object-less verb form carries its full ``phrase``; a specifier
+    verb form carries a ``word`` and optional ``direction`` and fills its
     object slot from the object axis (GET/PULL), or — for INCANT — accepts
     only the ring proper names.
     """
@@ -176,52 +178,52 @@ class _CommandTemplate:
     direction: str | None = None
 
 
-# The 26 templates in axis-0 order: 21 object-less, then GET/PULL (object
+# The 26 verb forms in axis-0 order: 21 object-less, then GET/PULL (object
 # slot from the specifier index) and INCANT (ring names only).
-_COMMAND_TEMPLATES = (
-    _CommandTemplate(phrase="MOVE"),
-    _CommandTemplate(phrase="MOVE BACK"),
-    _CommandTemplate(phrase="MOVE LEFT"),
-    _CommandTemplate(phrase="MOVE RIGHT"),
-    _CommandTemplate(phrase="TURN LEFT"),
-    _CommandTemplate(phrase="TURN RIGHT"),
-    _CommandTemplate(phrase="TURN AROUND"),
-    _CommandTemplate(phrase="CLIMB UP"),
-    _CommandTemplate(phrase="CLIMB DOWN"),
-    _CommandTemplate(phrase="ATTACK LEFT"),
-    _CommandTemplate(phrase="ATTACK RIGHT"),
-    _CommandTemplate(phrase="USE LEFT"),
-    _CommandTemplate(phrase="USE RIGHT"),
-    _CommandTemplate(phrase="DROP LEFT"),
-    _CommandTemplate(phrase="DROP RIGHT"),
-    _CommandTemplate(phrase="STOW LEFT"),
-    _CommandTemplate(phrase="STOW RIGHT"),
-    _CommandTemplate(phrase="REVEAL LEFT"),
-    _CommandTemplate(phrase="REVEAL RIGHT"),
-    _CommandTemplate(phrase="EXAMINE"),
-    _CommandTemplate(phrase="LOOK"),
-    _CommandTemplate(word="GET", direction="LEFT"),
-    _CommandTemplate(word="GET", direction="RIGHT"),
-    _CommandTemplate(word="PULL", direction="LEFT"),
-    _CommandTemplate(word="PULL", direction="RIGHT"),
-    _CommandTemplate(word="INCANT"),
+_COMMAND_VERB_FORMS = (
+    _CommandVerbForm(phrase="MOVE"),
+    _CommandVerbForm(phrase="MOVE BACK"),
+    _CommandVerbForm(phrase="MOVE LEFT"),
+    _CommandVerbForm(phrase="MOVE RIGHT"),
+    _CommandVerbForm(phrase="TURN LEFT"),
+    _CommandVerbForm(phrase="TURN RIGHT"),
+    _CommandVerbForm(phrase="TURN AROUND"),
+    _CommandVerbForm(phrase="CLIMB UP"),
+    _CommandVerbForm(phrase="CLIMB DOWN"),
+    _CommandVerbForm(phrase="ATTACK LEFT"),
+    _CommandVerbForm(phrase="ATTACK RIGHT"),
+    _CommandVerbForm(phrase="USE LEFT"),
+    _CommandVerbForm(phrase="USE RIGHT"),
+    _CommandVerbForm(phrase="DROP LEFT"),
+    _CommandVerbForm(phrase="DROP RIGHT"),
+    _CommandVerbForm(phrase="STOW LEFT"),
+    _CommandVerbForm(phrase="STOW RIGHT"),
+    _CommandVerbForm(phrase="REVEAL LEFT"),
+    _CommandVerbForm(phrase="REVEAL RIGHT"),
+    _CommandVerbForm(phrase="EXAMINE"),
+    _CommandVerbForm(phrase="LOOK"),
+    _CommandVerbForm(word="GET", direction="LEFT"),
+    _CommandVerbForm(word="GET", direction="RIGHT"),
+    _CommandVerbForm(word="PULL", direction="LEFT"),
+    _CommandVerbForm(word="PULL", direction="RIGHT"),
+    _CommandVerbForm(word="INCANT"),
 )
 
 # The two axes of the factored action space.
-NUM_TEMPLATES = len(_COMMAND_TEMPLATES)
+NUM_VERB_FORMS = len(_COMMAND_VERB_FORMS)
 NUM_OBJECT_SPECIFIERS = len(_OBJECT_SPECIFIER_INDEX)
 
 
-def derive_command_index(template: int, object_index: int) -> int | None:
-    """Map a factored action (template, object) to a wire command index.
+def derive_command_index(verb_form: int, object_index: int) -> int | None:
+    """Map a factored action (verb form, object specifier) to a wire command index.
 
-    Object-less templates ignore the object index and return their fixed
+    Object-less verb forms ignore the object index and return their fixed
     phrase's index. GET and PULL fill the object slot from the specifier
     index. INCANT accepts only the nine ring proper names; any other object
     index is syntactically invalid and returns None, which the environment
     treats as a no-op.
     """
-    spec = _COMMAND_TEMPLATES[template]
+    spec = _COMMAND_VERB_FORMS[verb_form]
     if spec.phrase is not None:
         return _COMMAND_PHRASES.index(spec.phrase)
     if spec.word == "INCANT":

@@ -14,7 +14,7 @@ same value.
 - `gondur/dungeons-of-daggorath` — the Linux port v0.5.1 of Richard Hunerlach's
   Windows C port. C++ source, `src/` present. Not a reimplementation: the
   original 6809 assembly translated line-for-line, so the hard mechanics
-  (heartbeat combat, darkness, sound-before-sight, 806 commands, long descent)
+  (heartbeat combat, darkness, sound-before-sight, 154 commands, long descent)
   are the real mechanics.
 - `MichaelSpencerJr/DungeonsOfDaggorath` — the original 6809 `.ASM` source, with
   `grant_of_license.png` checked in alongside it. The license is Douglas Morgan's

@@ -2,7 +2,7 @@
 
 **A world that didn't exist.**
 
-*Dungeons of Daggorath* (1982) is now a reinforcement-learning environment — and a brutally hard one. The game keeps no score at all. The dungeon is dark until you light a torch, and whatever you can't see, you hear. Every action is one of 806 typed commands, and nothing pays off quickly. Those are the conditions modern RL handles worst, and testbeds that pose them are scarce. That makes a game this old an unexpectedly useful place to train, and it's built for anyone to do it.
+*Dungeons of Daggorath* (1982) is now a reinforcement-learning environment — and a brutally hard one. The game keeps no score at all. The dungeon is dark until you light a torch, and whatever you can't see, you hear. Every action is one of 154 command phrases, and nothing pays off quickly. Those are the conditions modern RL handles worst, and testbeds that pose them are scarce. That makes a game this old an unexpectedly useful place to train, and it's built for anyone to do it.
 
 Getting there meant finishing a memory map others had started, reconstructing the game's combat math from its own code, and learning the hard way what an emulator tolerates when you instrument it at full speed.
 
@@ -40,9 +40,9 @@ The environment's full issue list is in [`gym/README.md`](gym/README.md#known-is
 
 MAME exposes the emulated machine's memory and a keyboard matrix, and nothing more — no notion of a player, a creature, or a wall. Turning that into signals an agent can act on took three things:
 
-- **Meaning from a binary** — reading the community's disassembly to resolve the RAM fields its map left open: which addresses mean "you are here," "this is in front of you," "you just died." The combat model — the damage formula, both strength-vs-damage pools, and a shield bug in the original ROM — was reconstructed from the cartridge.
-- **A transport the emulator survives** — 15 sandbox experiments established what MAME's embedded Lua actually tolerates: a FIFO for high-throughput state, a TCP socket for commands, no external dependencies, and reads gated so the game is never sampled mid-update.
-- **Typing as an action space** — the agent has no controller. Every action is a typed phrase, dispatched only when a readiness signal found in RAM says the game will accept it.
+- **Meaning from a binary** — the game offers no labels for its own state, so its own code was read to learn what its memory holds: where you are, what's in front of you, what creatures are near, how much light you have left, how close your heart is to bursting.
+- **A transport the emulator survives** — getting state out and commands back in took fifteen experiments. Several approaches crashed or froze the emulator outright; the one that stuck streams continuously and never reads at the wrong moment.
+- **Commands as an action space** — the agent has no controller. It issues the game's own command phrases — "attack left," "get left torch" — and only when the game is ready to accept them.
 
 The algorithm was never the hard part. The trainer just calls `step()` — all the work was making `step()` mean something.
 

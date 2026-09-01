@@ -26,7 +26,7 @@ A `conversation.md` is organized into threads — one per distinct design questi
 - **The perfect statement is the crown jewel; the reasoning is its setting.** We keep *"particular statements that frame concepts in just the right way"* most of all — but a statement is only perceived appropriately in the context of the reasoning that led up to it, so capture both. Nothing said should be lost: *"I don't want to lose that."*
 - **Evidence-backed.** A clean synthesis is not enough on its own — *"the overall record needs to be evidence-backed by the exact conversation itself."* Ground every claim in the verbatim exchange, or it reads as paraphrase.
 - **Antecedents, not summaries.** A statement is always a reply to something earlier: *"my statements are also in response to something that happened earlier."* A one-line note ("I had laid out the potentials and left strength out") *"helps minimally"* — show the actual prior exchange it was responding to.
-- **The crux gets a box.** The most significant statement *"deserves visual emphasis somehow"* — a large `### The Crux` heading inside its own blockquote, load-bearing terms bolded.
+- **The crux gets a box.** The most significant statement *"deserves visual emphasis somehow"* — a large `### The Crux` heading inside its own blockquote, key terms bolded.
 - **Speaker attribution everywhere, including the crux** — on the statement itself (`**Cline:** "…"`), never in the crux heading.
 
 ## Extracting a conversation

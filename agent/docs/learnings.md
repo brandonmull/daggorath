@@ -28,7 +28,7 @@ A `Dict` observation space needs SB3's `MultiInputPolicy`, which in turn uses a 
 
 ### Factored actions and joint masking
 
-`MultiDiscrete([26, 31])` is a **factored** action: two independent axes, one per choice (command template, object specifier). Per-axis masking — what masking libraries offer — can disable an item on one axis, but cannot express a **cross-axis** constraint such as "the object axis is limited only while the template is INCANT." A joint mask is a custom policy, not a mask array. That is why it is deferred here rather than wired in.
+`MultiDiscrete([26, 31])` is a **factored** action: two independent axes, one per choice (verb form, object specifier). Per-axis masking — what masking libraries offer — can disable an item on one axis, but cannot express a **cross-axis** constraint such as "the object axis is limited only while the verb form is INCANT." A joint mask is a custom policy, not a mask array. That is why it is deferred here rather than wired in.
 
 ### Activation functions
 

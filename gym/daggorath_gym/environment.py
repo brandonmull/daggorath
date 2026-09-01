@@ -7,7 +7,7 @@ import numpy as np
 from .emulator import MameOperator, IpcConfig
 from .commands import (
     NUM_OBJECT_SPECIFIERS,
-    NUM_TEMPLATES,
+    NUM_VERB_FORMS,
     DaggorathCommand,
     derive_command_index,
 )
@@ -17,7 +17,7 @@ from .state import PERCEIVED_SPACE, DaggorathState
 class DaggorathEnv(gym.Env):
     """A Gymnasium environment that wraps Dungeons of Daggorath via MAME.
 
-    Action space: MultiDiscrete([26, 31]) — a (template, object) pair.
+    Action space: MultiDiscrete([26, 31]) — a (verb form, object specifier) pair.
     Observation space: Dict — the perceived state (scalars + world channels).
     Lifecycle: owns a MameOperator; creates it on reset(), stops on close().
     Status: reward is a placeholder 0.0 (the reward wrapper computes the real
@@ -31,9 +31,9 @@ class DaggorathEnv(gym.Env):
         self._mame_config = mame_config
         self._ipc_config = ipc_config
 
-        # Action space: (template, object) — the command shape plus the object
+        # Action space: (verb form, object specifier) — the command shape plus the object
         # specifier index shared with the observation.
-        self.action_space = spaces.MultiDiscrete([NUM_TEMPLATES, NUM_OBJECT_SPECIFIERS])
+        self.action_space = spaces.MultiDiscrete([NUM_VERB_FORMS, NUM_OBJECT_SPECIFIERS])
 
         # Observation space: the perceived state (scalars + gated world channels)
         self.observation_space = PERCEIVED_SPACE

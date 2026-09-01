@@ -22,7 +22,7 @@ import pytest
 
 from daggorath_gym.commands import (
     NUM_OBJECT_SPECIFIERS,
-    NUM_TEMPLATES,
+    NUM_VERB_FORMS,
     _COMMAND_PHRASES,
     _OBJECT_SPECIFIER_INDEX,
     _PROPER_TYPE_BY_TOKEN,
@@ -161,21 +161,21 @@ def test_bare_classes_are_indices_zero_through_five():
 
 # ---- factored action space --------------------------------------------------
 
-def test_template_and_object_counts():
-    """The factored action space is 26 templates × 31 object specifiers."""
-    assert NUM_TEMPLATES == 26
+def test_verb_form_and_object_specifier_counts():
+    """The factored action space is 26 verb forms × 31 object specifiers."""
+    assert NUM_VERB_FORMS == 26
     assert NUM_OBJECT_SPECIFIERS == 31
 
 
 def test_derive_command_index_object_less_ignores_object():
-    """An object-less template maps to its fixed phrase whatever the object."""
+    """An object-less verb form maps to its fixed phrase whatever the object."""
     move_index = _COMMAND_PHRASES.index("MOVE")
     assert derive_command_index(0, 0) == move_index
     assert derive_command_index(0, 30) == move_index
 
 
 def test_derive_command_index_get_fills_specifier():
-    """GET/PULL templates fill their specifier slot from the object index."""
+    """GET/PULL verb forms fill their specifier slot from the object index."""
     assert derive_command_index(21, 5) == _COMMAND_PHRASES.index("GET LEFT TORCH")
     assert derive_command_index(24, 26) == _COMMAND_PHRASES.index("PULL RIGHT WOODEN SWORD")
 
