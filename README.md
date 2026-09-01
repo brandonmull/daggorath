@@ -2,7 +2,7 @@
 
 **A world that didn't exist.**
 
-*Dungeons of Daggorath* (1982) is now a reinforcement-learning environment — and a brutally hard one. The game keeps no score at all. The dungeon is dark until you light a torch, and whatever you can't see, you hear. Every action is one of 806 typed commands, and nothing pays off quickly. Those are the conditions modern RL handles worst, and testbeds that pose them are scarce. That makes a game this old an unexpectedly useful place to train, and it's built for anyone to do it — not just its author.
+*Dungeons of Daggorath* (1982) is now a reinforcement-learning environment — and a brutally hard one. The game keeps no score at all. The dungeon is dark until you light a torch, and whatever you can't see, you hear. Every action is one of 806 typed commands, and nothing pays off quickly. Those are the conditions modern RL handles worst, and testbeds that pose them are scarce. That makes a game this old an unexpectedly useful place to train, and it's built for anyone to do it.
 
 Getting there meant finishing a memory map others had started, reconstructing the game's combat math from its own code, and learning the hard way what an emulator tolerates when you instrument it at full speed.
 
@@ -36,22 +36,6 @@ The environment's full issue list is in [`gym/README.md`](gym/README.md#known-is
 
 ## What makes this interesting
 
-### An interface worth building on
-
-Getting an agent to play once is a demo. Whether anyone else can use the result is a design question, so the environment was built against what a person training an agent actually needs:
-
-| What a trainer needs | How it's served |
-|---|---|
-| A standard API, so existing tooling attaches | A Gymnasium `Env`; framework-specific adaptation (torch has no `uint16`) stays in the trainer, not the environment |
-| Spaces that are learnable, not raw bytes | A `Dict` observation and a `MultiDiscrete([26, 31])` action space |
-| Actions that express the game, not keystrokes | Factored **template × object** — a verb and a thing; syntactically invalid pairs are no-ops |
-| Correct episode boundaries | Termination read from the game's own death test, not a proxy |
-| To decide the objective themselves | The environment returns reward `0.0`; reward is a swappable wrapper |
-| True state for reward, without cheating the policy | A `current_state` property — never through `info` or the observation |
-| Throughput, and the ability to watch | Headless by default — no window, training runs in the background; `--watch` opens the window with sound |
-
-The one that matters most is the fifth. The environment holds no opinion about what the agent should want — it reports what is true and returns `0.0`, so the objective belongs to whoever is training. Bring your own reward; nothing argues with you.
-
 ### What it took
 
 MAME exposes the emulated machine's memory and a keyboard matrix, and nothing more — no notion of a player, a creature, or a wall. Turning that into signals an agent can act on took three things:
@@ -60,12 +44,23 @@ MAME exposes the emulated machine's memory and a keyboard matrix, and nothing mo
 - **A transport the emulator survives** — 15 sandbox experiments established what MAME's embedded Lua actually tolerates: a FIFO for high-throughput state, a TCP socket for commands, no external dependencies, and reads gated so the game is never sampled mid-update.
 - **Typing as an action space** — the agent has no controller. Every action is a typed phrase, dispatched only when a readiness signal found in RAM says the game will accept it.
 
-The payoff is a 311-line trainer. Everything else exists so those 311 lines can call `step()`.
+The algorithm was never the hard part. The trainer just calls `step()` — all the work was making `step()` mean something.
 
-### Decisions worth arguing about
+### An interface worth building on
 
-- **Reward the margin, not heart rate** — the game's iconic heartbeat is a trap: attacking raises the same exertion counter that being hit does, so penalizing a racing heart would punish the fighting that wins. Reward tracks `strength − exertion`, the game's own death test.
-- **Mask, never shrink** *(planned)* — the curriculum will gate commands by masking, never by resizing the action space, so the policy head survives every stage and `--resume` chains them.
+The environment was built against what a person training an agent actually needs:
+
+| What a trainer needs | How it's served |
+|---|---|
+| A standard interface | A Gymnasium environment, so any RL library can attach; framework-specific adaptation stays in the trainer, not here |
+| Learnable observations and actions | Structured spaces, not raw memory dumps |
+| Actions that mean something | The game's own commands — a verb and an object — not keystrokes |
+| Episodes that end correctly | The game's real death and win conditions, not a timer guess |
+| Freedom to define the goal | The environment reports facts and returns reward `0.0`; the reward is yours to define |
+| True state for the reward, without cheating the policy | Full state is available to whoever computes reward, but it never leaks into what the agent sees |
+| Speed, and the ability to watch | Headless by default — no window, training runs in the background; `--watch` opens the window with sound |
+
+The most important of these: the environment holds no opinion about what the agent should want. It reports what is true and returns reward `0.0`, so the objective belongs to whoever is training. Bring your own reward; nothing argues with you.
 
 ## Choose your door
 
