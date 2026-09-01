@@ -6,7 +6,20 @@
 
 Getting there meant finishing a memory map others had started, reconstructing the game's combat math from its own code, and learning the hard way what an emulator tolerates when you instrument it at full speed.
 
-## Quick start
+## Carved above the entrance
+
+> To all who would enter: the gate stands open, but the depths are still unmapped.
+
+The game boots and reports its state, and the training loop runs end to end. What isn't done:
+
+- **No trained agent.** The reward is a first pass; no run has produced competent play.
+- **No curriculum.** Staged rewards and command masking are still being scoped ([`agent/docs/plans/curriculum.md`](agent/docs/plans/curriculum.md)).
+
+The environment's full issue list is in [`gym/README.md`](gym/README.md#known-issues).
+
+## Outside the entrance
+
+### Step inside
 
 Runs on Debian/Ubuntu Linux, or Windows via WSL. Run `./setup.sh` — it's interactive and tells you exactly what it's doing: it pauses before each step so you can approve or skip any of them, and it never does anything you haven't said yes to.
 
@@ -25,16 +38,25 @@ Then:
 
 Prefer to do it by hand? The full manual steps are in the [environment's install guide](gym/README.md#installation).
 
-## Status
+### Read the stone
 
-The game boots and reports its state, and the training loop runs end to end. What isn't done:
+The reverse-engineering: how the game was made observable and controllable from the outside. Start with the overview, then the environment itself.
 
-- **No trained agent.** The reward is a first pass; no run has produced competent play.
-- **No curriculum.** Staged rewards and command masking are still being scoped ([`agent/docs/plans/curriculum.md`](agent/docs/plans/curriculum.md)).
+→ [`docs/overview.md`](docs/overview.md) · [`gym/README.md`](gym/README.md)
 
-The environment's full issue list is in [`gym/README.md`](gym/README.md#known-issues).
+### Train at the fire
 
-## What makes this interesting
+The training, end to end: how the environment becomes an agent that plays. One runnable example, from what the agent sees to what it does.
+
+→ [`agent/README.md`](agent/README.md)
+
+### Forge your torch
+
+`daggorath-gym` is a distributable package, and the reward is yours to bring. The interface and the reward are documented in the plan docs.
+
+→ [`gym/docs/plans/perception/plan.md`](gym/docs/plans/perception/plan.md) · [`gym/docs/plans/reward/plan.md`](gym/docs/plans/reward/plan.md)
+
+## What the dark hides
 
 ### What it took
 
@@ -61,24 +83,3 @@ The environment was built against what a person training an agent actually needs
 | Speed, and the ability to watch | Headless by default — no window, training runs in the background; `--watch` opens the window with sound |
 
 The most important of these: the environment holds no opinion about what the agent should want. It reports what is true and returns reward `0.0`, so the objective belongs to whoever is training. Bring your own reward; nothing argues with you.
-
-## Choose your door
-
-### How the environment was built
-
-The instrumentation: the RAM map, the 6809 disassembly, the MAME Lua plugin, and the findings from making an opaque machine observable. Start with the architecture overview, then the environment itself.
-
-→ [`docs/overview.md`](docs/overview.md) · [`gym/README.md`](gym/README.md)
-
-### The trainer as a worked RL example
-
-An end-to-end PPO run against a real game: the reward wrapper, the observation wrapper, and a custom CNN+MLP feature extractor over a `Dict` observation space.
-
-→ [`agent/README.md`](agent/README.md)
-
-### Build on it
-
-`daggorath-gym` is a distributable Gymnasium package, and reward is a wrapper — bring your own. The observation and action spaces are specified in the perception plan; the reward contract is in the reward plan.
-
-→ [`gym/docs/plans/perception/plan.md`](gym/docs/plans/perception/plan.md) · [`gym/docs/plans/reward/plan.md`](gym/docs/plans/reward/plan.md)
-

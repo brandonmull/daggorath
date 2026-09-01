@@ -35,6 +35,36 @@ observability, a large compositional action space, and a long horizon — the fo
 conditions modern RL handles worst, and testbeds posing them are scarce. The
 game's age stops being a curiosity and becomes the reason it is useful.
 
+## The README's shape: a dungeon entrance
+
+The README is a journey, not a table of contents. A reader arrives, reads a
+sign, surveys a camp, and steps inside. Section titles draw on the game's own
+mechanics — the torch, the gate, the unmapped depths — rather than wearing the
+theme as decoration.
+
+**The status is a sign.** Honesty-before-aspiration lives in the carving above
+the entrance: "To all who would enter: the gate stands open, but the depths are
+still unmapped." The environment runs (the gate is open); no agent has beaten
+it and no curriculum exists (the depths are unmapped). What is unfinished is
+worldbuilding, not a caveat.
+
+**The four stops are decisions, not doors.** "Outside the entrance" is a camp:
+step inside, read the stone, train at the fire, forge your torch. Each names a
+different means of engagement, and each is honest about its kind — step and
+forge are things you do, the stone is a thing you read, the fire is a thing you
+train at. A door can lead to a reading room; forcing every stop to be an action
+would misrepresent what it actually is.
+
+**The deep dive is the inside.** "What the dark hides" holds the argument. The
+spatial logic runs above → outside → inside: read the sign, survey the camp,
+step through, and learn what the dark was hiding.
+
+Two details are load-bearing and easy to lose in a rewrite. The sign says "the
+gate," singular — the camp has one door, and "Step inside" is that door; a
+plural would break the count. And the forge is its own stop, not a sub-point of
+training, because it names the craftsman's contribution — bring your own torch,
+build on it — as something special rather than a footnote.
+
 ## The README opening — binding rules
 
 Five rules govern the opening, each earned by a draft that violated it:
@@ -46,10 +76,10 @@ Five rules govern the opening, each earned by a draft that violated it:
    community's memory map are the foundation this project stands on. Any phrasing that implies
    the game was sealed or undocumented is false and gets cut.
 3. **State the idea and stop.** Supporting facts belong to the section that owns
-   them. If a fact appears under "What makes this interesting," it does not
+   them. If a fact appears under "What the dark hides," it does not
    appear in the opening.
 4. **No jargon before value.** MAME, the 6809, Lua, Gymnasium, and `Env` do not
-   appear in the opening. They belong in Quick start and the doors.
+   appear in the opening. They belong in Step inside and the rest of the camp.
 5. **No insider references.** `PPO(...)`, `gym.make("CartPole-v1")`, and "this
    project is the `make`" only land if the reader already knows the toolchain.
    Translated to plain terms: normally you download a ready-made world; there
