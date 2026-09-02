@@ -2,7 +2,7 @@
 
 The training harness for the [Daggorath Gym](../gym) environment. This is the reference end-to-end PPO trainer: it consumes `daggorath_gym` as a library and turns it into a working Stable-Baselines3 run.
 
-The split is deliberate — the environment package imports no training library, and this package imports only what it needs to train. See `gym/docs/plans/deployment/plan.md` for the full design.
+The split is deliberate — the environment package imports no training library, and this package imports only what it needs to train. See `gym/docs/decisions/deployment.md` for the full design.
 
 ## Prerequisites
 
@@ -70,7 +70,7 @@ Two adaptations are trainer-specific, so they belong in this package, never the 
 1. **`CastScalarsWrapper`** — the environment's `scalars` channel is `uint16`, and torch has no `uint16` tensor type, so Stable-Baselines3 would crash on it. The wrapper widens it losslessly to `int32`. The environment stays trainer-agnostic.
 2. **`DaggorathFeaturesExtractor`** — the observation is a `Dict` whose `map` channel is a two-plane image and whose other five channels are flat arrays. The extractor routes the map through a small CNN (stride-2 convolutions, no pooling) and the rest through an MLP, then concatenates.
 
-Deferred: a joint action-mask policy for the INCANT verb form (see the deployment plan). For now plain PPO relies on the environment's no-op fallback for invalid INCANT pairs.
+Deferred: a joint action-mask policy for the INCANT verb form (see the deployment decision). For now plain PPO relies on the environment's no-op fallback for invalid INCANT pairs.
 
 ## Documentation
 

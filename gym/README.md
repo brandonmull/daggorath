@@ -114,7 +114,7 @@ Project docs follow a three-phase design pipeline:
 |-------|-----------|-------------|
 | **Plans** | `docs/plans/` | Pre-build design specifications |
 | **Reviews** | `docs/reviews/` | Post-build critique — observations, deferred items |
-| **Decisions** | `docs/decisions/` | Implemented changes |
+| **Decisions** | `docs/decisions/` | Implemented concepts — the decision and its reasoning |
 
 Two further categories sit beside the pipeline: **findings** (`docs/findings/`) — hard-won discoveries — and **references** (`docs/references/`) — external source material.
 

@@ -6,7 +6,7 @@ The environment is the objective world: it holds the true state (creatures,
 objects, maze, every player field) and reports only what the player perceives.
 The reward is a *separate, agent-side* component that reads that true state and
 assigns it value. This is the project's "fact vs valuation" boundary
-(reward/conversation.md): the environment answers "what is true / what
+(docs/decisions/reward.md): the environment answers "what is true / what
 happened"; the reward answers "what is any of it worth". The policy never sees
 true state; the reward is *supposed* to.
 
@@ -57,15 +57,14 @@ DEFERRED (placeholders below, not yet implemented)
   corridor termination) — needs a line-of-sight feature extractor in
   navigation.py.
 - Reveal novelty (first reveal of each (class, proper) pair) — needs a
-  coefficient, and object power on the wire to scale by power as the plan
-  intends.
+  coefficient, and object power on the wire to scale by power as intended.
 - Creature type/instance "seen" and "heard" novelty — "heard" needs the
   deferred sound channel.
 - The remaining six potentials (strength, sight, holdings, safety, strain,
   incapacity) — only survival has a formula today.
 - Pick-up spike — objects/plan.md defers it (holdings would double-count).
 
-See reward/plan.md and reward/conversation.md for the full design.
+See docs/decisions/reward.md for the full design.
 """
 
 import math
@@ -75,13 +74,13 @@ import gymnasium as gym
 from .state import DaggorathState
 
 
-# ---- Coefficients (light, tunable — reward/plan.md "Coefficients") -------
+# ---- Coefficients (light, tunable — see docs/decisions/reward.md) -------
 # The scale rule is terminal >> discovery >> advance: terminal events dominate,
 # discovery is a meaningful tenth, advance is a dense hundredth. These numbers
 # are starting points, not final.
 _WIN_REWARD = 1.0          # the win: INCANT FINAL transforms the held ring
 _DEATH_REWARD = -1.0       # death: game_mode flips to FF
-_KILL_REWARD = 0.2         # per creature killed (not in the plan table; tunable)
+_KILL_REWARD = 0.2         # per creature killed (tunable)
 _WIZARD_KILL_REWARD = 0.5  # the milestone before the win (tunable)
 _ADVANCE_REWARD = 0.01     # each newly entered cell
 _REJECT_REWARD = -0.1      # a command the game refused with "???"
@@ -232,7 +231,7 @@ class DaggorathReward:
         # meaningful tenth, a new cell a dense hundredth.
         #
         # DEFERRED (placeholder): reveal novelty — the first reveal of each
-        # (class, proper) pair. reward/plan.md intends it to scale with the
+        # (class, proper) pair. docs/decisions/reward.md intends it to scale with the
         # object's power, which needs power on the wire (we ship class/proper/
         # reveal only) and a coefficient.
         #

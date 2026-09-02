@@ -1,6 +1,6 @@
 """Training entry point — the reference end-to-end PPO trainer.
 
-Assembles the pipeline the deployment plan prescribes:
+Assembles the pipeline the deployment decision describes:
 
     train()
         -> constructs the environment (headless by default, windowed via --watch)

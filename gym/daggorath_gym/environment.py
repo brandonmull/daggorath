@@ -42,7 +42,7 @@ class DaggorathEnv(gym.Env):
 
         # The most recent true (ungated) state. The environment holds it so
         # the reward wrapper can read it through the environment object —
-        # never through `info` or the observation (see reward/plan.md).
+        # never through `info` or the observation (see docs/decisions/reward.md).
         self._current_state: DaggorathState | None = None
 
     # ---- Gym interface ---------------------------------------------------

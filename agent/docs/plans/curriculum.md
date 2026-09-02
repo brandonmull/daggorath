@@ -1,6 +1,6 @@
 # Curriculum
 
-_How the agent is taught: the staged path from a fresh agent to one that plays competently. This is the trainer's half of the curriculum — selecting a stage, activating the matching reward channels, and masking commands. The environment's half — the perception scaffolding it exposes now and removes later — is documented in the gym package's `perception/plan.md`. Not yet implemented._
+_How the agent is taught: the staged path from a fresh agent to one that plays competently. This is the trainer's half of the curriculum — selecting a stage, activating the matching reward channels, and masking commands. The environment's half — the perception scaffolding it exposes now and removes later — is documented in the gym package's perception decision (`gym/docs/decisions/perception.md`). Not yet implemented._
 
 ## Purpose
 
@@ -8,7 +8,7 @@ A fresh agent confronts 154 command phrases, a dark dungeon, and a reward that o
 
 ## The core mechanism — the novelty flag
 
-One source drives every curriculum effect: the **novelty-flag memory** (see the gym package's `reward/plan.md`). A flag records the unknown → known transition — the first reveal of an object, the first entry into a cell, the first sighting of a creature type. At the moment a flag flips, three things can happen at once:
+One source drives every curriculum effect: the **novelty-flag memory** (see the gym package's reward decision, `gym/docs/decisions/reward.md`). A flag records the unknown → known transition — the first reveal of an object, the first entry into a cell, the first sighting of a creature type. At the moment a flag flips, three things can happen at once:
 
 1. **Soft shaping** — the existing information-gain reward for the transition. This stays; it does the dense credit assignment.
 2. **The unlock spike** — a one-shot reward, larger than ordinary discovery, paid specifically when a flag enables a new capability. It marks the milestone.
@@ -41,7 +41,7 @@ stage 4 — survive
 
 The agent discovers its inventory and that holdings are worth improving. The unlock marker is the first disclosure of the pack; the commands that examine and equip the inventory stand behind it.
 
-Reward: a **holdings potential** over the objects held and packed, and **reveal novelty** — the first reveal of each held object. Holdings is listed in `reward/plan.md` as "no — object detection," but the specifier decoding now exists; the potential is available.
+Reward: a **holdings potential** over the objects held and packed, and **reveal novelty** — the first reveal of each held object. Holdings is listed in the reward decision (`gym/docs/decisions/reward.md`) as "no — object detection," but the specifier decoding now exists; the potential is available.
 
 ### Stage 2 — LOOK & light
 
@@ -57,7 +57,7 @@ Reward: **advance** (new cell) and **discovery** (a salient feature — junction
 
 ### Stage 4 — survive
 
-The agent reasons about engagements. This is the hard stage: `player_strength − m0221` teaches "don't die" but not "this creature is beatable." A true fight/run signal needs a threat estimate against the agent's strength — the deferred combat-model work, not a coefficient. This stage is the deferred refinement it already is in `reward/plan.md`.
+The agent reasons about engagements. This is the hard stage: `player_strength − m0221` teaches "don't die" but not "this creature is beatable." A true fight/run signal needs a threat estimate against the agent's strength — the deferred combat-model work, not a coefficient. This stage is the deferred refinement it already is in the reward decision.
 
 ## Interface
 
@@ -103,7 +103,7 @@ Because the action space never changes shape, a stage transition is not a policy
 | Document | What It Contains |
 |----------|-----------------|
 | `docs/game/combat-model.md` | The survival margin and the fight/run foundation |
-| `gym/docs/plans/reward/plan.md` | The reward layers, potentials, and the novelty memory |
-| `gym/docs/plans/state/plan.md` | The scalar fields the potentials draw from |
+| `gym/docs/decisions/reward.md` | The reward layers, potentials, and the novelty memory |
+| `gym/docs/decisions/state.md` | The scalar fields the potentials draw from |
 | `gym/docs/plans/objects/plan.md` | Object attainment and the reveal field |
-| `gym/docs/plans/perception/plan.md` | The perception, which carries no novelty flags |
+| `gym/docs/decisions/perception.md` | The perception, which carries no novelty flags |

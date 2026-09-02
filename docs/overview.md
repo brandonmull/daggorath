@@ -64,7 +64,7 @@ These govern what the agent perceives — the answer to "what does the player pe
 
 > Position + heading + body state, with no walls, no creatures, no goal, reduces to a random walk with a sparse death penalty.
 
-Perception has to give the agent something to act on. Self-state alone — position, heading, body — leaves nothing to navigate toward, avoid, or seek: no gradient, no goal, nothing to learn. The trainable core is the *world* (the maze, the creatures, the light) plus self-state. How fairly the agent's access to that world mirrors a real player's is a later curriculum concern, not a prerequisite for the first working environment — act first, fairness later. The discussion lives in [`perception/conversation.md`](../gym/docs/plans/perception/conversation.md).
+Perception has to give the agent something to act on. Self-state alone — position, heading, body — leaves nothing to navigate toward, avoid, or seek: no gradient, no goal, nothing to learn. The trainable core is the *world* (the maze, the creatures, the light) plus self-state. How fairly the agent's access to that world mirrors a real player's is a later curriculum concern, not a prerequisite for the first working environment — act first, fairness later. The reasoning is recorded in [`perception`](../gym/docs/decisions/perception.md).
 
 ### Perception vs. proprioception.
 
@@ -114,7 +114,7 @@ Project docs follow a three-phase design pipeline:
 |-------|-----------|-------------|
 | **Plans** | `gym/docs/plans/` | Pre-build design specifications — what we intended to build |
 | **Reviews** | `gym/docs/reviews/` | Post-build critique — observations, alternatives, and deferred items |
-| **Decisions** | `gym/docs/decisions/` | Implemented changes — concrete code-level outcomes from each review |
+| **Decisions** | `gym/docs/decisions/` | Implemented concepts — the decision and its reasoning |
 
 Two further categories sit beside the pipeline: **findings** (`gym/docs/findings/`) — hard-won discoveries from reverse-engineering — and **references** (`gym/docs/references/`) — external source material from the game manual, disassembly, and hardware docs.
 
@@ -122,16 +122,10 @@ Two further categories sit beside the pipeline: **findings** (`gym/docs/findings
 
 | Document | What It Contains |
 |----------|-----------------|
-| `gym/docs/plans/state/plan.md` | Game state reporting module plan |
-| `gym/docs/plans/commands/plan.md` | Command dispatch module plan |
-| `gym/docs/plans/screen/plan.md` | Screen reading module plan — capture and decode of command-area text |
 | `gym/docs/plans/creatures/plan.md` | Creature detection — knowns, unknowns, and open questions |
 | `gym/docs/plans/objects/plan.md` | Object detection — knowns, unknowns, and open questions |
-| `gym/docs/plans/reward/plan.md` | Reward — potential-based shaping over player-perceived state |
 | `gym/docs/plans/sound/plan.md` | Sound — the auditory observation channel |
-| `gym/docs/plans/navigation/plan.md` | Navigation — maze decoding and line-of-sight |
 | `gym/docs/plans/events/plan.md` | Events — the deferred event channel and its candidate catalog |
-| `gym/docs/plans/perception/plan.md` | Perception — the perceptible state and how the channels combine into one array |
 | `gym/docs/plans/cpp-port/plan.md` | C++ port — replacing the MAME backend with a faithful port |
 | `gym/docs/reviews/environment.py.md` | environment.py design review (observations, deferred items) |
 | `gym/docs/reviews/emulator.py.md` | emulator.py design review (observations, deferred items) |
@@ -139,10 +133,13 @@ Two further categories sit beside the pipeline: **findings** (`gym/docs/findings
 | `gym/docs/reviews/commands.py.md` | commands.py design review (observations, deferred items) |
 | `gym/docs/reviews/state.lua.md` | state.lua design review (observations, deferred items) |
 | `gym/docs/reviews/commands.lua.md` | commands.lua design review (observations, deferred items) |
-| `gym/docs/decisions/environment.py.md` | environment.py implemented decisions |
-| `gym/docs/decisions/emulator.py.md` | emulator.py implemented decisions |
-| `gym/docs/decisions/state.lua.md` | state.lua implemented decisions |
-| `gym/docs/decisions/commands.lua.md` | commands.lua implemented decisions |
+| `gym/docs/decisions/state.md` | State module — the reported state and its wire format |
+| `gym/docs/decisions/commands.md` | Commands module — the 154 phrases and the factored action space |
+| `gym/docs/decisions/screen.md` | Screen reading — command-area pixel decode |
+| `gym/docs/decisions/navigation.md` | Navigation — maze decode and line-of-sight |
+| `gym/docs/decisions/reward.md` | Reward — the agent-side reward wrapper |
+| `gym/docs/decisions/perception.md` | Perception — the gated observation channels |
+| `gym/docs/decisions/deployment.md` | Deployment — the gym/agent package split |
 | `gym/docs/decisions/plugin-conversion.md` | MAME plugin conversion |
 | `gym/docs/decisions/ipc-hybrid.md` | Hybrid IPC — FIFO state channel + TCP command channel |
 | `gym/docs/decisions/gc-autounsubscribe.md` | Saving notifier subscriptions to prevent GC auto-unsubscribe |

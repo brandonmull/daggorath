@@ -52,9 +52,9 @@ The training, end to end: how the environment becomes an agent that plays. One r
 
 ### Forge your torch
 
-`daggorath-gym` is a distributable package, and the reward is yours to bring. The interface and the reward are documented in the plan docs.
+`daggorath-gym` is a distributable package, and the reward is yours to bring. The interface and the reward are documented in the decision docs.
 
-→ [`gym/docs/plans/perception/plan.md`](gym/docs/plans/perception/plan.md) · [`gym/docs/plans/reward/plan.md`](gym/docs/plans/reward/plan.md)
+→ [`gym/docs/decisions/perception.md`](gym/docs/decisions/perception.md) · [`gym/docs/decisions/reward.md`](gym/docs/decisions/reward.md)
 
 ## What the dark hides
 

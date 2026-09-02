@@ -5,7 +5,7 @@ The observation is a six-channel dict. One channel — the map — is spatial
 of scalars and entity tables. This extractor routes the map through a small
 convolutional network and the flat channels through a multi-layer perceptron,
 then concatenates the two into one feature vector for the policy's linear
-heads. This is the CNN + MLP split described in perception/plan.md.
+heads. This is the CNN + MLP split described in docs/decisions/perception.md.
 """
 
 import math
