@@ -41,8 +41,8 @@ Usage tips:
 
 1. ✅ **Functional gym environment** — MAME boots the game, `reset()` returns a live observation (readiness-gated)
 2. ✅ **Hybrid IPC** — state FIFO + command socket between Python and the Lua plugin
-3. 🔜 **Trainable step loop** — reward + termination so `step()` returns meaningful values
-4. **Future** — Train an RL agent
+3. ✅ **Trainable step loop** — reward + termination so `step()` returns meaningful values
+4. 🔜 **Train an RL agent** — tuning the trainer and reward toward competent play
 
 ## Architecture
 
