@@ -108,12 +108,11 @@ Lua uses `local` for privacy, Python uses a `_` prefix. The root names are ident
 
 ## Documentation Structure
 
-Project docs follow a three-phase design pipeline:
+Project docs follow a two-phase design pipeline:
 
 | Phase | Directory | Description |
 |-------|-----------|-------------|
 | **Plans** | `gym/docs/plans/` | Pre-build design specifications — what we intended to build |
-| **Reviews** | `gym/docs/reviews/` | Post-build critique — observations, alternatives, and deferred items |
 | **Decisions** | `gym/docs/decisions/` | Implemented concepts — the decision and its reasoning |
 
 Two further categories sit beside the pipeline: **findings** (`gym/docs/findings/`) — hard-won discoveries from reverse-engineering — and **references** (`gym/docs/references/`) — external source material from the game manual, disassembly, and hardware docs.
@@ -127,12 +126,6 @@ Two further categories sit beside the pipeline: **findings** (`gym/docs/findings
 | `gym/docs/plans/sound/plan.md` | Sound — the auditory observation channel |
 | `gym/docs/plans/events/plan.md` | Events — the deferred event channel and its candidate catalog |
 | `gym/docs/plans/cpp-port/plan.md` | C++ port — replacing the MAME backend with a faithful port |
-| `gym/docs/reviews/environment.py.md` | environment.py design review (observations, deferred items) |
-| `gym/docs/reviews/emulator.py.md` | emulator.py design review (observations, deferred items) |
-| `gym/docs/reviews/state.py.md` | state.py design review (observations, deferred items) |
-| `gym/docs/reviews/commands.py.md` | commands.py design review (observations, deferred items) |
-| `gym/docs/reviews/state.lua.md` | state.lua design review (observations, deferred items) |
-| `gym/docs/reviews/commands.lua.md` | commands.lua design review (observations, deferred items) |
 | `gym/docs/decisions/state.md` | State module — the reported state and its wire format |
 | `gym/docs/decisions/commands.md` | Commands module — the 154 phrases and the factored action space |
 | `gym/docs/decisions/screen.md` | Screen reading — command-area pixel decode |

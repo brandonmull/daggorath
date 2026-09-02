@@ -16,7 +16,3 @@ The 154 valid command phrases are enumerated from eight command words, a directi
 
 - `daggorath_gym/commands.py` — grammar constants, phrase builders, the 31 specifiers, `derive_command_index`, `DaggorathCommand`.
 - `emulation/plugins/daggorath/commands.lua` — the mirrored grammar and `COMMAND_PHRASES`, dispatch via natkeyboard.
-
-## Reference
-
-- Reviews: `docs/reviews/commands.py.md`, `docs/reviews/commands.lua.md`

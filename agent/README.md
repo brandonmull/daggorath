@@ -81,4 +81,4 @@ Documentation lives under `docs/`:
 - **`docs/considerations.md`** — ideas and observations from working with the project that are not yet decided.
 - **`docs/plans/`** — feature plans, including `watch-training.md` (the `--watch` interface), `persist-learning.md` (checkpoint format, the load contract, and `--resume`), and `curriculum.md` (the staged ladder and command masking).
 
-This is intentionally lighter than the gym package's four-phase docs (`plans/`, `reviews/`, `decisions/`, `findings/`), which reflect months of reverse-engineering. The harness documents itself in these files, and `docs/plans/` grows as new features are scoped.
+This is intentionally lighter than the gym package's docs (`plans/`, `decisions/`, `findings/`), which reflect months of reverse-engineering. The harness documents itself in these files, and `docs/plans/` grows as new features are scoped.

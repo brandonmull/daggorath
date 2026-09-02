@@ -25,5 +25,4 @@ The nineteen fields: `game_mode`, `at_floor`, `at_cell_x`, `at_cell_y`, `at_head
 
 ## Reference
 
-- Reviews: `docs/reviews/state.py.md`, `docs/reviews/state.lua.md`
 - Decisions: `docs/decisions/readiness-gating.md`, `docs/decisions/ipc-hybrid.md`

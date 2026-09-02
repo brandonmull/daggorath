@@ -83,7 +83,7 @@ Daggorath ROM (daggorath.zip — Shield Fix) + CoCo 3 ROM (coco3.zip)
 | `emulation/roms/` | coco3.zip, daggorath.zip |
 | `emulation/hash/` | MAME hash files (Shield Fix) |
 | `tests/` | Pytest suite (unit + integration) |
-| `docs/plans/`, `docs/reviews/`, `docs/decisions/`, `docs/findings/` | Design, review, decision, and findings docs |
+| `docs/plans/`, `docs/decisions/`, `docs/findings/` | Design, decision, and findings docs |
 | `docs/references/` | 6809 disassembly, RAM map, command grammar, hardware ref |
 | `sandbox/` | Validated experiments (see its README) |
 | `pyproject.toml` | Pip package config |
@@ -108,12 +108,11 @@ Daggorath ROM (daggorath.zip — Shield Fix) + CoCo 3 ROM (coco3.zip)
 
 ## Reference Documentation
 
-Project docs follow a three-phase design pipeline:
+Project docs follow a two-phase design pipeline:
 
 | Phase | Directory | Description |
 |-------|-----------|-------------|
 | **Plans** | `docs/plans/` | Pre-build design specifications |
-| **Reviews** | `docs/reviews/` | Post-build critique — observations, deferred items |
 | **Decisions** | `docs/decisions/` | Implemented concepts — the decision and its reasoning |
 
 Two further categories sit beside the pipeline: **findings** (`docs/findings/`) — hard-won discoveries — and **references** (`docs/references/`) — external source material.
