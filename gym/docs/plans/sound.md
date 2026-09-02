@@ -1,6 +1,6 @@
 # Sound
 
-_See [overview.md](../../../../docs/overview.md) for project context and architecture._
+_See [overview.md](../../../docs/overview.md) for project context and architecture._
 
 This document records what we know and don't know about the game's sound system, and the open questions that must be answered before any design work begins. It applies the perception principle — the agent perceives what the player perceives — to the ears rather than the eyes.
 
@@ -51,4 +51,4 @@ The key property: the DAC carries a *mixed, transient* waveform. What a player a
 |----------|-----------------|
 | `gym/docs/references/game/code.md` | Disassembly — sound dispatch, effect table, approach-sound math |
 | `docs/game/combat-model.md` | The distance-scaled approach sound model |
-| `gym/docs/plans/creatures/plan.md` | The "sound as proximity" question this module answers |
+| `gym/docs/plans/creatures.md` | The "sound as proximity" question this module answers |

@@ -1,6 +1,6 @@
 # Object Detection
 
-_See [overview.md](../../../../docs/overview.md) for project context and architecture._
+_See [overview.md](../../../docs/overview.md) for project context and architecture._
 
 This document records what we know and don't know about the game's object system, and the open questions that must be answered before any design work begins. It is deliberately not a design spec — architecture and wire format are deferred until the questions below are settled.
 

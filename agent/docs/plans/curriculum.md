@@ -105,5 +105,5 @@ Because the action space never changes shape, a stage transition is not a policy
 | `docs/game/combat-model.md` | The survival margin and the fight/run foundation |
 | `gym/docs/decisions/reward.md` | The reward layers, potentials, and the novelty memory |
 | `gym/docs/decisions/state.md` | The scalar fields the potentials draw from |
-| `gym/docs/plans/objects/plan.md` | Object attainment and the reveal field |
+| `gym/docs/plans/objects.md` | Object attainment and the reveal field |
 | `gym/docs/decisions/perception.md` | The perception, which carries no novelty flags |

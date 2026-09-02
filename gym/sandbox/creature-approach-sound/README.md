@@ -2,11 +2,11 @@
 
 ## Goal
 
-Determine when the approach sound actually fires. `docs/plans/sound/plan.md` records the disassembly gate as a 2-cell corridor (`min(|dx|,|dy|) ≤ 2`), but that contradicts lived experience of hearing creatures off-axis. Place creatures at known offsets, log when the approach sound plays, and deliver the real gating rule to `sound/plan.md`.
+Determine when the approach sound actually fires. `docs/plans/sound.md` records the disassembly gate as a 2-cell corridor (`min(|dx|,|dy|) ≤ 2`), but that contradicts lived experience of hearing creatures off-axis. Place creatures at known offsets, log when the approach sound plays, and deliver the real gating rule to `sound.md`.
 
 ## Status
 
-Prepared, not built. The static trace below is the hypothesis; the experiment in TODO will confirm or correct it before the rule is recorded in `sound/plan.md`.
+Prepared, not built. The static trace below is the hypothesis; the experiment in TODO will confirm or correct it before the rule is recorded in `sound.md`.
 
 ## Static finding (the hypothesis to confirm)
 
@@ -39,4 +39,4 @@ Each is a default; all are changeable.
 
 - The logged `(dy, dx)` → "gate passed" map matches `max ≤ 8 && min ≤ 2` — or reveals the true rule.
 - "Sound plays" ≈ half of "gate passed" at any offset (the fair coin), separating the corridor gate from the 50% roll.
-- The real rule lands in `docs/plans/sound/plan.md` (replacing the *Corridor gate* unknown); this folder is deleted after use.
+- The real rule lands in `docs/plans/sound.md` (replacing the *Corridor gate* unknown); this folder is deleted after use.

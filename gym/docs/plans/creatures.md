@@ -1,6 +1,6 @@
 # Creature Detection
 
-_See [overview.md](../../../../docs/overview.md) for project context and architecture._
+_See [overview.md](../../../docs/overview.md) for project context and architecture._
 
 This document records what we know and don't know about the game's creature array, and the open questions that must be answered before any design work begins. It is deliberately not a design spec — architecture and wire format are deferred until the questions below are settled.
 
@@ -36,7 +36,7 @@ Verified from the disassembly:
 - On player death the array and count table are left untouched. The heart-rate update detects `m0221` > `pStrength` (`LDX <pStrength` / `CMPX <m0221` / `BCS $C5B5`, C5AE–C5B2), then beams in the Moon Wizard and prints "YET ANOTHER DOES NOT RETURN" (C5B5–C5CC), flips `gameMode` (0x0277) back to 0xFF demo (`DEC <gameMode`, C5D5), and halts in an endless loop (`BRA $C5D7`). The array (0x03D4–0x05F4) and count table (0x0398–0x03D3) freeze at their death-moment values; the game does not re-enter `PlayDemo`. The 0xFF flag only re-arms the ISR's "any key restarts" path (C303–C316), which jumps to `PlayGame` (C005) to clear and rebuild all RAM.
 - `GetCreatureAt` is called with the player's Y/X, so creature and player coordinates share a grid.
 - Combat is a strength pool versus a damage pool. Each landed hit adds to the defender's pool (creature offset `0x0A`; the player's `m0221` at 0x0221), and death is the damage pool overtaking the strength pool — so hitpoints left = strength - damage. See `docs/game/combat-model.md`.
-- An unseen creature announces itself by sound: Chebyshev distance ≤ 8, volume 255 - 31×distance, and the sound is the creature's type. The disassembly reads a 2-cell corridor gate, but this is disputed (see `sound/plan.md`). The Seer scroll (`scrollType`, 0x0294) reveals all creatures on the map.
+- An unseen creature announces itself by sound: Chebyshev distance ≤ 8, volume 255 - 31×distance, and the sound is the creature's type. The disassembly reads a 2-cell corridor gate, but this is disputed (see `sound.md`). The Seer scroll (`scrollType`, 0x0294) reveals all creatures on the map.
 
 The 12-type catalogue is resolved. Every type token (the byte at `slot + 13`) indexes three parallel ROM tables laid out in the same order — sound routine (C7DC), creature picture (DAA3), and an 8-byte creature-class entry (DABB). The class entry's first two bytes are the creature's strength, copied to `slot + 0`.
 
@@ -86,7 +86,7 @@ The four bytes ship in one fixed-size `C` record — 128 bytes, 32 slots in arra
 - **Visibility channel is derived from type.** The `C` record ships `alive`/`type`/`X`/`Y`, not the `See` byte (offset 02). But the renderer picks a creature's light channel from `See` — physical when `See == 0`, magic when `See != 0`. Since `See` is a fixed property of the type token, Python derives the channel from type: the magical set is scorpion (0x06), wraith (0x08), galdrog (0x09), demon (0x0A), wizard (0x0B); the other seven are physical.
 - **No memory of the unseen.** Stale coordinates lie — a creature that leaves sight leaves the perception. The sound channel (deferred) is the game's own "behind me" cue.
 - **Sound as proximity.** The sound channel (type + distance, no direction, multi-slot) is the proximity observation for unseen creatures.
-- **Combat is a reward-level interpretation, not a module.** Strikes come from existing signals (`!!!`, alive flags, `m0221`); the event channel (see `events/plan.md`) is deferred.
+- **Combat is a reward-level interpretation, not a module.** Strikes come from existing signals (`!!!`, alive flags, `m0221`); the event channel (see `events.md`) is deferred.
 
 ## Reference Documents
 
@@ -95,4 +95,4 @@ The four bytes ship in one fixed-size `C` record — 128 bytes, 32 slots in arra
 | `gym/docs/references/game/ram.md` | Memory map — the creature array layout and `creatureCounts` |
 | `gym/docs/references/game/code.md` | Disassembly — spawn/death paths, `GetCreatureAt`, creature type tokens |
 | `docs/game/combat-model.md` | The strength-vs-damage combat model and the sound proximity channel |
-| `gym/docs/plans/sound/plan.md` | The auditory proximity channel — answers the sound-as-proximity question |
+| `gym/docs/plans/sound.md` | The auditory proximity channel — answers the sound-as-proximity question |

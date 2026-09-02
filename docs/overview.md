@@ -121,11 +121,12 @@ Two further categories sit beside the pipeline: **findings** (`gym/docs/findings
 
 | Document | What It Contains |
 |----------|-----------------|
-| `gym/docs/plans/creatures/plan.md` | Creature detection — knowns, unknowns, and open questions |
-| `gym/docs/plans/objects/plan.md` | Object detection — knowns, unknowns, and open questions |
-| `gym/docs/plans/sound/plan.md` | Sound — the auditory observation channel |
-| `gym/docs/plans/events/plan.md` | Events — the deferred event channel and its candidate catalog |
-| `gym/docs/plans/cpp-port/plan.md` | C++ port — replacing the MAME backend with a faithful port |
+| `gym/docs/plans/deployment.md` | Deployment — registration: making the environment discoverable via `gymnasium.make` |
+| `gym/docs/plans/creatures.md` | Creature detection — knowns, unknowns, and open questions |
+| `gym/docs/plans/objects.md` | Object detection — knowns, unknowns, and open questions |
+| `gym/docs/plans/sound.md` | Sound — the auditory observation channel |
+| `gym/docs/plans/events.md` | Events — the deferred event channel and its candidate catalog |
+| `gym/docs/plans/cpp-port.md` | C++ port — replacing the MAME backend with a faithful port |
 | `gym/docs/decisions/state.md` | State module — the reported state and its wire format |
 | `gym/docs/decisions/commands.md` | Commands module — the 154 phrases and the factored action space |
 | `gym/docs/decisions/screen.md` | Screen reading — command-area pixel decode |

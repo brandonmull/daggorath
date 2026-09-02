@@ -62,7 +62,7 @@ DEFERRED (placeholders below, not yet implemented)
   deferred sound channel.
 - The remaining six potentials (strength, sight, holdings, safety, strain,
   incapacity) — only survival has a formula today.
-- Pick-up spike — objects/plan.md defers it (holdings would double-count).
+- Pick-up spike — objects.md defers it (holdings would double-count).
 
 See docs/decisions/reward.md for the full design.
 """
@@ -188,7 +188,7 @@ class DaggorathReward:
         if previous.evil_wizard_dead == 0 and current.evil_wizard_dead == 0xFF:
             reward += _WIZARD_KILL_REWARD
 
-        # DEFERRED (placeholder): pick-up spike. objects/plan.md defers it —
+        # DEFERRED (placeholder): pick-up spike. objects.md defers it —
         # the holdings potential would double-count the same gain.
 
         return reward

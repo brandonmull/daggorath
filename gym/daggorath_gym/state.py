@@ -56,7 +56,7 @@ _DISPLAY_EXAMINE = 0xD495
 _MAGICAL_CREATURE_TYPES = frozenset({0x06, 0x08, 0x09, 0x0A, 0x0B})
 
 # Proper-type token of the FINAL ring — the win's terminal: INCANT FINAL
-# writes this token into the held ring's proper-type field (objects/plan.md).
+# writes this token into the held ring's proper-type field (objects.md).
 _FINAL_RING_TOKEN = 0x12
 
 # Perceived-state dimensions. Creature slots and map size are the game's own

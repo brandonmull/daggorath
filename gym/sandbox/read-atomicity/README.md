@@ -32,4 +32,4 @@ The four options:
 | Frame-locked sampling | Already in place — the frame notifier is the lock |
 | Defer | Chosen for now |
 
-Whichever way the sandbox lands, the outcome goes into `docs/plans/creatures/plan.md` (the "Read atomicity" unknown).
+Whichever way the sandbox lands, the outcome goes into `docs/plans/creatures.md` (the "Read atomicity" unknown).
