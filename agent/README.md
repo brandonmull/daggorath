@@ -62,7 +62,7 @@ The tests verify the `train()` wiring without launching MAME — they build the 
 | `docs/1_discussions/` | Open questions and not-yet-decided ideas |
 | `docs/2_plans/watch-training.md` | Feature plan — the remaining `-video none` headless enforcement |
 | `docs/2_plans/persist-learning.md` | Feature plan — the remaining `play.py` |
-| `docs/2_plans/curriculum/` | Curriculum — the syllabus and its numbered courses |
+| `docs/1_discussions/curriculum.md` | Curriculum — course ordering and rewards, open discussion |
 
 ## Why the wrappers and extractor live here
 
@@ -80,7 +80,7 @@ Documentation lives under `docs/`:
 - **`docs/3_decisions/`** — implemented concepts: the training pipeline, feature extractor, observation wrapper, reward, watch-training, and persist-learning, each with its decision and reasoning.
 - **`docs/concepts.md`** — the expanded concepts behind those choices: what `VecEnv` is, why activations exist, what a stride does.
 - **`docs/findings/`** — hard-won operating lessons: pip tooling, WSL CUDA, stdout buffering.
-- **`docs/1_discussions/`** — open questions and ideas not yet decided (pre-planning).
-- **`docs/2_plans/`** — what remains: `watch-training.md` (the `-video none` enforcement), `persist-learning.md` (`play.py`), and `curriculum/` (the syllabus and its courses).
+- **`docs/1_discussions/`** — open questions and ideas not yet decided (pre-planning), including `curriculum.md` (course ordering and rewards).
+- **`docs/2_plans/`** — what remains: `watch-training.md` (the `-video none` enforcement) and `persist-learning.md` (`play.py`).
 
 This is intentionally lighter than the gym package's docs (`2_plans/`, `3_decisions/`, `findings/`), which reflect months of reverse-engineering. The harness documents itself in these files, and `docs/2_plans/` grows as new features are scoped.

@@ -13,7 +13,7 @@ Getting there meant finishing a memory map others had started, reconstructing th
 The game boots and reports its state, and the training loop runs end to end. What isn't done:
 
 - **No trained agent.** The reward is a first pass; no run has produced competent play.
-- **No curriculum.** Staged rewards and command masking are still being scoped ([`agent/docs/2_plans/curriculum/`](agent/docs/2_plans/curriculum/)).
+- **No curriculum.** Staged rewards and command masking are still open discussion ([`agent/docs/1_discussions/curriculum.md`](agent/docs/1_discussions/curriculum.md)).
 
 The environment's full issue list is in [`gym/README.md`](gym/README.md#known-issues).
 
