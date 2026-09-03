@@ -13,7 +13,7 @@ Getting there meant finishing a memory map others had started, reconstructing th
 The game boots and reports its state, and the training loop runs end to end. What isn't done:
 
 - **No trained agent.** The reward is a first pass; no run has produced competent play.
-- **No curriculum.** Staged rewards and command masking are still being scoped ([`agent/docs/plans/curriculum.md`](agent/docs/plans/curriculum.md)).
+- **No curriculum.** Staged rewards and command masking are still being scoped ([`agent/docs/2_plans/curriculum/`](agent/docs/2_plans/curriculum/)).
 
 The environment's full issue list is in [`gym/README.md`](gym/README.md#known-issues).
 
@@ -52,9 +52,9 @@ The training, end to end: how the environment becomes an agent that plays. One r
 
 ### Forge your torch
 
-`daggorath-gym` is a distributable package, and the reward is yours to bring. The interface and the reward are documented in the decision docs.
+`daggorath-gym` is a distributable package, and the reward is yours to bring. The interface is documented in the perception decision; the reward lives in the agent package.
 
-→ [`gym/docs/decisions/perception.md`](gym/docs/decisions/perception.md) · [`gym/docs/decisions/reward.md`](gym/docs/decisions/reward.md)
+→ [`gym/docs/3_decisions/perception.md`](gym/docs/3_decisions/perception.md) · [`agent/docs/3_decisions/reward.md`](agent/docs/3_decisions/reward.md)
 
 ## What the dark hides
 

@@ -25,4 +25,4 @@ The nineteen fields: `game_mode`, `at_floor`, `at_cell_x`, `at_cell_y`, `at_head
 
 ## Reference
 
-- Decisions: `docs/decisions/readiness-gating.md`, `docs/decisions/ipc-hybrid.md`
+- Decisions: `docs/3_decisions/readiness-gating.md`, `docs/3_decisions/ipc-hybrid.md`

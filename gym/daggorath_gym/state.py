@@ -61,7 +61,7 @@ _FINAL_RING_TOKEN = 0x12
 
 # Perceived-state dimensions. Creature slots and map size are the game's own
 # bounds; the pack and floor-object caps are our fixed-capacity choices
-# (fixed slots, 0xFF-padded — see docs/decisions/perception.md).
+# (fixed slots, 0xFF-padded — see docs/3_decisions/perception.md).
 CREATURE_SLOTS = 32
 MAP_SIZE = 32
 HAND_COUNT = 2

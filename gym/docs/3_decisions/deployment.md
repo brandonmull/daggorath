@@ -14,6 +14,6 @@ One repo holds two packages — `daggorath-gym` (the environment, `gymnasium` + 
 
 ## What Changed
 
-- `gym/` — `daggorath_gym` (environment, emulator, reward, state, commands, screen, navigation).
-- `agent/` — `daggorath_agent` (`train.py`, `feature_extractor.py`, `wrappers.py`).
-- Deferred: `Daggorath-v0` registration (see `docs/plans/deployment.md`); joint action masking.
+- `gym/` — `daggorath_gym` (environment, emulator, state, commands, screen, navigation).
+- `agent/` — `daggorath_agent` (`train.py`, `reward.py`, `feature_extractor.py`, `wrappers.py`).
+- Deferred: `Daggorath-v0` registration (see `docs/2_plans/deployment.md`); joint action masking.

@@ -20,7 +20,7 @@ Write a Lua `-autoboot_script` that, inside a `emu.add_machine_frame_notifier` c
 The static evidence already points at "single pass is fine," but it isn't trusted enough yet to record as a decision:
 
 - `emu.add_machine_frame_notifier` fires when an emulated **frame completes** (`docs/references/mame/lua-common.md`), so the callback runs at the frame boundary rather than mid-instruction.
-- A blocking read inside the frame notifier freezes the whole emulator (`docs/decisions/ipc-hybrid.md`, `sandbox/fifo/`) — proof that Lua runs synchronously inside the emulation loop and the 6809 is not executing while the callback reads RAM.
+- A blocking read inside the frame notifier freezes the whole emulator (`docs/3_decisions/ipc-hybrid.md`, `sandbox/fifo/`) — proof that Lua runs synchronously inside the emulation loop and the 6809 is not executing while the callback reads RAM.
 - If that holds, a 32-slot scan is already one consistent snapshot, and a double-read check could never disagree.
 
 The four options:
@@ -32,4 +32,4 @@ The four options:
 | Frame-locked sampling | Already in place — the frame notifier is the lock |
 | Defer | Chosen for now |
 
-Whichever way the sandbox lands, the outcome goes into `docs/plans/creatures.md` (the "Read atomicity" unknown).
+Whichever way the sandbox lands, the outcome goes into `docs/2_plans/creatures.md` (the "Read atomicity" unknown).

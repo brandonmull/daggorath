@@ -2,11 +2,11 @@
 
 ## Goal
 
-Determine how far the 3D view renders down a corridor at a given light level — the number that sets the sight-gate's reach in `docs/decisions/navigation.md`. Vary light and creature depth; log whether the creature's pixels appear in the play field.
+Determine how far the 3D view renders down a corridor at a given light level — the number that sets the sight-gate's reach in `docs/3_decisions/navigation.md`. Vary light and creature depth; log whether the creature's pixels appear in the play field.
 
 ## Status
 
-Prepared, not built. The static trace below is the hypothesis; the experiment in TODO will confirm or correct it before the rule is recorded in `docs/decisions/navigation.md`.
+Prepared, not built. The static trace below is the hypothesis; the experiment in TODO will confirm or correct it before the rule is recorded in `docs/3_decisions/navigation.md`.
 
 ## Static finding (the hypothesis to confirm)
 
@@ -48,4 +48,4 @@ Each is a default; all are changeable.
 - The logged `visible` column matches `depth ≤ 9 && depth < light`, with `light` = physical for See = 0 and magic for See ≠ 0.
 - Depth 10 is never visible (the 10-cell cap).
 
-Outcome lands in `docs/decisions/navigation.md`; this folder is deleted after use.
+Outcome lands in `docs/3_decisions/navigation.md`; this folder is deleted after use.

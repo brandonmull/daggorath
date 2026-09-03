@@ -64,7 +64,7 @@ These govern what the agent perceives — the answer to "what does the player pe
 
 > Position + heading + body state, with no walls, no creatures, no goal, reduces to a random walk with a sparse death penalty.
 
-Perception has to give the agent something to act on. Self-state alone — position, heading, body — leaves nothing to navigate toward, avoid, or seek: no gradient, no goal, nothing to learn. The trainable core is the *world* (the maze, the creatures, the light) plus self-state. How fairly the agent's access to that world mirrors a real player's is a later curriculum concern, not a prerequisite for the first working environment — act first, fairness later. The reasoning is recorded in [`perception`](../gym/docs/decisions/perception.md).
+Perception has to give the agent something to act on. Self-state alone — position, heading, body — leaves nothing to navigate toward, avoid, or seek: no gradient, no goal, nothing to learn. The trainable core is the *world* (the maze, the creatures, the light) plus self-state. How fairly the agent's access to that world mirrors a real player's is a later curriculum concern, not a prerequisite for the first working environment — act first, fairness later. The reasoning is recorded in [`perception`](../gym/docs/3_decisions/perception.md).
 
 ### Perception vs. proprioception.
 
@@ -112,8 +112,8 @@ Project docs follow a two-phase design pipeline:
 
 | Phase | Directory | Description |
 |-------|-----------|-------------|
-| **Plans** | `gym/docs/plans/` | Pre-build design specifications — what we intended to build |
-| **Decisions** | `gym/docs/decisions/` | Implemented concepts — the decision and its reasoning |
+| **Plans** | `gym/docs/2_plans/` | Pre-build design specifications — what we intended to build |
+| **Decisions** | `gym/docs/3_decisions/` | Implemented concepts — the decision and its reasoning |
 
 Two further categories sit beside the pipeline: **findings** (`gym/docs/findings/`) — hard-won discoveries from reverse-engineering — and **references** (`gym/docs/references/`) — external source material from the game manual, disassembly, and hardware docs.
 
@@ -121,24 +121,23 @@ Two further categories sit beside the pipeline: **findings** (`gym/docs/findings
 
 | Document | What It Contains |
 |----------|-----------------|
-| `gym/docs/plans/deployment.md` | Deployment — registration: making the environment discoverable via `gymnasium.make` |
-| `gym/docs/plans/creatures.md` | Creature detection — knowns, unknowns, and open questions |
-| `gym/docs/plans/objects.md` | Object detection — knowns, unknowns, and open questions |
-| `gym/docs/plans/sound.md` | Sound — the auditory observation channel |
-| `gym/docs/plans/events.md` | Events — the deferred event channel and its candidate catalog |
-| `gym/docs/plans/cpp-port.md` | C++ port — replacing the MAME backend with a faithful port |
-| `gym/docs/decisions/state.md` | State module — the reported state and its wire format |
-| `gym/docs/decisions/commands.md` | Commands module — the 154 phrases and the factored action space |
-| `gym/docs/decisions/screen.md` | Screen reading — command-area pixel decode |
-| `gym/docs/decisions/navigation.md` | Navigation — maze decode and line-of-sight |
-| `gym/docs/decisions/reward.md` | Reward — the agent-side reward wrapper |
-| `gym/docs/decisions/perception.md` | Perception — the gated observation channels |
-| `gym/docs/decisions/deployment.md` | Deployment — the gym/agent package split |
-| `gym/docs/decisions/plugin-conversion.md` | MAME plugin conversion |
-| `gym/docs/decisions/ipc-hybrid.md` | Hybrid IPC — FIFO state channel + TCP command channel |
-| `gym/docs/decisions/gc-autounsubscribe.md` | Saving notifier subscriptions to prevent GC auto-unsubscribe |
-| `gym/docs/decisions/readiness-gating.md` | Gating RAM reads on `displayFunction == 0xCE66` before sampling |
-| `gym/docs/decisions/roms-in-repo.md` | ROMs stay in the repo — verify-only, never download |
+| `gym/docs/2_plans/deployment.md` | Deployment — registration: making the environment discoverable via `gymnasium.make` |
+| `gym/docs/2_plans/creatures.md` | Creature detection — knowns, unknowns, and open questions |
+| `gym/docs/2_plans/objects.md` | Object detection — knowns, unknowns, and open questions |
+| `gym/docs/2_plans/sound.md` | Sound — the auditory observation channel |
+| `gym/docs/2_plans/events.md` | Events — the deferred event channel and its candidate catalog |
+| `gym/docs/2_plans/cpp-port.md` | C++ port — replacing the MAME backend with a faithful port |
+| `gym/docs/3_decisions/state.md` | State module — the reported state and its wire format |
+| `gym/docs/3_decisions/commands.md` | Commands module — the 154 phrases and the factored action space |
+| `gym/docs/3_decisions/screen.md` | Screen reading — command-area pixel decode |
+| `gym/docs/3_decisions/navigation.md` | Navigation — maze decode and line-of-sight |
+| `gym/docs/3_decisions/perception.md` | Perception — the gated observation channels |
+| `gym/docs/3_decisions/deployment.md` | Deployment — the gym/agent package split |
+| `gym/docs/3_decisions/plugin-conversion.md` | MAME plugin conversion |
+| `gym/docs/3_decisions/ipc-hybrid.md` | Hybrid IPC — FIFO state channel + TCP command channel |
+| `gym/docs/3_decisions/gc-autounsubscribe.md` | Saving notifier subscriptions to prevent GC auto-unsubscribe |
+| `gym/docs/3_decisions/readiness-gating.md` | Gating RAM reads on `displayFunction == 0xCE66` before sampling |
+| `gym/docs/3_decisions/roms-in-repo.md` | ROMs stay in the repo — verify-only, never download |
 | `gym/docs/findings/ipc.md` | IPC transport evaluation — FIFO vs TCP vs Unix sockets |
 | `gym/docs/findings/ram-signals.md` | RAM signal catalog — readiness and command-acceptance signals |
 | `gym/docs/findings/memory-reads.md` | Safe RAM reads + segfault debugging in MAME Lua |

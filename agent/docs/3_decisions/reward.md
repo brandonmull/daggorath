@@ -16,5 +16,5 @@ Reward is an agent-side wrapper, not the environment: it reads the true state th
 
 ## What Changed
 
-- `daggorath_gym/reward.py` — `DaggorathReward` (spikes, survival potential, advance, combat novelty, reject penalty) and `DaggorathRewardWrapper`.
+- `daggorath_agent/reward.py` — `DaggorathReward` (spikes, survival potential, advance, combat novelty, reject penalty) and `DaggorathRewardWrapper`.
 - Deferred: structural discovery, reveal/seen/heard novelty, and the six remaining potentials.

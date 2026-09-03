@@ -6,7 +6,7 @@ The environment is the objective world: it holds the true state (creatures,
 objects, maze, every player field) and reports only what the player perceives.
 The reward is a *separate, agent-side* component that reads that true state and
 assigns it value. This is the project's "fact vs valuation" boundary
-(docs/decisions/reward.md): the environment answers "what is true / what
+(docs/3_decisions/reward.md): the environment answers "what is true / what
 happened"; the reward answers "what is any of it worth". The policy never sees
 true state; the reward is *supposed* to.
 
@@ -64,17 +64,17 @@ DEFERRED (placeholders below, not yet implemented)
   incapacity) — only survival has a formula today.
 - Pick-up spike — objects.md defers it (holdings would double-count).
 
-See docs/decisions/reward.md for the full design.
+See docs/3_decisions/reward.md for the full design.
 """
 
 import math
 
 import gymnasium as gym
 
-from .state import DaggorathState
+from daggorath_gym.state import DaggorathState
 
 
-# ---- Coefficients (light, tunable — see docs/decisions/reward.md) -------
+# ---- Coefficients (light, tunable — see docs/3_decisions/reward.md) -------
 # The scale rule is terminal >> discovery >> advance: terminal events dominate,
 # discovery is a meaningful tenth, advance is a dense hundredth. These numbers
 # are starting points, not final.
@@ -231,7 +231,7 @@ class DaggorathReward:
         # meaningful tenth, a new cell a dense hundredth.
         #
         # DEFERRED (placeholder): reveal novelty — the first reveal of each
-        # (class, proper) pair. docs/decisions/reward.md intends it to scale with the
+        # (class, proper) pair. docs/3_decisions/reward.md intends it to scale with the
         # object's power, which needs power on the wire (we ship class/proper/
         # reveal only) and a coefficient.
         #

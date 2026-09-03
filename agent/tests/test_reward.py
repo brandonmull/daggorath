@@ -1,4 +1,4 @@
-"""Unit tests for daggorath_gym.reward — no MAME needed.
+"""Unit tests for daggorath_agent.reward — no MAME needed.
 
 The reward layers are exercised on hand-built DaggorathState transitions:
 survival shaping, kill/wizard/terminal spikes, advance and combat novelty
@@ -9,7 +9,7 @@ import math
 
 import pytest
 
-from daggorath_gym.reward import (
+from daggorath_agent.reward import (
     DaggorathReward,
     _ADVANCE_REWARD,
     _DEATH_REWARD,

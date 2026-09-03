@@ -28,18 +28,12 @@ The game synthesizes sound through a 6-bit DAC and plays one of 23 named effects
 
 The key property: the DAC carries a *mixed, transient* waveform. What a player actually distinguishes — a spider three cells ahead, a heartbeat racing — is reconstructed from the sound *sources*, not read off the waveform. The game computes each source separately; the DAC is only the sum.
 
-## Unknowns
-
-- **Heartbeat audibility.** When does `hearHeart` clear — fainting, death, or never? Not traced.
-- **Effect internals.** Each of the 23 sound routines is a small waveform program; their shapes are irrelevant if cues are derived, but they are not catalogued.
-- **`m0261` semantics.** Identified as the volume register (was `??` in the RAM map), but its exact interaction with the DAC writes is not traced.
-- **Corridor gate.** The disassembly appears to gate the approach sound to a 2-cell corridor (`min(|dx|,|dy|) ≤ 2`), but this contradicts lived experience of hearing creatures off-axis. Needs a sandbox to determine when approach sounds actually fire — a *separate experiment* from the navigation module's line-of-sight, in its own sandbox subfolder.
 
 ## Decisions
 
 - **Derive the cues; never read the DAC.** The DAC carries a mixed, transient amplitude with no source attribution — the player distinguishes *sources*, not the waveform, and the game discards source structure when it sums them. The cues (creature type + distance, heartbeat, combat sounds) are derived from RAM instead.
 - **Sound is a Python derivation, not a module.** No new Lua sampling — the cues are a transform over creature positions, player position, heart rate, and combat signals.
-- **Deterministic "audible now."** The 50% coin flip is dropped — it's rolled per sound event and washes out at the agent's timescale. The corridor gate is *not* settled (see Unknowns).
+- **Deterministic "audible now."** The 50% coin flip is dropped — it's rolled per sound event and washes out at the agent's timescale. The corridor gate is *not* settled (see `../1_discussions/sound.md`).
 - **Per-sound granularity; three properties.** Each sound carries distance (loudness), sound type (the effect), and source (creature type / object class / player / environment / wizard). Sound conveys *no direction*: the game is mono, so loudness carries distance and nothing carries bearing. Multiple sounds at once must be representable (a fixed-size "nearest N" list).
 - **Sound is the full auditory scene, not just creature proximity.** Creatures aren't the only source — objects (use sounds), the player (hit, heartbeat), the environment (wall hit), and the wizard (beam, strike) all sound too; a creature alone makes more than one sound (approach, dying).
 - **The sound→source association is a curriculum item.** The source is exposed alongside each sound for now; in a later stage it's removed, so the agent learns to associate sound with source itself.
@@ -51,4 +45,4 @@ The key property: the DAC carries a *mixed, transient* waveform. What a player a
 |----------|-----------------|
 | `gym/docs/references/game/code.md` | Disassembly — sound dispatch, effect table, approach-sound math |
 | `docs/game/combat-model.md` | The distance-scaled approach sound model |
-| `gym/docs/plans/creatures.md` | The "sound as proximity" question this module answers |
+| `gym/docs/2_plans/creatures.md` | The "sound as proximity" question this module answers |

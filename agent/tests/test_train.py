@@ -59,7 +59,7 @@ def test_ppo_policy_produces_valid_action():
 def test_checkpoint_roundtrip():
     """A saved model loads and predicts, honouring the load contract.
 
-    Validates the two parts of the persist-learning plan's contract: that a
+    Validates the two parts of the persist-learning decision's contract: that a
     saved checkpoint resolves the custom extractor by import path, and that a
     loaded model requires (and accepts) set_env() before predicting.
     """

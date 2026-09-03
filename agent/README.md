@@ -2,7 +2,7 @@
 
 The training harness for the [Daggorath Gym](../gym) environment. This is the reference end-to-end PPO trainer: it consumes `daggorath_gym` as a library and turns it into a working Stable-Baselines3 run.
 
-The split is deliberate — the environment package imports no training library, and this package imports only what it needs to train. See `gym/docs/decisions/deployment.md` for the full design.
+The split is deliberate — the environment package imports no training library, and this package imports only what it needs to train. See `gym/docs/3_decisions/deployment.md` for the full design.
 
 ## Prerequisites
 
@@ -56,12 +56,13 @@ The tests verify the `train()` wiring without launching MAME — they build the 
 | `daggorath_agent/wrappers.py` | `CastScalarsWrapper` — widens the uint16 scalars to int32 so torch can ingest them |
 | `tests/test_train.py` | Smoke tests for the `train()` wiring — extractor shape and a valid PPO action, no MAME |
 | `pyproject.toml` | Package config and dependencies |
-| `docs/design.md` | Design reference — pipeline, extractor, wrappers, deferred work |
-| `docs/learnings.md` | Concepts and operating lessons — `VecEnv`, activations, wheels, and more |
-| `docs/considerations.md` | Ideas and design considerations, not yet decided |
-| `docs/plans/watch-training.md` | Feature plan — the `--watch` training interface and checkpoint persistence |
-| `docs/plans/persist-learning.md` | Feature plan — checkpoint format, the load contract, `--resume` |
-| `docs/plans/curriculum.md` | Curriculum plan — the staged ladder, reward channels, and command masking |
+| `docs/3_decisions/` | Implemented concepts — pipeline, extractor, observation wrapper, reward, watch-training, persist-learning |
+| `docs/concepts.md` | The concepts behind the decisions — `VecEnv`, activations, torch dtypes |
+| `docs/findings/` | Hard-won operating lessons — pip tooling, WSL CUDA, stdout buffering |
+| `docs/1_discussions/` | Open questions and not-yet-decided ideas |
+| `docs/2_plans/watch-training.md` | Feature plan — the remaining `-video none` headless enforcement |
+| `docs/2_plans/persist-learning.md` | Feature plan — the remaining `play.py` |
+| `docs/2_plans/curriculum/` | Curriculum — the syllabus and its numbered courses |
 
 ## Why the wrappers and extractor live here
 
@@ -76,9 +77,10 @@ Deferred: a joint action-mask policy for the INCANT verb form (see the deploymen
 
 Documentation lives under `docs/`:
 
-- **`docs/design.md`** — the design reference: the `train()` pipeline, the feature extractor and observation wrapper, the environment-vs-trainer boundary, and the deferred joint-mask policy. It records *what we use and a brief why*.
-- **`docs/learnings.md`** — the expanded concepts and operating lessons behind those choices: what `VecEnv` is, why activations exist, what a wheel is, and the mistakes worth not repeating. It will grow as more is learned.
-- **`docs/considerations.md`** — ideas and observations from working with the project that are not yet decided.
-- **`docs/plans/`** — feature plans, including `watch-training.md` (the `--watch` interface), `persist-learning.md` (checkpoint format, the load contract, and `--resume`), and `curriculum.md` (the staged ladder and command masking).
+- **`docs/3_decisions/`** — implemented concepts: the training pipeline, feature extractor, observation wrapper, reward, watch-training, and persist-learning, each with its decision and reasoning.
+- **`docs/concepts.md`** — the expanded concepts behind those choices: what `VecEnv` is, why activations exist, what a stride does.
+- **`docs/findings/`** — hard-won operating lessons: pip tooling, WSL CUDA, stdout buffering.
+- **`docs/1_discussions/`** — open questions and ideas not yet decided (pre-planning).
+- **`docs/2_plans/`** — what remains: `watch-training.md` (the `-video none` enforcement), `persist-learning.md` (`play.py`), and `curriculum/` (the syllabus and its courses).
 
-This is intentionally lighter than the gym package's docs (`plans/`, `decisions/`, `findings/`), which reflect months of reverse-engineering. The harness documents itself in these files, and `docs/plans/` grows as new features are scoped.
+This is intentionally lighter than the gym package's docs (`2_plans/`, `3_decisions/`, `findings/`), which reflect months of reverse-engineering. The harness documents itself in these files, and `docs/2_plans/` grows as new features are scoped.

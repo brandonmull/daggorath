@@ -14,7 +14,7 @@ so torch can ingest them (see wrappers.py); the environment itself is
 unchanged, and the environment package imports no training library.
 
 "Watch training" is the windowed mode: run with --watch to see the agent act
-in the MAME window as it learns (see docs/plans/watch-training.md).
+in the MAME window as it learns (see docs/3_decisions/watch-training.md).
 """
 
 import argparse
@@ -28,7 +28,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 
 from daggorath_gym.emulator import MameConfig
 from daggorath_gym.environment import DaggorathEnv
-from daggorath_gym.reward import DaggorathRewardWrapper
+from .reward import DaggorathRewardWrapper
 
 from .feature_extractor import DaggorathFeaturesExtractor
 from .wrappers import CastScalarsWrapper
@@ -82,7 +82,7 @@ def train(
 
     if resume is not None:
         # A loaded model carries weights but no environment; reattach it before
-        # learning or predicting (the persist-learning plan's load contract).
+        # learning or predicting (the persist-learning decision's load contract).
         model = PPO.load(resume)
         model.set_env(vector_env)
     else:

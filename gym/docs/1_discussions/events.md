@@ -6,7 +6,7 @@ This document records the event-based architecture — deferred, not built for t
 
 ## Status
 
-**Deferred.** The prototype relies on state observation plus potential-based reward; a dedicated event channel (discrete "something happened" signals) is a future architectural surface. The deferral is argued in `creatures.md` ("combat — loud signals") and `objects.md` ("pick-up and drop").
+**Deferred.** The prototype relies on state observation plus potential-based reward; a dedicated event channel (discrete "something happened" signals) is a future architectural surface. The deferral is argued in `../2_plans/creatures.md` ("combat — loud signals") and `../2_plans/objects.md` ("pick-up and drop").
 
 ## What an event is
 
@@ -37,7 +37,7 @@ The sound module's auditory cues (creature approach sound, heartbeat, combat sou
 
 ## Why events beat flags (recorded, not yet acted on)
 
-From the factored-action-space discussion (`../decisions/commands.md`):
+From the factored-action-space discussion (`../3_decisions/commands.md`):
 
 - **A flag is a level; an event is a pulse.** `command_rejected` as a boolean means "rejected right now," which needs edge-detection to count once; an event says "a rejection happened once, here," and is self-counting and self-ordering. Most reward signals — spikes, the two-stage win, novelty — are transitions over time, which events model directly.
 - **Environment reports, wrapper prices.** Detection is a fact (the environment's job, from `command_text`/`perfectMatch`); sequencing and valuation are the reward wrapper's job. `command_rejected` would be a true-state fact, not a `PERCEIVED_SPACE` channel — the policy never sees it, only feels the penalty.
@@ -49,5 +49,5 @@ From the factored-action-space discussion (`../decisions/commands.md`):
 
 | Document | What It Contains |
 |----------|-----------------|
-| `creatures.md` | The "combat — loud signals" reasoning that deferred the channel |
-| `objects.md` | The "pick-up and drop" reasoning that flagged the architecture |
+| `../2_plans/creatures.md` | The "combat — loud signals" reasoning that deferred the channel |
+| `../2_plans/objects.md` | The "pick-up and drop" reasoning that flagged the architecture |

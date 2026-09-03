@@ -30,14 +30,6 @@ wrapper, the trainer.
 MAME, the Lua plugin, the FIFO/TCP bridge, the RAM archaeology, the firmware, the
 ROMs — and with them the setup and legal friction around the CoCo 3 firmware.
 
-## Open questions before integration
-
-- Does the port's source build, and is the checked-in source actually v0.5.1 (the
-  README describes v0.3)?
-- What do the state classes look like, and is the game loop clean enough to hang
-  an observation/action interface on?
-- Does the port preserve the mechanics faithfully enough that the "brutally hard
-  testbed" claim stays true?
 
 ## Next
 

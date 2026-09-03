@@ -70,9 +70,6 @@ The environment samples the creature array single-pass each frame, reading four 
 
 The four bytes ship in one fixed-size `C` record — 128 bytes, 32 slots in array order — in the order `alive`, `type`, `X`, `Y`, matching the perceived channel. Dead and empty slots zero out the `alive` byte, and Python keys on that byte.
 
-## Unknowns
-
-- **Read atomicity.** Each byte read is atomic, but a 32-slot scan spans many instructions. The frame notifier runs at the frame boundary while the 6809 is halted, so a single-pass scan is assumed atomic — a torn snapshot would be a one-frame position glitch, noise the agent averages over. `gym/sandbox/read-atomicity/` will confirm.
 
 ## Decisions
 
@@ -95,4 +92,4 @@ The four bytes ship in one fixed-size `C` record — 128 bytes, 32 slots in arra
 | `gym/docs/references/game/ram.md` | Memory map — the creature array layout and `creatureCounts` |
 | `gym/docs/references/game/code.md` | Disassembly — spawn/death paths, `GetCreatureAt`, creature type tokens |
 | `docs/game/combat-model.md` | The strength-vs-damage combat model and the sound proximity channel |
-| `gym/docs/plans/sound.md` | The auditory proximity channel — answers the sound-as-proximity question |
+| `gym/docs/2_plans/sound.md` | The auditory proximity channel — answers the sound-as-proximity question |

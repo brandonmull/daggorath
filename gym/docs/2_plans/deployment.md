@@ -4,7 +4,7 @@ _See [overview.md](../../../docs/overview.md) for project context and architectu
 
 ## Purpose
 
-Deployment is the umbrella for how a trainer obtains and runs the environment. The implemented half — the package split, the import boundary, and the reference trainer — is recorded in the deployment decision (`../decisions/deployment.md`). This plan covers the remaining half: **registration** — making `gymnasium.make("Daggorath-v0")` resolve within the repo.
+Deployment is the umbrella for how a trainer obtains and runs the environment. The implemented half — the package split, the import boundary, and the reference trainer — is recorded in the deployment decision (`../3_decisions/deployment.md`). This plan covers the remaining half: **registration** — making `gymnasium.make("Daggorath-v0")` resolve within the repo.
 
 Registration is code-side — the `gymnasium.register` call that names the environment. It is distinct from distribution, publishing the package to the public repository, which is out of scope here.
 
@@ -31,5 +31,5 @@ importing `daggorath_gym`
 
 | Document | What It Contains |
 |----------|-----------------|
-| `../decisions/deployment.md` | The implemented half — package split, import boundary, reference trainer |
+| `../3_decisions/deployment.md` | The implemented half — package split, import boundary, reference trainer |
 | `../../../README.md` | Known Issue #1 — the gap this plan closes |

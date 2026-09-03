@@ -21,7 +21,18 @@ Training an RL bot to play Dungeons of Daggorath (1982) in MAME + Gymnasium.
 - **The import boundary is the split.** `daggorath_gym` imports only `gymnasium` and `numpy`; only `daggorath_agent` imports the training stack (`stable-baselines3`, `torch`, `sb3-contrib`). Never add a training import to the environment.
 - **Fact vs. valuation.** The environment reports facts and returns reward 0.0; reward is an agent-side valuation. The agent reads true state through the environment's `current_state` property — never through RAM addresses or disassembly. It consumes the interface, not the internals.
 - **Checkpoint policy.** Trained weights land in `agent/checkpoints/` (gitignored); never commit them.
-- **Docs tiers.** Game knowledge and shared principles live in `docs/`; observation machinery and the environment's design live in `gym/docs/`; the trainer's design lives in `agent/docs/`.
+
+## Documentation
+
+- **Tiers.** Game knowledge and shared principles live in `docs/`; the environment's design (facts, observation machinery) lives in `gym/docs/`; the trainer's design — including the reward — lives in `agent/docs/`. Reward is agent-side: its code and docs live in `agent/`, never in `gym/`.
+
+- **Numbered lifecycle: `1_discussions` → `2_plans` → `3_decisions`.** An idea is first discussed (open questions, not-yet-decided), then planned (a pre-build spec), then decided (implemented, with the reasoning). No review tier, no conversation files.
+
+- **Flat by default.** Docs are `<topic>.md` files, not `<topic>/plan.md` — a folder wrapping a single file is redundant. Use a folder only when a topic genuinely needs multiple related files (e.g. `2_plans/curriculum/` and its courses).
+
+- **A concept may span stages** — e.g. `1_discussions/creatures.md` (open questions) plus `2_plans/creatures.md` (the spec), or `3_decisions/deployment.md` (what shipped) plus `2_plans/deployment.md` (what remains).
+
+- **Promote on completion.** When a plan's work ships, fold its design and reasoning into a decision and remove the plan (or trim it to what remains). Beside the pipeline sit `findings/` (hard-won discoveries) and `references/` (external source material).
 
 ## Coding Conventions
 - **README naming conventions are binding.** Lua uses camelCase; Python uses snake_case. Always use `socket` (not `sock`). Multi-word names follow adjective-then-noun order (`state_socket`, not `socket_state`). `gym/README.md` is the authority — check it before choosing any name.
@@ -68,7 +79,7 @@ When writing or revising README files:
 
 ## Plan Doc Writing Principles
 
-When writing or revising files in `gym/docs/plans/` or `agent/docs/plans/`:
+When writing or revising files in `gym/docs/2_plans/` or `agent/docs/2_plans/`:
 
 1. **Be specific about scope.**
    Every instruction should define what it applies to. Instead of "use `command` everywhere," say what domain the rule governs: "components related to how the player issues commands." The reader shouldn't have to guess where the boundary is.
