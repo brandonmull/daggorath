@@ -170,8 +170,104 @@ The final move followed from it: drawing all the walls is writing a program — 
 
 **A symbol is a discretized vector — a bounded region of representational space, grown by discretization, composed through its boundary.** The reusable form is the set of walls the agent grows; what we build is the chemistry and the curriculum that make the right walls grow.
 
+## The causal chain
+
+The descent reached "knowledge lives in a preliminary form that produces weights," but not what that form is. The answer began as a concrete proposal and was sharpened through the exchange:
+
+> **the premise** — "the basic premise starts with causal detection. we need a method for computing a cause/effect, which i believe should be done by diffing game state. consider the difference in game state before and after a torch is lit. also, consider that the agent needs memory of action to result."
+
+The diff is the raw material, but "action → result" is too thin: a command's effect depends on the state it was issued in, so the record is really precondition, command, effect. The first reduction turned the diff itself into something indexable:
+
+> **the reduction** — "what if this was reduced to a simple vector of zeros and ones, like a mask that indicates the parameters involved in change, and what if you somehow paired that with the indexes representing action? this at least is some kind of representation, right?"
+
+It is — the mask is the **footprint** of an action, the answer to "what does this command touch?" But a mask says *what* changed, never *how*, and the attempt to fold direction into the mask ran into the state's mixed types:
+
+> **the question** — "would it be noisy to let the mask encode three values {-1,0,1}?"
+
+For token fields — the inventory slots that hold a torch or a sword — "direction" is an artifact of the index ordering, not a fact; for the clock fields that move on their own, it is uncorrelated with the command. So the sign belongs in the **value**, not the mask:
+
+> **the synthesis** — "the change representation needs to be able to determine 'how' a parameter changed (direction, magnitude) in addition to 'what' changed. ditto for precondition. the reason is that a bit mask acts to quiet noise and can be used to index different classes of change/precondition."
+
+That is the mask/value split: a sparse vector whose mask is the index and whose value is the content. And a cause is incomplete without the state it acted on, so the full unit is a triple — precondition, action, effect. The triple is the first thing that composes: PULL writes "torch in hand"; USE reads "torch in hand" and writes "torch lit." The after-value of one effect is the precondition of the next. That stitching is the chain.
+
+## How does the agent detect causation?
+
+The diff answers what changed; it does not answer what *caused* it, when the world moves on its own. The turn to neuroscience was the search for how that attribution is done:
+
+> **the turn** — "i think we need to inspect neuroscience to inspire a model that more closely mimics human ability to detect causation."
+
+The answer, across the literature, is one statistic: humans do not learn "B followed A"; they learn whether B happens more when they do A than when they do not — the contingency ΔP = P(effect | cause) − P(effect | ¬cause), framed as an **intervention**: the cause is something you *do*, not something you watch. That turned exploration into a loop:
+
+> **the loop** — "what we need to do is let the agent randomly choose actions until something significant changes in state, then have the agent experiment with those actions over again to build its sense of causation?"
+
+And the control side of the same statistic fell out of the same idea:
+
+> **the control** — "we can use the same concept to help the agent determine what changes are not caused by their actions by having it experiment with no-action and see what changes. anything it finds that it has no affect over, we can create some sort of inhibitors for in our model."
+
+The no-action experiment is the ¬cause term: doing nothing is not-doing every action at once, so one passive step estimates the base rate for every candidate cause simultaneously. The fields that change under no action are the world's, not the agent's — the **inhibition mask** that keeps them out of the chain. Prediction error is the learning signal; the cognitive map is the storage.
+
+## Knowledge is symbolic; reasoning is learned
+
+The chain is knowledge, but building it and using it are not the same thing, and the exchange that fixed that boundary began as a pushback:
+
+> **the pushback** — "it's just that there should be some part of the model that is 'learning' how to make causal inferences and 'learning' how to reason over them. this indicates a neural network for at least some portion of that work."
+
+The earlier conclusion — knowledge lives outside the weights — had been read too broadly, as "everything must be hand-coded." The correction restores three tiers: **knowledge is symbolic structure; reasoning over it is a learned process; the policy is learned skill.** The mask, the value, the triple stay symbolic, because a symbol's value is that it can be *operated on* — matched, chained, unified, inspected. The chain must be readable — one can look at it and see "USE TORCH lights the torch" — or the exercise collapses back into weights. What is learned is the *reasoning*: judging which candidate edges are real causes and which are confounds, selecting which are relevant now, choosing which to chain toward a goal. The network reads the chain, judges it, and plans with it — it never writes it.
+
+## Learning without ground truth
+
+A learned reasoner needs a training signal, and the search for one ran into a wall:
+
+> **the question** — "what trains the reasoner?"
+>
+> **the answer** — "learning to make correct causal inferences needs a signal for 'correct,' and we don't have ground-truth causation — the agent is supposed to discover it. the only workable signal is self-consistency."
+>
+> **the gloss** — "reward the reasoner for making the symbolic chain predictive of future observation. a reasoner that trusts real edges and rejects confounds produces a chain that forecasts what happens next; a bad one does not. the network is trained to keep the knowledge honest, not fed external truth."
+>
+> **the agreement** — "yep, self-consistency is the only way because there is no ground truth. that's exactly what i was thinking."
+
+Self-consistency, then, is a stability check over the evidence the chain has already gathered, not a forecast. Each edge accumulates many instances — the same precondition and action, observed again and again — and the reductive process asks whether those instances agree:
+
+- a field that changes the same way every time → real effect, keep it
+- a field that changes sometimes and not others → noise, prune it
+- an edge whose whole effect scatters → no stable cause behind it, drop the edge
+
+The direction is retrospective — pruning the past, never forecasting the future — which is why "predict what the agent observes next" was the wrong description, and why forecasting was already rejected along with the world model.
+
+But stability alone does not tell a real cause from a reliable confound — a field that changes every step regardless of the action is stable but not caused. So the stability must be measured **interventionally**: does the effect hold under the action and not under no-action; the action in the triple is what separates a cause from a coincidence. And stability needs a pressure toward compression, or the chain keeps every field that merely co-occurs; the network's limited capacity is that pressure — its bottleneck is what forces the chain to keep the few stable causes rather than the noise.
+
+## The two networks
+
+The preceding section described the network as a reader that never writes the chain — a framing that was then challenged:
+
+> **the framing** — "the network reads the chain and returns reasoning decisions — it never writes the chain. the symbolic layer stays the ground truth the network reasons about."
+>
+> **the first try** — "i don't know about 'the' network not being the author of the chain. i believe there should be separate networks for helping to construct the chain vs read the chain."
+>
+> **the correction** — "my fault. i think that constructing the chain vs read the chain is a misnomer. what's really going on is there needs to be a network for reading the knowledge base to construct a chain, at least. i'm not sure how we handle reasoning over the chain though. that is where i think there should be a separate network if any."
+
+The two networks fall out of two different timescales. **Consolidation** reads the accumulated raw observations and distills the clean chain from them — offline, in the background. **Execution** uses the chain at action time — online.
+
+Execution must stay a **symbolic search with a learned heuristic**, not a network that reasons wholesale. Backward chaining over the chain is exact and inspectable; the network only ranks which edge to try first. If it emits plans directly, the chain was decoration.
+
+This is where the discussion currently stops — the two networks and self-consistency are named but not yet planned.
+
+## Answers rejected
+
+The argument records what was abandoned along the way, because each rejection fixed a boundary:
+
+- **A world model** — "what if we used a temporal series of conditions (with changes maybe) plus an action to train a model that predicts effect?" It dissolves the noise and bootstrapping problems outright, but it is prediction, not knowledge: it cannot be read, chained, or transferred, and it does not compose outside its training distribution. It answered a different question.
+- **Knowledge as input to a model** — "what if we augmented the model's input with causal chain knowledge - after selecting a relevant subset from the knowledge base that is." Selecting the relevant edges is the entire hard problem; if the selection is learned attention the reasoning is back in the weights, and if it is symbolic matching a planner already exists and the predictor is redundant. Knowledge-as-input keeps the encoding and throws away the manipulability.
+- **A mini-network per mask** — "crazy, vague idea: what if we created a mini neural network per mask?" A real architecture, but it makes the network the *author* of the knowledge content — the one thing that must stay symbolic — and it overfits the sparse instances a single mask accumulates.
+- **A powerset lattice** — "i was thinking of organizing the index in layers, starting with a single parameter." Correct and elegant, but premature: the flat index is the lossless raw record, and all overlap reasoning is a later inference pass over it. Merging early destroys the evidence that would have shown which field was noise.
+
 ## Open questions
 
 - **Goal production.** A goal is itself a symbol — a name pointing at the region of the world model to reach. Goal-production is a special case of symbol-production; the open part is *what selects which region to name* — where the wanting comes from, once the possession-potential answer is rejected.
 - **Emergent boundaries.** Can a representation reliably grow its own walls, or must discretization be imposed?
 - **The curriculum consequence.** If learning is drawing walls, the curriculum stages the experiences that grow the right walls in the right order — what "examine before you act" (`curriculum.md`) becomes.
+- **Self-consistency, concretely.** The chain must prune noise and false predictors, but the mechanism — how stability across instances is measured, what separates a stable cause from a reliable confound — is described, not settled.
+- **Reasoning over the chain.** Knowledge is symbolic and reasoning is learned, but the consolidation/execution split is named without a plan, and how reasoning learns without ground truth is open.
+- **The value layer.** The mask indexes what changed and the value carries how, but the value's form — direction, magnitude, typed token identity — and how an effect's after-value becomes the next precondition, are open.
+- **Unifying overlapping masks.** The flat index is lossless by design; the inference that merges near-duplicate masks into one event is deferred.
+- **The acting agent's interface to the chain.** The knowledge store is the acting agent's "goto," but how the policy reads precondition-matched action/effect affordances and acts on them is open.

@@ -27,6 +27,8 @@ Two orderings, undecided:
 1. **Torch first** (former plan): `EXAMINE → PULL → LOOK → USE`, with EXAMINE bolted on as step one. This teaches the *form* of the habit but not the *substance*: the boot pack is fixed (pine torch + wooden sword), so examining reveals nothing new, and the reward that grades the display flip rewards the action, not the information. Its machine was five states (start / examined / held / looked / lit) paying +1.0 to light, +0.1 per step, −0.1 for no progress.
 2. **Examine-and-equip first** (proposed): reward the *disclosure* — the pack becoming visible and its contents then being acted on — so the habit itself is what is learned. Torch-lighting follows as course 2 and reuses the habit.
 
+A third possibility, still exploratory, is that the ordering should not be authored at all: causal-chain learning (see `knowledge-and-reasoning.md`) learns trivial preconditions first and composes upward, which would generate this ladder from below.
+
 ## Open questions
 
 - **Holdings potential — what is "valuable"?** A potential over held and packed objects is proposed, but there is no formula, and object power is not on the wire (carried objects ship class/proper/reveal only). Does "good" mean class and proper rarity, revealed-ness, or do we put power on the wire first?
