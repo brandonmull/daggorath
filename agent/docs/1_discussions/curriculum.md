@@ -1,6 +1,8 @@
 # Curriculum
 
-_How the agent is taught: the staged path from a fresh agent to competent play. This is open discussion, not a plan — the course ordering and the first course's reward are under revision, and the questions below must be settled before this returns to `2_plans/`. It supersedes the former `2_plans/curriculum/` plan, whose content is folded in here and amended._
+_How the agent is taught: the staged path from a fresh agent to competent play. This is open discussion, not a plan — the course ordering and the first course's reward are under revision, and the questions below must be settled before this returns to `2_plans/`. It supersedes the former `2_plans/curriculum/` plan, whose content is preserved here — with new considerations from `knowledge-and-reasoning.md` added alongside, and the tensions between them made explicit._
+
+The foundation this rests on — how knowledge, memory, reasoning, and skill are distinct, and why knowledge lives in a reusable form rather than in the weights — is [`knowledge-and-reasoning.md`](knowledge-and-reasoning.md).
 
 ## The governing habit
 
