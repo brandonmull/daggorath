@@ -62,7 +62,7 @@ The tests verify the `train()` wiring without launching MAME — they build the 
 | `docs/1_discussions/` | Open questions and not-yet-decided ideas |
 | `docs/2_plans/watch-training.md` | Feature plan — the remaining `-video none` headless enforcement |
 | `docs/2_plans/persist-learning.md` | Feature plan — the remaining `play.py` |
-| `docs/2_plans/ground-truth-probe.md` | Feature plan — the ground-truth probe |
+| `docs/2_plans/causal-diff.md` | Feature plan — the causal diff |
 | `docs/1_discussions/curriculum.md` | Curriculum — course ordering and rewards, open discussion |
 | `docs/1_discussions/knowledge-and-reasoning.md` | Knowledge and reasoning — the argument for knowledge living outside the weights |
 
@@ -83,6 +83,6 @@ Documentation lives under `docs/`:
 - **`docs/concepts.md`** — the expanded concepts behind those choices: what `VecEnv` is, why activations exist, what a stride does.
 - **`docs/findings/`** — hard-won operating lessons: pip tooling, WSL CUDA, stdout buffering.
 - **`docs/1_discussions/`** — open questions and ideas not yet decided (pre-planning), including `curriculum.md` (course ordering and rewards) and `knowledge-and-reasoning.md` (the argument for knowledge living outside the weights).
-- **`docs/2_plans/`** — what remains: `watch-training.md` (the `-video none` enforcement), `persist-learning.md` (`play.py`), and `ground-truth-probe.md` (the ground-truth probe).
+- **`docs/2_plans/`** — what remains: `watch-training.md` (the `-video none` enforcement), `persist-learning.md` (`play.py`), and `causal-diff.md` (the causal diff).
 
 This is intentionally lighter than the gym package's docs (`2_plans/`, `3_decisions/`, `findings/`), which reflect months of reverse-engineering. The harness documents itself in these files, and `docs/2_plans/` grows as new features are scoped.

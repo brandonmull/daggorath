@@ -1,4 +1,4 @@
-# Ground Truth Probe — Plan
+# Causal Diff — Plan
 
 ## Purpose and scope
 

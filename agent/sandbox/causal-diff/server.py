@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Ground-truth probe: verify the state diff and the primitive-field choice.
+"""Causal-diff probe: verify the state diff and the primitive-field choice.
 
 Drives the real Daggorath environment through the torch-lighting event —
 PULL LEFT TORCH, then USE LEFT — and diffs the perceived scalar fields
@@ -7,7 +7,7 @@ before and after each command. It checks that the USE diff recovers
 "light the torch" as one primitive cause (`torch_physical_light`), with every
 other change reported as noise.
 
-Run: python agent/sandbox/ground-truth-probe/server.py
+Run: python agent/sandbox/causal-diff/server.py
 """
 
 import sys
@@ -156,7 +156,7 @@ def main():
         observation, _ = environment.reset()
 
         baseline = _scalar_values(observation)
-        print("Ground-truth probe: torch-lighting event")
+        print("Causal-diff probe: torch-lighting event")
         print(f"baseline: torch_physical_light={baseline['torch_physical_light']}")
 
         failures = []

@@ -1,4 +1,4 @@
-# Ground Truth Probe
+# Causal Diff
 
 ## Goal
 
@@ -37,5 +37,5 @@ The diff reads the *perceived* scalars, not true state. Perceived and true are i
 ## Running
 
 ```bash
-python agent/sandbox/ground-truth-probe/server.py
+python agent/sandbox/causal-diff/server.py
 ```
