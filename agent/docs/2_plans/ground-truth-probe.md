@@ -30,7 +30,7 @@ Lighting a torch changes one number that matters — the torch's own light comin
 
 The probe is one Python script on nothing but the environment's public surface — `DaggorathEnv`, the perceived observation, the command API (`derive_command_index` and `DaggorathCommand.phrase`), and the `FIELDS` schema — with numpy for the array types.
 
-It reads two perceived channels. `scalars` is a uint16 array holding the nineteen `FIELDS` in schema order, read by field name through `_FIELD_INDEX`, a name → position map built from `FIELDS`. `hands` is a uint8 array of two slots: `0xFF` for an empty hand, otherwise the held object's specifier index.
+It reads two perceived channels. `scalars` is a uint16 array holding the nineteen `FIELDS` in schema order, read by field name through `_FIELD_INDEX`, a name → position map built from `FIELDS`. `hands` is a uint8 array of two slots: `0xFF` for an empty hand, otherwise the held object's specifier index. Both channels are diffed before and after each command, so the PULL step's change — a hand now holding the torch — shows in the report, not just the USE step's scalar change.
 
 The factored action space is verb form (0–25) × object specifier (0–30). `_find_action` scans it with `derive_command_index` and `DaggorathCommand.phrase` to recover the factored action for a phrase; `_find_noop_action` returns the first syntactically invalid pair — INCANT with a non-ring — which maps to no command, so the step advances a frame without acting. The scripted actions resolve to verb form 23 with object specifier 5 (PULL LEFT TORCH), verb form 11 with object specifier 0 (USE LEFT), and verb form 25 with object specifier 0 (the no-op).
 
@@ -78,6 +78,10 @@ _classify_field()
     → takes a field name
     → returns cause or noise
 
+_hand_slots()
+    → reads the hands channel
+    → returns the two slot values, with 0xFF for an empty hand
+
 _hand_holds_torch()
     → reads the hands channel
     → returns true when either hand slot is not the empty sentinel
@@ -95,7 +99,8 @@ _step_until_settled()
 
 _report_command()
     → prints the factored action and its phrase
-    → then each changed field — name, before → after, and classification — in schema order
+    → then any changed hand slot, before → after
+    → then each changed scalar field — name, before → after, and classification — in schema order
     → or prints that no scalar field changed
 ```
 
