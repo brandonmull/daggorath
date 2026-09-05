@@ -4,7 +4,7 @@
 
 The goal down the line is an agent that understands cause and effect in the game — that taking the torch from your pack and lighting it is what lets you see. That understanding has to rest on something, and the most basic something is this: when you act in the game and then look at what changed, can you actually tell what happened?
 
-This probe answers that question for one case, the one we can check against a known answer. It runs the real game, lights a torch, and asks whether a plain before-and-after comparison recovers the truth — one thing caused it, two things followed — or just a jumble of unrelated changes.
+This probe answers that question for one case, the one we can check against a known answer. It runs the real game, takes the torch out and lights it, and asks whether a plain before-and-after comparison recovers each step — the torch in hand, then its light on with the timer following — or just a jumble of unrelated changes.
 
 The scope is deliberately small. This is about lighting a torch and nothing else. It saves nothing for later, and it builds none of the understanding the agent will eventually need — that work is still open elsewhere. Passing it proves only that the foundation holds, not that anything has been built on it.
 
@@ -14,21 +14,17 @@ The bar is simple, and worth stating up front. Lighting a torch is a two-step st
 
 And one thing is allowed to be messy. The game is alive even when the player stands still — the heart beats, the body tires. Those changes are fine; the probe can notice them and let them pass.
 
-Three checks, in order:
-
-- After pulling the torch out, a hand holds it.
-- After using the torch in hand, the torch's light is on.
-- Changes that happen on their own — the heartbeat, tiredness — are ignored.
+Two checks, in order:
+1. After pulling the torch out, a hand holds it.
+2. After using the torch in hand, the torch's light is on.
 
 ## Strategy
 
-The plan is to act out the story and watch it happen. Run the real game, take the torch out of the pack, light it, and compare the game's state before and after each step. The comparison is plain subtraction: which of the numbers changed, and by how much.
+The plan is to act out the story and watch it happen. Run the real game, take the torch out of the pack, light it, and compare the game's state before and after each step. The comparison is plain subtraction: what changed, and by how much.
 
-Only a small set of numbers matters — the ones about the player and their immediate situation: where they are, how they're doing, how well they can see. Everything else in the game — the maze, the creatures, the objects on the floor — is left out of the comparison. And the comparison looks at what the player perceives, not at the game's hidden truth; for these particular numbers the two happen to be the same, but the distinction is the whole point — the agent learns from what it sees, and it's judged on what's actually true.
+Only a small part of the state matters — the numbers about the player (where they are, how they're doing, how well they can see) and what they're holding. Everything else — the maze, the creatures, the objects on the floor — is left out. And the comparison looks at what the player perceives, not at the game's hidden truth — the agent learns from what it sees, and it's judged on what's actually true.
 
-Lighting a torch changes three of those numbers, and a careless reading would call it three separate causes. The probe's job is to see through that: one number is the cause — the torch's own light coming on — and the other two are computed by the game from it — how well you can see now, and how long the torch has left. We already know which is which because we've read the game's code; the probe's job is to confirm that reading, not to discover it.
-
-One of the three lags behind. The torch's light and the countdown timer both flip the instant it lights, but how well you can see doesn't change until the game next redraws the screen, a frame or two later. So the probe doesn't wait a fixed amount of time and hope; it waits for each number to reach the value it's supposed to reach.
+Lighting a torch changes two of those numbers, and a careless reading would call it two separate causes. The probe's job is to see through that: one number is the cause — the torch's own light coming on — and the other is computed by the game from it — how long the torch has left. We already know which is which because we've read the game's code; the probe's job is to confirm that reading, not to discover it.
 
 ## Technical details
 
@@ -38,27 +34,22 @@ It reads two perceived channels. `scalars` is a uint16 array holding the ninetee
 
 The factored action space is verb form (0–25) × object specifier (0–30). `_find_action` scans it with `derive_command_index` and `DaggorathCommand.phrase` to recover the factored action for a phrase; `_find_noop_action` returns the first syntactically invalid pair — INCANT with a non-ring — which maps to no command, so the step advances a frame without acting. The scripted actions resolve to verb form 23 with object specifier 5 (PULL LEFT TORCH), verb form 11 with object specifier 0 (USE LEFT), and verb form 25 with object specifier 0 (the no-op).
 
-`_PRIMITIVE_FIELDS` and `_DERIVED_FIELDS` are tuples of field names — the former holding torch_physical_light, the latter effective_light_physical and torch_minutes — and `_TORCH_FIELDS` is their concatenation. `_SETTLE_STEPS` caps each settle wait at 100 no-op frames.
+`_PRIMITIVE_FIELDS` and `_DERIVED_FIELDS` are tuples of field names — the former holding torch_physical_light, the latter torch_minutes — and `_TORCH_FIELDS` is their concatenation. `_SETTLE_STEPS` caps each settle wait at 100 no-op frames.
 
 The flow of `main()`:
 
 ```
 main()
     → builds the environment headless
-    → resets and reads the baseline; the three torch fields must be unlit
+    → resets and reads the baseline; the torch must be unlit
     → plays PULL LEFT TORCH
-        → reads the before-state
         → sends the command through the environment's step
         → advances frames until a hand holds the torch
-        → reads the after-state, diffs, reports — expecting no field change
+        → checks that a hand holds the torch
     → plays USE LEFT
-        → reads the before-state
         → sends the command through the environment's step
-        → advances frames until the burn-down timer starts
-        → advances frames until the effective light catches up to the torch's own light
-        → reads the after-state, diffs, reports
-    → classifies each changed field as cause, readout, or noise
-    → asserts the success criterion
+        → advances frames until the torch lights
+        → checks that the torch's light is on, and reads the timer as its consequence
     → prints the report and returns pass or fail
 ```
 
@@ -93,9 +84,6 @@ _hand_holds_torch()
 
 _torch_lit()
     → returns true once the burn-down timer is above 0
-
-_effective_light_settled()
-    → returns true once the effective light equals the torch's own light
 
 _action_phrase()
     → returns the command phrase for a factored action, for the report
