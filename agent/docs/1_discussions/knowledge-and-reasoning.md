@@ -176,6 +176,8 @@ The descent reached "knowledge lives in a preliminary form that produces weights
 
 > **the premise** — "The basic premise starts with causal detection. We need a method for computing a cause/effect, which I believe should be done by diffing game state. Consider the difference in game state before and after a torch is lit. Also, consider that the agent needs memory of action to result."
 
+One boundary read out of that premise: the state being diffed is the **perceived** state — the observation — not the true state. The agent builds its causal model from what it observes, so the diff runs over perception, and its "state fluents" are game facts *as observed*. The reward, by contrast, reads true state — valuation is over facts whether or not the player saw them. For the torch event the two coincide, because the light and timer fields are the player's own frame, shipped ungated; but the split is the rule, not an accident: the chain learns over perception, the reward values over truth.
+
 The diff is the raw material, but "action → result" is too thin: a command's effect depends on the state it was issued in, so the record is really precondition, command, effect. The first reduction turned the diff itself into something indexable:
 
 > **the reduction** — "What if this was reduced to a simple vector of zeros and ones, like a mask that indicates the parameters involved in change, and what if you somehow paired that with the indexes representing action? This at least is some kind of representation, right?"
