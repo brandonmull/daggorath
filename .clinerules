@@ -131,3 +131,33 @@ When writing or revising files in `gym/docs/2_plans/` or `agent/docs/2_plans/`:
     This is easier to scan than prose paragraphs and avoids the symbol-index problem
     (walls of `_BACKTICKED_IDENTIFIERS`). Every arrowed item is plain English;
     code symbols live in the block title, not the body.
+
+## Discussion Doc Writing Principles
+
+When writing or revising files in `gym/docs/1_discussions/` or `agent/docs/1_discussions/`:
+
+1. **Record the exchanges, not just the conclusions.**
+   A discussion doc keeps the argument — the question asked, the answer given, and the reply — in the words that produced it, lightly cleaned. The reader follows *how* a conclusion was reached, not just what it was. That is what makes a discussion a discussion and not a decision.
+
+2. **Format every exchange as a blockquote of labeled turns.**
+   Each turn is a bolded descriptive label, an em-dash, and the quoted words; a lone `>` separates turns:
+
+   ```
+   > **the question** — "…"
+   >
+   > **the answer** — "…"
+   ```
+
+   One blockquote per exchange, introduced by a one-line lead-in.
+
+3. **Label turns by what they do, not who speaks.**
+   `the premise`, `the answer`, `the doubt`, `the proposal`, `the agreement`, `the objection`, `the correction` — never "user" or "assistant". Labels stay lowercase, matching the existing docs.
+
+4. **Every turn answers something present; every block has a lead-in.**
+   A reply with nothing to reply to reads as a non-sequitur. If a turn responds to a statement, quote the statement first — and a block with a single turn still needs its lead-in, such as "The reasoning was stated plainly:".
+
+5. **Clean the quotes; keep the voice.**
+   Fix capitalization, grammar, and spelling (American — `behavior`, `recognize`, `colored`). Capitalize every sentence, including one that would otherwise begin with a lowercase code identifier — rephrase so it opens with a word. Keep contractions and spoken register; a quote that reads like an essay is no longer a quote.
+
+6. **Gloss after the block; don't repeat it.**
+   Follow each block with prose that adds the implication. Where the quote already says something, the prose carries it forward rather than restating it.
