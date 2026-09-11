@@ -160,4 +160,22 @@ When writing or revising files in `gym/docs/1_discussions/` or `agent/docs/1_dis
    Fix capitalization, grammar, and spelling (American — `behavior`, `recognize`, `colored`). Capitalize every sentence, including one that would otherwise begin with a lowercase code identifier — rephrase so it opens with a word. Keep contractions and spoken register; a quote that reads like an essay is no longer a quote.
 
 6. **Gloss after the block; don't repeat it.**
-   Follow each block with prose that adds the implication. Where the quote already says something, the prose carries it forward rather than restating it.
+   Follow each block with prose that adds the implication. Where the quote already says something, the prose carries it forward rather than restating it, and puts the ideas in its own words — a gloss built from the quote's phrasing adds nothing the quote didn't already say.
+
+7. **The lead-in states the purpose and the payoff.**
+   Open a block by naming what prompted the exchange and previewing the insight it produced. Keep it to a couple of plain sentences — concrete, not a bland label ("a review"), and without em dashes or colons as ornament.
+
+8. **The prose is impersonal; the quotes carry the voice.**
+   The turns speak in the first person ("I think…", "One session, in my mind…"), but the prose around them never names a participant. Never write "the author" or "the user" — describe the exchange impersonally.
+
+9. **The titles alone tell the story.**
+   A reader scanning the section titles should be able to follow the argument — the cohesion has to be visible at the outline, not buried in a paragraph. Order the sections as a chain in which each is the next step from the one before.
+
+10. **A section answers its title, and only its title.**
+    Don't let it drift into a second question. When a consequence or fallout appears that the title doesn't cover — how one lesson's knowledge combines with another's, say — give it its own question or move it to Open questions.
+
+11. **Order framing before detail, and keep one artifact to one section.**
+    A section that frames what follows — a layering, a roadmap — belongs ahead of the detail it frames. When two sections re-enter the same artifact, merge them rather than stack them.
+
+12. **Title with the reader's own question, and name the subject.**
+    Prefer the question a reader would actually ask ("When is one step finished?") over a clinical label ("The step unit"), and keep titles in sentence case. No title leans on a pronoun that reaches back to an earlier title ("part of it", "the two", "that graph") — each names what its own section is about.
