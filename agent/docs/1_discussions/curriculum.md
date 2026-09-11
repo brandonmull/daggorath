@@ -4,6 +4,8 @@ _How the agent is taught: the staged path from a fresh agent to competent play. 
 
 The foundation this rests on — how knowledge, memory, reasoning, and skill are distinct, and why knowledge lives in a reusable form rather than in the weights — is [`knowledge-and-reasoning.md`](knowledge-and-reasoning.md).
 
+How those ideas are represented — the graph the agent's steps form, the smaller set of facts each lesson watches, and the labels a course uses to grade progress — is [`knowledge-representation.md`](knowledge-representation.md).
+
 ## The governing habit
 
 The thing the ladder exists to build is **examine before you act**: look in the pack, learn what you have, then base the next command on that. This is not a mechanical requirement — a torch can be pulled and lit without ever examining. It is the behavioral discipline we want the agent to acquire, because everything downstream (equipping, revealing, choosing a torch over a sword) depends on acting on inventory knowledge.
@@ -35,6 +37,7 @@ A third possibility, still exploratory, is that the ordering should not be autho
 - **Reveal novelty — scoped how?** The reward decision lists reveal novelty as deferred, pending a coefficient and power on the wire to scale by power. Do we ship a power-free version now, or wait for power?
 - **The mask — when?** Locking PULL until the first EXAMINE is the syllabus's way to enforce the habit, but masking is the deferred `MaskablePPO` work. Is it part of the first course, or is the first course reward-only?
 - **Activation.** Each course's reward is active only during its course, but the stage gate (`--stage`, a wrapper parameter) does not exist yet. Wiring a course's reward unconditionally would fire its penalties on every step of the baseline. How is the boundary expressed before the gate lands?
+- **The reduced field set and progress.** Each lesson watches only some facts — the representation doc's per-lesson reduction, a form of attention — and a lesson's progress or setback has to be defined in those facts. How is a lesson's set of facts declared, and can the progress rule be written out as a small schema, or is each lesson's rule hand-made? See [`knowledge-representation.md`](knowledge-representation.md).
 
 ## Reference Documents
 
@@ -44,3 +47,4 @@ A third possibility, still exploratory, is that the ordering should not be autho
 | `gym/docs/3_decisions/state.md` | The scalar fields the potentials draw from |
 | `gym/docs/2_plans/objects.md` | Object attainment and the reveal field |
 | `gym/docs/3_decisions/perception.md` | The perception, which carries no novelty flags |
+| [`knowledge-representation.md`](knowledge-representation.md) | The two knowledge types, the transition graph, and the per-lesson reduction |

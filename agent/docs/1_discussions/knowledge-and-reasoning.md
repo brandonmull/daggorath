@@ -254,6 +254,8 @@ Execution must stay a **symbolic search with a learned heuristic**, not a networ
 
 This is where the discussion currently stops — the two networks and self-consistency are named but not yet planned.
 
+The representation this argument implies — the graph of steps, and the question of where one step ends — is worked out in [`knowledge-representation.md`](knowledge-representation.md).
+
 ## Answers rejected
 
 The argument records what was abandoned along the way, because each rejection fixed a boundary:
