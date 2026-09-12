@@ -179,3 +179,21 @@ When writing or revising files in `gym/docs/1_discussions/` or `agent/docs/1_dis
 
 12. **Title with the reader's own question, and name the subject.**
     Prefer the question a reader would actually ask ("When is one step finished?") over a clinical label ("The step unit"), and keep titles in sentence case. No title leans on a pronoun that reaches back to an earlier title ("part of it", "the two", "that graph") — each names what its own section is about.
+
+13. **A title must ask something worth answering.**
+    If nobody could doubt the answer, the title isn't a question — it's a decision wearing one. State the real choice, with the rejected alternative visible: "Should a consumer reuse the environment's state reporting, or repeat that work for itself?" A forced question tells the reader nothing and flattens the outline.
+
+14. **Conclusions stand on their own.**
+    The prose that closes a section states its claim whole, naming its subject. No stubs ("No, then"), no bare pro-forms ("one", "the two"), and no leaning on an earlier section to supply what's missing. A reader who reads only the closing sentence should still get the conclusion. The rule against titles leaning on pronouns applies to conclusions too.
+
+15. **Divide by move, not by topic.**
+    Cut a discussion into the steps of its argument — each section the step the previous answer forces — not into a list of subjects. A topic list cannot narrate however its titles are worded; a chain of moves can.
+
+16. **Restate; do not reference.**
+    No "Section 1", "the two sections before", "the gap", "as above". Say the thing itself wherever it is needed. A reference sends the reader backward and breaks the sentence for anyone reading it alone.
+
+17. **Quotes keep the words that were said; the prose generalizes.**
+    Clean a quote's grammar, never its vocabulary. If a turn said "sandbox", it keeps saying "sandbox" after the prose has adopted a broader term; retrofitting a quote rewrites the record and hides the conversation's own vocabulary.
+
+18. **Hold one question form across the headings.**
+    Sections read as a chain when they share a shape. Mixing "Does…?", "Why…?", "What…?", and "Should…?" reads as a list even when the argument isn't one. Fix the form and let the answers carry the variation.
