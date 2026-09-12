@@ -15,28 +15,36 @@ from gymnasium import spaces
 from .commands import derive_specifier_index
 from .navigation import REACH_CAP, rewrite_magic_doors, walk_corridor
 
-# Schema: ordered tuple of (name, offset, width) 3-tuples.
-# The byte order is the shared contract with Lua's SCHEMA.
+# Schema: ordered tuple of (name, offset, width) 3-tuples, grouped by
+# category. The byte order is the shared contract with Lua's SCHEMA; a new
+# fact is added by filing it into its category.
 FIELDS: list[tuple[str, int, int]] = [
+    # mode
     ("game_mode", 0, 1),
-    ("at_floor", 1, 1),
-    ("at_cell_x", 2, 1),
-    ("at_cell_y", 3, 1),
-    ("at_heading", 4, 1),
-    ("ambient_light_physical", 5, 1),
-    ("ambient_light_magical", 6, 1),
-    ("effective_light_physical", 7, 1),
-    ("effective_light_magical", 8, 1),
-    ("torch_minutes", 9, 1),
-    ("torch_physical_light", 10, 1),
-    ("torch_magic_light", 11, 1),
-    ("player_weight", 12, 2),
-    ("player_strength", 14, 2),
-    ("m0221", 16, 2),
-    ("heart_beat_interval", 18, 1),
-    ("player_fainting", 19, 1),
-    ("evil_wizard_dead", 20, 1),
-    ("display_function", 21, 2),
+    ("display_function", 1, 2),
+    # position
+    ("at_floor", 3, 1),
+    ("at_cell_x", 4, 1),
+    ("at_cell_y", 5, 1),
+    ("at_heading", 6, 1),
+    # light
+    ("ambient_light_physical", 7, 1),
+    ("ambient_light_magical", 8, 1),
+    ("effective_light_physical", 9, 1),
+    ("effective_light_magical", 10, 1),
+    # torch
+    ("torch_minutes", 11, 1),
+    ("torch_physical_light", 12, 1),
+    ("torch_magic_light", 13, 1),
+    # body
+    ("player_weight", 14, 2),
+    ("player_strength", 16, 2),
+    ("m0221", 18, 2),
+    ("player_fainting", 20, 1),
+    # heart
+    ("heart_beat_interval", 21, 1),
+    # wizard
+    ("evil_wizard_dead", 22, 1),
 ]
 
 # Total frame length in bytes: 15 u8 + 4 u16 = 15 + 8 = 23

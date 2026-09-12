@@ -117,3 +117,36 @@ def test_world_channels_arrive_and_decode():
         assert np.any(state.holes_ladders[..., 0] != 0xFF)
     finally:
         operator.stop()
+
+
+def test_report_every_frame_keeps_reporting_when_idle():
+    """report_every_frame sends a numeric frame every frame, even once settled."""
+    config = IpcConfig(
+        state_fifo_path="/tmp/daggorath-test-emulator-everyframe",
+        command_port=15102,
+        report_every_frame=True,
+    )
+    operator = MameOperator(ipc_config=config)
+    try:
+        operator.start()
+        # Drain until the world channels have all arrived once — the game has
+        # settled, so change-gating would send nothing further.
+        state = None
+        for _ in range(100):
+            state = operator.recv()
+            if (
+                state.maze is not None
+                and state.creatures is not None
+                and state.hands is not None
+                and state.holes_ladders is not None
+            ):
+                break
+        assert state is not None and state.maze is not None
+
+        # Every-frame reporting must keep the numeric frame flowing while the
+        # game is idle; under change-gating each call would time out instead.
+        for _ in range(5):
+            state = operator.recv()
+            assert isinstance(state, DaggorathState)
+    finally:
+        operator.stop()

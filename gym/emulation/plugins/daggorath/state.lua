@@ -4,7 +4,9 @@
 --
 -- Public API: state.beginWatching(stateFile, config)
 --   stateFile: FIFO file handle (io.open("w"))
---   config: { frame_sampling_rate = N } (default: 1 = every frame)
+--   config: { frame_sampling_rate = N, report_every_frame = bool }
+--     frame_sampling_rate: sample every Nth frame (default 1 = every frame)
+--     report_every_frame: write the numeric frame every sampled frame (default false)
 --
 -- Wire format (fixed-size, no delimiter — the pixel payload is binary):
 --   "S" + 23-byte frame                              state only changed
@@ -101,30 +103,38 @@ local HOLE_LADDER_SENTINEL = 0xFF
 local EMPTY_HOLE_LADDER = string.char(
     HOLE_LADDER_SENTINEL, HOLE_LADDER_SENTINEL, HOLE_LADDER_SENTINEL)
 
--- Schema: ordered array of { name, addr, width } tables. The lit torch's three
--- fields use { name, torchOffset, width } instead of addr — they are read
--- through torchPtr, the game's pointer to the lit torch (0 = none lit).
--- The byte order is the shared contract with DaggorathStateSchema.FIELDS in Python.
+-- Schema: ordered array of { name, addr, width } tables, grouped by category.
+-- The lit torch's three fields use { name, torchOffset, width } instead of
+-- addr — they are read through torchPtr, the game's pointer to the lit torch
+-- (0 = none lit). The byte order is the shared contract with
+-- DaggorathStateSchema.FIELDS in Python.
 local SCHEMA = {
-    { name = "gameMode",             addr = 0x0277, width = 1 },
-    { name = "atFloor",              addr = 0x0281, width = 1 },
-    { name = "atCellX",              addr = 0x0214, width = 1 },
-    { name = "atCellY",              addr = 0x0213, width = 1 },
-    { name = "atHeading",            addr = 0x0223, width = 1 },
+    -- mode
+    { name = "gameMode",        addr = 0x0277, width = 1 },
+    { name = "displayFunction", addr = 0x02B2, width = 2 },
+    -- position
+    { name = "atFloor",         addr = 0x0281, width = 1 },
+    { name = "atCellX",         addr = 0x0214, width = 1 },
+    { name = "atCellY",         addr = 0x0213, width = 1 },
+    { name = "atHeading",       addr = 0x0223, width = 1 },
+    -- light
     { name = "ambientLightPhysical",   addr = 0x0226, width = 1 },
     { name = "ambientLightMagical",    addr = 0x0227, width = 1 },
     { name = "effectiveLightPhysical", addr = 0x026E, width = 1 },
     { name = "effectiveLightMagical",  addr = 0x026F, width = 1 },
-    { name = "torchMinutes",         torchOffset = 6,  width = 1 },
-    { name = "torchPhysicalLight",   torchOffset = 7,  width = 1 },
-    { name = "torchMagicLight",      torchOffset = 8,  width = 1 },
-    { name = "playerWeight",         addr = 0x0215, width = 2 },
-    { name = "playerStrength",       addr = 0x0217, width = 2 },
-    { name = "m0221",                addr = 0x0221, width = 2 },
-    { name = "heartBeatInterval",    addr = 0x02AF, width = 1 },
-    { name = "playerFainting",       addr = 0x0228, width = 1 },
-    { name = "evilWizardDead",       addr = 0x022B, width = 1 },
-    { name = "displayFunction",      addr = 0x02B2, width = 2 },
+    -- torch
+    { name = "torchMinutes",       torchOffset = 6, width = 1 },
+    { name = "torchPhysicalLight", torchOffset = 7, width = 1 },
+    { name = "torchMagicLight",    torchOffset = 8, width = 1 },
+    -- body
+    { name = "playerWeight",   addr = 0x0215, width = 2 },
+    { name = "playerStrength", addr = 0x0217, width = 2 },
+    { name = "m0221",          addr = 0x0221, width = 2 },
+    { name = "playerFainting", addr = 0x0228, width = 1 },
+    -- heart
+    { name = "heartBeatInterval", addr = 0x02AF, width = 1 },
+    -- wizard
+    { name = "evilWizardDead", addr = 0x022B, width = 1 },
 }
 
 -- Internal state
@@ -132,6 +142,7 @@ local _stateFile = nil
 local _memory = nil
 local _framesElapsed = 0
 local _frameSamplingRate = 1
+local _reportEveryFrame = false
 local _stateSnapshot = nil
 local _pixelSnapshot = nil
 local _comColorSnapshot = nil
@@ -422,7 +433,19 @@ local function _onFrame()
         or (pixels ~= _pixelSnapshot)
         or (comColor ~= _comColorSnapshot)
 
-    if stateChanged and pixelChanged then
+    if _reportEveryFrame then
+        -- Report the numeric frame every sampled frame, regardless of change.
+        -- The command-area text keeps its own change gate, so a text change
+        -- bundles with the frame as a "B" record.
+        if pixelChanged then
+            _writeRecord("B", frame, comColor, pixels)
+            _pixelSnapshot = pixels
+            _comColorSnapshot = comColor
+        else
+            _writeRecord("S", frame, nil, nil)
+        end
+        _stateSnapshot = frame
+    elseif stateChanged and pixelChanged then
         _writeRecord("B", frame, comColor, pixels)
         _stateSnapshot = frame
         _pixelSnapshot = pixels
@@ -481,6 +504,12 @@ function state.beginWatching(stateFile, config)
         _frameSamplingRate = config.frame_sampling_rate
     else
         _frameSamplingRate = 1
+    end
+
+    if config and config.report_every_frame then
+        _reportEveryFrame = true
+    else
+        _reportEveryFrame = false
     end
 
     _frameSubscription = emu.add_machine_frame_notifier(_onFrame)

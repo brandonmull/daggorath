@@ -62,6 +62,7 @@ class IpcConfig:
     command_host: str = "127.0.0.1"
     command_port: int = 15001
     connection_timeout: float = 30
+    report_every_frame: bool = False
 
 
 @dataclass(frozen=True)
@@ -343,5 +344,6 @@ class MameOperator:
         env["STATE_FIFO_PATH"] = self._ipc_config.state_fifo_path
         env["COMMAND_HOST"] = self._ipc_config.command_host
         env["COMMAND_PORT"] = str(self._ipc_config.command_port)
+        env["REPORT_EVERY_FRAME"] = "1" if self._ipc_config.report_every_frame else "0"
         print(f"[MameOperator] Launching: {' '.join(command_line)}")
         return subprocess.Popen(command_line, env=env)
