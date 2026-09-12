@@ -54,15 +54,23 @@ A fact a consumer needs joins the environment's state permanently, and later con
 >
 > **the correction** — "A general way to read memory is not necessary. A fact a sandbox needs is one more field in the state, added when the fact is needed, not a general way to read anything and not something each sandbox builds for itself."
 
-## Should a consumer be allowed to extend the true state, the perceived state, or both?
+## Should a consumer extend the state, or only narrow the view?
 
-The true state already takes new facts, and the true state's reporting is reused rather than rebuilt. The perceived state is a different kind of thing and draws its own line.
+The true state already takes new facts, and the true state's reporting is reused rather than rebuilt. The perceived state is a different kind of thing, and the question is what a consumer can do to it.
 
 > **the extension** — "And if our sandboxes ever need to customize perceived state, we should redesign the gym to allow that."
 >
 > **the boundary** — "True state and perceived state are different things. Narrowing the view to the facts a lesson cares about is attention, and attention belongs to the agent, so it can live in a wrapper. Changing the gates themselves belongs to the environment, and it would need the view to become a setting."
 
-Both states may be extended, but not in the same way. A consumer may narrow the view for itself; changing what the gates reveal would belong to the environment.
+The boundary drew a line between narrowing and the gates, but the opening move still spoke of customizing the perceived state as if a consumer extended it. That word is the trouble.
+
+> **the refinement** — "Perceived state should be a list of all potential facts a player would actually have access to. The only way consumers should be allowed to modify that list is by reduction — perhaps a simple convention, an inhibitory mask or an array of output fields."
+>
+> **the choice** — "The keep list is the simplest interface, and it makes clearer to code readers what the output will actually look like."
+>
+> **the correction** — "A consumer never extends any state. The needs of a consumer can prompt an addition to true state, and in consequence possibly the perceived state, but the consumer never does that on its own."
+
+The consumer never extends. A need prompts the environment to add a fact to true state, and that fact reaches the perceived state only in consequence, when the player genuinely perceives it. The consumer's one operation on the perceived state is reduction, expressed as a keep-list of output fields; the gates themselves stay the environment's.
 
 ## Should a consumer receive state synchronously with its command, or asynchronously?
 
@@ -79,7 +87,7 @@ So a consumer that wants the command and the observation apart reaches for MameO
 - Whether the recognition flag ships as a state field or as the separate record the events discussion proposes (`events.md`).
 - Whether every-frame reporting is a setting on the sampler or a record of its own.
 - How the frame a command was posted is pinned, since the operator sends to a socket that the plugin reads on a later frame.
-- Whether perceived-state customization is ever needed, or whether reduction always stays agent-side.
+- Whether the gates themselves ever need to become a setting, or stay fixed with reduction as the consumer's only operation.
 - Whether the launch belongs in this set at all, or whether consumers keep setting their own plugin path.
 
 ## Reference
