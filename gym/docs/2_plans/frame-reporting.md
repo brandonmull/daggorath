@@ -22,7 +22,7 @@ Each stage ships with a verification test, and each is gated on the one before:
 
 Every game frame emits one report, in this order: a **frame marker** — the tag `F` followed by a 4-byte little-endian frame number, the sampler's own counter — then the **changed content** — the `S`/`B`/`T`/`M`/`C`/`O`/`H` records that differ from their snapshots, in their existing forms — and nothing else. A frame with no changes emits the marker alone.
 
-The whole report is written and flushed once per frame, so a frame's content can never lag its marker. There is no end-of-frame tag: the next marker is the boundary, and the atomic flush is what keeps that boundary safe. An empty frame is the marker alone — five bytes.
+The buffered reports are written and flushed once per reporting cadence, so a frame's content can never lag its marker. There is no end-of-frame tag: the next marker is the boundary, and the atomic flush is what keeps that boundary safe. An empty frame is the marker alone — five bytes.
 
 ## The producer
 
@@ -30,17 +30,18 @@ The sampler's `_onFrame` loses its `report_every_frame` branch and becomes unifo
 
 ```
 _onFrame()
-    → samples the numeric frame, the command-area pixels, and the world channels
+    → samples the numeric frame, the command-area pixels, and the world channels, every frame
     → computes which of them changed against the snapshots
-    → writes the frame marker with the current frame number
-    → writes each changed record
-    → flushes once
+    → appends the frame marker and each changed record to the report buffer
+    → flushes the buffer once the reporting cadence elapses
     → updates the snapshots
 ```
 
-The `report_every_frame` field and the `REPORT_EVERY_FRAME` environment variable go away; the plugin entry stops reading and passing them. The snapshot comparison stays — it is what keeps the content change-gated even while the marker is every-frame.
+The `report_every_frame` field and the `REPORT_EVERY_FRAME` environment variable go away, and so does the `frame_sampling_rate` knob — the sampler always samples every frame. The snapshot comparison stays; it keeps the content change-gated even while the marker is every-frame.
 
-A producer-only integration test, `tests/test_frame_reporting.py`, reads the raw FIFO bytes the sampler writes — not `recv` — and checks the wire format: an `F` marker on every frame, an advancing 4-byte little-endian frame number, empty frames as a marker alone, and change-gated content only between markers.
+The reporting cadence — how often the buffered reports are flushed — is `reporting_cadence`, defaulting to 1 (every frame). It is client-configurable: `IpcConfig.reporting_cadence` flows through the `REPORTING_CADENCE` environment variable to the plugin entry, which passes it to `beginWatching`.
+
+A producer-only integration test, `tests/test_frame_reporting.py`, reads the raw FIFO bytes the sampler writes — not `recv` — and checks the wire format: an `F` marker on every frame, an advancing 4-byte little-endian frame number, empty frames as a marker alone, and change-gated content only between markers. It measures the frame rate over 10 s after the game starts and asserts the frame number advances at ~60 Hz.
 
 ## The reader
 

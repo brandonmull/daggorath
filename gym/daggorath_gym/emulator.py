@@ -6,8 +6,11 @@ a simple start/stop/recv/send API.
     State channel:   named pipe (FIFO) — MAME writes, Python reads
     Command channel: TCP socket         — Python writes, MAME reads
 
-The state channel carries fixed-size tagged records (no delimiter):
+The state channel carries fixed-size tagged records (no delimiter). Every
+frame emits an F marker followed by the records that changed that frame,
+written and flushed together; a frame with no changes is the marker alone:
 
+    F  + 4-byte little-endian frame number             frame marker, every frame
     S  + 20-byte frame                                 state only changed
     T  + 1-byte comColor + 1024 pixel bytes            text only changed
     B  + 20-byte frame + 1-byte comColor + 1024 px     both changed
@@ -20,6 +23,7 @@ The state channel carries fixed-size tagged records (no delimiter):
 import os
 import select
 import socket
+import struct
 import subprocess
 import time
 from dataclasses import dataclass
@@ -40,6 +44,7 @@ from .state import (
 
 # Record sizes keyed by the one-byte tag (fixed-size framing, binary-safe).
 _RECORD_LENGTHS = {
+    b"F": 5,  # frame marker: tag + 4-byte little-endian frame number
     b"S": 1 + FRAME_LEN,
     b"T": 1 + 1 + PIXEL_BYTES,
     b"B": 1 + FRAME_LEN + 1 + PIXEL_BYTES,
@@ -62,7 +67,7 @@ class IpcConfig:
     command_host: str = "127.0.0.1"
     command_port: int = 15001
     connection_timeout: float = 30
-    report_every_frame: bool = False
+    reporting_cadence: int = 1
 
 
 @dataclass(frozen=True)
@@ -98,6 +103,11 @@ class MameOperator:
 
         # ---------- receive buffer + reconstruction ----------
         self._receive_buffer = b""
+
+        # ---------- frame-number marker + the frame being assembled ----------
+        self._frame_number: Optional[int] = None
+        self._frame_state: Optional[DaggorathState] = None
+
         self._last_frame: Optional[bytes] = None
         self._last_command_text = ""
         self._last_maze: Optional[bytes] = None
@@ -172,6 +182,8 @@ class MameOperator:
         self._state_fd = None
         self._mame_process = None
         self._receive_buffer = b""
+        self._frame_number = None
+        self._frame_state = None
         self._last_frame = None
         self._last_command_text = ""
         self._last_maze = None
@@ -181,35 +193,27 @@ class MameOperator:
 
     # ---------- communication ----------
 
-    def recv(self) -> DaggorathState:
-        """Block until the next tagged record arrives, returning current state.
+    def recv(self) -> tuple[int, DaggorathState]:
+        """Block until the next changed frame arrives, returning (frame_number, state).
 
-        The returned DaggorathState always carries the latest known numeric
-        state and the latest known command text. Records omit the unchanged
-        half, so this method reconstructs from the last-known values.
+        A frame is the F marker followed by every record that changed that
+        frame, up to the next marker. Empty frames (a marker with no content)
+        are skipped; the returned state reflects all of a frame's content
+        records, reconstructed from the last-known values.
         """
         while True:
-            if self._state_fd is None:
-                raise ConnectionError("Operator not started or already stopped")
-
-            # ---------- parse a complete record when buffered ----------
-            record = self._extract_record()
-            if record is not None:
-                return self._parse_record(record)
-
-            # ---------- wait for the FIFO to become readable ----------
-            readable, _, _ = select.select([self._state_fd], [], [], _STATE_READ_TIMEOUT)
-            if not readable:
-                raise TimeoutError("Timed out waiting for a state record")
-
-            # ---------- read more bytes from the FIFO ----------
-            try:
-                chunk = os.read(self._state_fd, 4096)
-            except OSError:
-                raise ConnectionError("MAME disconnected (FIFO read error)")
-            if not chunk:
-                raise ConnectionError("MAME disconnected (EOF)")
-            self._receive_buffer += chunk
+            record = self._read_record()
+            if record[0:1] == b"F":
+                frame_number = struct.unpack("<I", record[1:5])[0]
+                if self._frame_state is not None:
+                    completed_number = self._frame_number
+                    completed_state = self._frame_state
+                    self._frame_number = frame_number
+                    self._frame_state = None
+                    return completed_number, completed_state
+                self._frame_number = frame_number
+                continue
+            self._frame_state = self._parse_record(record)
 
     def send(self, command: commands.DaggorathCommand) -> None:
         """Send a command index (one byte) to MAME on the command socket."""
@@ -224,6 +228,32 @@ class MameOperator:
             raise ConnectionError(f"Failed to send command: {exc}")
 
     # ---------- internals ----------
+
+    def _read_record(self) -> bytes:
+        """Return the next complete record from the FIFO, blocking as needed.
+
+        Raises ConnectionError if the operator is not started or MAME
+        disconnects, and TimeoutError if no record arrives in time.
+        """
+        while True:
+            if self._state_fd is None:
+                raise ConnectionError("Operator not started or already stopped")
+
+            record = self._extract_record()
+            if record is not None:
+                return record
+
+            readable, _, _ = select.select([self._state_fd], [], [], _STATE_READ_TIMEOUT)
+            if not readable:
+                raise TimeoutError("Timed out waiting for a state record")
+
+            try:
+                chunk = os.read(self._state_fd, 4096)
+            except OSError:
+                raise ConnectionError("MAME disconnected (FIFO read error)")
+            if not chunk:
+                raise ConnectionError("MAME disconnected (EOF)")
+            self._receive_buffer += chunk
 
     def _extract_record(self) -> Optional[bytes]:
         """Return a complete record if one is buffered, else None.
@@ -344,6 +374,6 @@ class MameOperator:
         env["STATE_FIFO_PATH"] = self._ipc_config.state_fifo_path
         env["COMMAND_HOST"] = self._ipc_config.command_host
         env["COMMAND_PORT"] = str(self._ipc_config.command_port)
-        env["REPORT_EVERY_FRAME"] = "1" if self._ipc_config.report_every_frame else "0"
+        env["REPORTING_CADENCE"] = str(self._ipc_config.reporting_cadence)
         print(f"[MameOperator] Launching: {' '.join(command_line)}")
         return subprocess.Popen(command_line, env=env)

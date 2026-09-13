@@ -4,13 +4,13 @@
 --
 -- Public API: state.beginWatching(stateFile, config)
 --   stateFile: FIFO file handle (io.open("w"))
---   config: { frame_sampling_rate = N }
---     frame_sampling_rate: sample every Nth frame (default 1 = every frame)
+--   config: { reporting_cadence = N }
+--     reporting_cadence: flush the buffered reports every Nth frame (default 1 = every frame)
 --
 -- Wire format (fixed-size, no delimiter — the pixel payload is binary). Every
--- sampled frame emits an "F" marker followed by the records that changed that
--- frame, written and flushed together; a frame with no changes is the marker
--- alone:
+-- frame emits an "F" marker followed by the records that changed that frame;
+-- reports are buffered and flushed at the reporting cadence. A frame with no
+-- changes is the marker alone:
 --   "F" + 4-byte little-endian frame number         frame marker, every frame
 --   "S" + 20-byte frame                              state only changed
 --   "T" + 1-byte comColor + 1024 pixel bytes         text only changed
@@ -146,7 +146,8 @@ local SCHEMA = {
 local _stateFile = nil
 local _memory = nil
 local _framesElapsed = 0
-local _frameSamplingRate = 1
+local _reportingCadence = 1
+local _reportBuffer = {}
 local _stateSnapshot = nil
 local _pixelSnapshot = nil
 local _comColorSnapshot = nil
@@ -421,11 +422,6 @@ local function _onFrame()
         return
     end
 
-    -- Skip frames that aren't multiples of the sampling rate
-    if _framesElapsed % _frameSamplingRate ~= 0 then
-        return
-    end
-
     -- Readiness gate: only sample during live play (LOOK or EXAMINE).
     if not _isLive() then
         return
@@ -476,8 +472,12 @@ local function _onFrame()
         pieces[#pieces + 1] = "H" .. holesLadders
     end
 
-    -- Write and flush once, then update the snapshots.
-    _writeReport(table.concat(pieces))
+    -- Buffer the report, and flush once the reporting cadence is reached.
+    _reportBuffer[#_reportBuffer + 1] = table.concat(pieces)
+    if #_reportBuffer >= _reportingCadence then
+        _writeReport(table.concat(_reportBuffer))
+        _reportBuffer = {}
+    end
     if stateChanged then
         _stateSnapshot = frame
     end
@@ -512,10 +512,10 @@ function state.beginWatching(stateFile, config)
     _objectSnapshot = nil
     _holesLaddersSnapshot = nil
 
-    if config and config.frame_sampling_rate then
-        _frameSamplingRate = config.frame_sampling_rate
+    if config and config.reporting_cadence then
+        _reportingCadence = config.reporting_cadence
     else
-        _frameSamplingRate = 1
+        _reportingCadence = 1
     end
 
     _frameSubscription = emu.add_machine_frame_notifier(_onFrame)
@@ -525,6 +525,7 @@ end
 -- MAME rebuilds the machine on reset, invalidating the cached memory space.
 function state.onReset()
     _memory = nil
+    _reportBuffer = {}
     _stateSnapshot = nil
     _pixelSnapshot = nil
     _comColorSnapshot = nil

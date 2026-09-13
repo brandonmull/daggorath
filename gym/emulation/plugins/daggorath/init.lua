@@ -50,7 +50,8 @@ function exports.startplugin()
     print("[daggorath] Command socket opened: " .. commandHost .. ":" .. commandPort)
 
     -- Hand off to domain modules
-    state.beginWatching(stateFile, { frame_sampling_rate = 1 })
+    local reportingCadence = tonumber(os.getenv("REPORTING_CADENCE")) or 1
+    state.beginWatching(stateFile, { reporting_cadence = reportingCadence })
     commands.beginProcessing(commandSocket)
 
     -- Save notifier subscriptions (GC fix: must store return values or GC auto-unsubscribes)
