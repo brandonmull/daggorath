@@ -50,11 +50,7 @@ function exports.startplugin()
     print("[daggorath] Command socket opened: " .. commandHost .. ":" .. commandPort)
 
     -- Hand off to domain modules
-    local reportEveryFrame = os.getenv("REPORT_EVERY_FRAME") == "1"
-    state.beginWatching(stateFile, {
-        frame_sampling_rate = 1,
-        report_every_frame = reportEveryFrame,
-    })
+    state.beginWatching(stateFile, { frame_sampling_rate = 1 })
     commands.beginProcessing(commandSocket)
 
     -- Save notifier subscriptions (GC fix: must store return values or GC auto-unsubscribes)

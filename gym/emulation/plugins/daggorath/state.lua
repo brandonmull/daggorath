@@ -4,11 +4,14 @@
 --
 -- Public API: state.beginWatching(stateFile, config)
 --   stateFile: FIFO file handle (io.open("w"))
---   config: { frame_sampling_rate = N, report_every_frame = bool }
+--   config: { frame_sampling_rate = N }
 --     frame_sampling_rate: sample every Nth frame (default 1 = every frame)
---     report_every_frame: write the numeric frame every sampled frame (default false)
 --
--- Wire format (fixed-size, no delimiter — the pixel payload is binary):
+-- Wire format (fixed-size, no delimiter — the pixel payload is binary). Every
+-- sampled frame emits an "F" marker followed by the records that changed that
+-- frame, written and flushed together; a frame with no changes is the marker
+-- alone:
+--   "F" + 4-byte little-endian frame number         frame marker, every frame
 --   "S" + 20-byte frame                              state only changed
 --   "T" + 1-byte comColor + 1024 pixel bytes         text only changed
 --   "B" + 20-byte frame + 1-byte comColor + 1024 px  both changed
@@ -144,7 +147,6 @@ local _stateFile = nil
 local _memory = nil
 local _framesElapsed = 0
 local _frameSamplingRate = 1
-local _reportEveryFrame = false
 local _stateSnapshot = nil
 local _pixelSnapshot = nil
 local _comColorSnapshot = nil
@@ -367,8 +369,18 @@ local function _sampleHolesLadders()
     return result
 end
 
--- Write one tagged record to the FIFO in a single call.
-local function _writeRecord(kind, frame, comColor, pixels)
+-- Build the frame marker: the "F" tag and the 4-byte little-endian frame
+-- number (the sampler's own counter).
+local function _buildFrameMarker(frameNumber)
+    return "F" .. string.char(
+        frameNumber % 256,
+        math.floor(frameNumber / 256) % 256,
+        math.floor(frameNumber / 65536) % 256,
+        math.floor(frameNumber / 16777216) % 256)
+end
+
+-- Build one S/B/T record's bytes (no write).
+local function _buildRecord(kind, frame, comColor, pixels)
     local pieces = { kind }
     if frame then
         pieces[#pieces + 1] = frame
@@ -379,28 +391,22 @@ local function _writeRecord(kind, frame, comColor, pixels)
     if pixels then
         pieces[#pieces + 1] = pixels
     end
+    return table.concat(pieces)
+end
 
+-- Write one frame's report in a single call, so a frame's content can never
+-- lag its marker.
+local function _writeReport(payload)
     local ok = pcall(function()
-        _stateFile:write(table.concat(pieces))
+        _stateFile:write(payload)
         _stateFile:flush()
     end)
     if not ok then
-        print("[state] Failed to write record " .. kind)
+        print("[state] Failed to write report")
     end
 end
 
--- Write one fixed-size world record to the FIFO in a single call.
-local function _writeWorldRecord(kind, payload)
-    local ok = pcall(function()
-        _stateFile:write(kind .. payload)
-        _stateFile:flush()
-    end)
-    if not ok then
-        print("[state] Failed to write record " .. kind)
-    end
-end
-
--- Per-frame notifier: sample, dedup, and write tagged records.
+-- Per-frame notifier: sample, dedup, and write one report per frame.
 local function _onFrame()
     _framesElapsed = _framesElapsed + 1
 
@@ -430,64 +436,65 @@ local function _onFrame()
         return
     end
 
-    local stateChanged = (_stateSnapshot == nil) or (frame ~= _stateSnapshot)
-
+    -- Sample the command area and the world channels.
     local pixels = _readCommandAreaPixels()
     local comColor = _memory:read_u8(COM_COLOR)
+    local maze = _sampleMaze()
+    local creatures = _sampleCreatures()
+    local objects = _sampleObjects()
+    local holesLadders = _sampleHolesLadders()
+
+    -- Compute which channels changed against the snapshots.
+    local stateChanged = (_stateSnapshot == nil) or (frame ~= _stateSnapshot)
     local pixelChanged = (_pixelSnapshot == nil)
         or (pixels ~= _pixelSnapshot)
         or (comColor ~= _comColorSnapshot)
+    local mazeChanged = (maze ~= nil) and (maze ~= _mazeSnapshot)
+    local creaturesChanged = (creatures ~= nil) and (creatures ~= _creatureSnapshot)
+    local objectsChanged = (objects ~= nil) and (objects ~= _objectSnapshot)
+    local holesLaddersChanged = (holesLadders ~= nil) and (holesLadders ~= _holesLaddersSnapshot)
 
-    if _reportEveryFrame then
-        -- Report the numeric frame every sampled frame, regardless of change.
-        -- The command-area text keeps its own change gate, so a text change
-        -- bundles with the frame as a "B" record.
-        if pixelChanged then
-            _writeRecord("B", frame, comColor, pixels)
-            _pixelSnapshot = pixels
-            _comColorSnapshot = comColor
-        else
-            _writeRecord("S", frame, nil, nil)
-        end
-        _stateSnapshot = frame
-    elseif stateChanged and pixelChanged then
-        _writeRecord("B", frame, comColor, pixels)
-        _stateSnapshot = frame
-        _pixelSnapshot = pixels
-        _comColorSnapshot = comColor
+    -- Build the report: the frame marker first, then each changed record.
+    local pieces = { _buildFrameMarker(_framesElapsed) }
+    if stateChanged and pixelChanged then
+        pieces[#pieces + 1] = _buildRecord("B", frame, comColor, pixels)
     elseif stateChanged then
-        _writeRecord("S", frame, nil, nil)
-        _stateSnapshot = frame
+        pieces[#pieces + 1] = _buildRecord("S", frame, nil, nil)
     elseif pixelChanged then
-        _writeRecord("T", nil, comColor, pixels)
+        pieces[#pieces + 1] = _buildRecord("T", nil, comColor, pixels)
+    end
+    if mazeChanged then
+        pieces[#pieces + 1] = "M" .. maze
+    end
+    if creaturesChanged then
+        pieces[#pieces + 1] = "C" .. creatures
+    end
+    if objectsChanged then
+        pieces[#pieces + 1] = "O" .. objects
+    end
+    if holesLaddersChanged then
+        pieces[#pieces + 1] = "H" .. holesLadders
+    end
+
+    -- Write and flush once, then update the snapshots.
+    _writeReport(table.concat(pieces))
+    if stateChanged then
+        _stateSnapshot = frame
+    end
+    if pixelChanged then
         _pixelSnapshot = pixels
         _comColorSnapshot = comColor
     end
-    -- else: nothing changed — write no record
-
-    -- World channels: maze, creatures, and objects are each compared to their
-    -- own snapshot and written only when they differ.
-    local maze = _sampleMaze()
-    if maze and maze ~= _mazeSnapshot then
-        _writeWorldRecord("M", maze)
+    if mazeChanged then
         _mazeSnapshot = maze
     end
-
-    local creatures = _sampleCreatures()
-    if creatures and creatures ~= _creatureSnapshot then
-        _writeWorldRecord("C", creatures)
+    if creaturesChanged then
         _creatureSnapshot = creatures
     end
-
-    local objects = _sampleObjects()
-    if objects and objects ~= _objectSnapshot then
-        _writeWorldRecord("O", objects)
+    if objectsChanged then
         _objectSnapshot = objects
     end
-
-    local holesLadders = _sampleHolesLadders()
-    if holesLadders and holesLadders ~= _holesLaddersSnapshot then
-        _writeWorldRecord("H", holesLadders)
+    if holesLaddersChanged then
         _holesLaddersSnapshot = holesLadders
     end
 end
@@ -509,12 +516,6 @@ function state.beginWatching(stateFile, config)
         _frameSamplingRate = config.frame_sampling_rate
     else
         _frameSamplingRate = 1
-    end
-
-    if config and config.report_every_frame then
-        _reportEveryFrame = true
-    else
-        _reportEveryFrame = false
     end
 
     _frameSubscription = emu.add_machine_frame_notifier(_onFrame)
