@@ -14,8 +14,8 @@ Out of scope: the sandbox's frame-by-frame reader (a subclass that keeps empty f
 
 Each stage ships with a verification test, and each is gated on the one before:
 
-1. **Producer.** The sampler writes the frame marker and change-gated content every frame. Verified by `tests/test_frame_reporting.py`, reading the raw FIFO bytes and checking the wire format.
-2. **Reader.** `recv()` assembles a whole frame, skips empty ones, and returns `(frame_number, state)`. Gated on the producer test. Verified by a `recv()` test.
+1. **Producer.** The sampler writes the frame marker and change-gated content every frame. Verified by `tests/test_emulator.py`, reading the raw FIFO bytes and checking the wire format.
+2. **Reader.** `recv()` assembles a whole frame, skips empty ones, and returns `(frame_number, state)`. Gated on the producer test. Verified by a `recv()` test in `tests/test_emulator.py`.
 3. **Environment.** `reset`/`step` unpack the pair, keeping their outward behavior. Gated on the reader test. Verified by the existing `test_environment.py`.
 
 ## The wire format
@@ -41,7 +41,7 @@ The `report_every_frame` field and the `REPORT_EVERY_FRAME` environment variable
 
 The reporting cadence — how often the buffered reports are flushed — is `reporting_cadence`, defaulting to 1 (every frame). It is client-configurable: `IpcConfig.reporting_cadence` flows through the `REPORTING_CADENCE` environment variable to the plugin entry, which passes it to `beginWatching`.
 
-A producer-only integration test, `tests/test_frame_reporting.py`, reads the raw FIFO bytes the sampler writes — not `recv` — and checks the wire format: an `F` marker on every frame, an advancing 4-byte little-endian frame number, empty frames as a marker alone, and change-gated content only between markers. It measures the frame rate over 10 s after the game starts and asserts the frame number advances at ~60 Hz.
+A producer test in `tests/test_emulator.py` reads the raw FIFO bytes the sampler writes — not `recv` — and checks the wire format: an `F` marker on every frame, an advancing 4-byte little-endian frame number, empty frames as a marker alone, and change-gated content only between markers. It measures the frame rate over 10 s after the game starts and asserts the frame number advances at ~60 Hz.
 
 ## The reader
 
