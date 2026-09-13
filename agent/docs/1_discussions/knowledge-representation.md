@@ -111,6 +111,8 @@ So the approach is to **separate the action from its effect and wait out a windo
 
 The sandbox at [`../../sandbox/causal-timing/`](../../sandbox/causal-timing/README.md) is measuring these three moments. This doc lays out the question; the sandbox is where the answer comes from.
 
+The three moments and the no-action control are the two halves of one need — causal attribution — named in [`causal-attribution.md`](causal-attribution.md).
+
 ## How do experience and causal knowledge meet?
 
 The two datasets are used together in two passes, at two different times:
