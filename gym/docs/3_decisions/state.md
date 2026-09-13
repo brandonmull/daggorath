@@ -13,6 +13,7 @@ The sixteen fields: `game_mode`, `display_function`, `at_floor`, `at_cell_x`, `a
 ## Why
 
 - **Track what the player perceives, plus self-state.** The field list is the player's own frame: position, heading, light, body (weight, strength, the exertion pool `m0221`), heart, and the modal display. Light ships as its two sums — the *effective* physical and magical light the player actually sees. The components (the ambient level and the torch's own light) are true-state: the player sees the dungeon brighten, never the torch's contribution.
+- **Object data, not pointers.** Holdings ship as decoded identities (hands, pack), never raw addresses. The torch's minutes/light were the last pointer-read fields in the schema; they now ship as a lit-torch entry in the object record, the same way the hands and pack do.
 - **Strength is not hidden — it's imprecise.** The player genuinely knows their strength through effect (a kill makes you stronger; stronger means fewer hits). The environment always tracks it — reward and termination need it — and exposing the exact number is a training accelerant; the "agent learns its own body" variant is a deferred curriculum ablation.
 - **Immutability for safe, fast reads.** `DaggorathState` uses `__slots__` and overrides `__setattr__`, so the reported state cannot be mutated from Python and attribute access stays a single C-level lookup.
 - **The wire is the shared contract.** Byte order in Lua's `SCHEMA` and Python's `FIELDS` must match exactly, so the same bytes mean the same field on both sides.

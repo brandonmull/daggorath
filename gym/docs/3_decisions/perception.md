@@ -10,7 +10,9 @@ The observation is a six-channel `Dict` — `scalars` (14, uint16), `hands` (2),
 
 - **Act-first, fairness-later.** Prioritize the state the agent needs to *act* — the maze, creatures, light — over faithfulness to what a real player perceives. A shell of self-fields is a working interface, not a trainable task.
 - **The gate is RAM line-of-sight, not screen pixels.** The game computes visibility from RAM, so the environment mirrors that logic rather than reverse-engineering the display. Reach is `min(light, 10)`; `light == 0` is blackout.
+- **Light is perceived as its effect, not its parts.** The player sees the dungeon brighten and magic doors appear, never the torch's own light or the ambient level — so the observation carries only the two effective sums, and the components are true-state.
 - **Modal perception.** LOOK reveals the dungeon, EXAMINE reveals the pack — mutually exclusive via `displayFunction`.
+- **Perceived is declared, not inferred.** Each field marks itself perceived (opt-in, default hidden), and the observation is the positive filter of those marks, so a hidden fact never leaks into perception by default.
 - **No memory, no novelty.** Perception is instantaneous; memory and "first seen" bookkeeping are the agent's and the reward wrapper's job, never the observation's.
 - **`Dict` + `MultiInputPolicy`.** A CNN reads the spatial map; an MLP reads the flat scalars and entity tables.
 

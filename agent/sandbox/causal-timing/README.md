@@ -4,7 +4,7 @@ _Observe the three moments of a command — matched, executed, changed — and t
 
 The design argument behind it — what a transition is, and why the three moments matter — is in [`../../docs/1_discussions/knowledge-representation.md`](../../docs/1_discussions/knowledge-representation.md).
 
-This sandbox is agent-side, not part of the environment. It nails down the basic unit the agent's experience is built from — the same job as its sibling [`../causal-diff/`](../causal-diff/README.md). It reads RAM through a MAME plugin, but what it measures belongs to the agent's knowledge, not to the game.
+This sandbox is agent-side, not part of the environment. It nails down the basic unit the agent's experience is built from — the same job as its sibling [`../causal-diff/`](../causal-diff/README.md). It reads state through the environment's reporting (`MameOperator` with `report_every_frame`), but what it measures belongs to the agent's knowledge, not to the game.
 
 ## Goal
 
@@ -18,11 +18,10 @@ The measurement is the gap between *matched* and *changed*: when a command is re
 
 ## What the code does today
 
-- `gym/daggorath_gym/environment.py` — `step()` sends one command (or a no-op), calls `recv()` **once**, and returns. Its comment names the follow-up: *"Wait-for-settle (perfectMatch on the wire)."*
-- `gym/daggorath_gym/emulator.py` — `recv()` blocks for the **next** record (sequential, not latest), reconstructing unchanged channels from last-known values.
-- `gym/emulation/plugins/daggorath/state.lua` — records are **change-gated** and sampled every frame (`frame_sampling_rate = 1`), so one command whose effect spans N frames yields up to N records.
-- `perfectMatch` is **not on the wire**: the 19 `FIELDS` in `state.py` do not include it. What is shipped is `command_text` (the command-area echo, decoded from screen pixels) and the derived `command_rejected` (`"???" in command_text`).
-- `agent/sandbox/causal-diff/server.py` — its probe settles with `_step_until_settled(env, obs, predicate)`, capped at `_SETTLE_STEPS = 100` no-op frames, waiting for a *command-specific* observable (hand holds torch / torch lit). That is right for a probe checking a known answer, but a per-command predicate does not scale to 154 commands.
+- `gym/daggorath_gym/emulator.py` — `MameOperator` keeps `send` and `recv` separate, and `IpcConfig(report_every_frame=True)` makes the sampler write a numeric frame every frame, not only on change. That is the hook the sandbox uses to watch frames after a command.
+- `gym/daggorath_gym/state.py` — `FIELDS` is a list of `StateField(name, offset, width, perceived)` grouped by category, and is the extension point: a new fact is filed into its category and picked up on both sides of the wire.
+- `perfectMatch` is **not yet on the wire**: the sixteen `FIELDS` do not include the parser's flags. What is shipped is `command_text` (the command-area echo, decoded from screen pixels) and the derived `command_rejected` (`"???" in command_text`).
+- `agent/sandbox/causal-diff/server.py` — its probe settles with `_step_until_settled(env, obs, predicate)`, capped at `_SETTLE_STEPS = 100` no-op frames, waiting for a *command-specific* observable (hand holds torch / dungeon brightens). That is right for a probe checking a known answer, but a per-command predicate does not scale to 154 commands.
 
 Two candidate general signals exist, and neither is certainly "changed": `perfectMatch` (a RAM flag, not on the wire) and `command_text` (an echo, screen-derived). The echo filling marks the command going in and the echo clearing marks the parser finishing with it — plausibly closer to "processing complete," but still not "state changed."
 
@@ -39,7 +38,7 @@ causal-timing/
 
 Three things are shared, and belong to neither child alone:
 
-- **The observation method** — how *matched* and *changed* are read from RAM each frame, and how a run is logged.
+- **The observation method** — how *matched* and *changed* are read from the environment each frame, and how a run is logged.
 - **The signal set** — the columns every frame records. Each child then *declares* which of those columns count as an effect for it (its watched fields).
 - **The analysis** — for each posted command, the frame offset to *matched* and to *changed*, and the latency summary.
 
@@ -69,13 +68,13 @@ If the anchor shows *changed* tracking *matched* by a small, consistent gap, and
 | Player | `atCellX`, `atCellY`, `atHeading`, `effectiveLightPhysical`, `playerStrength`, `m0221`, `heartBeatInterval` | movement, light, body |
 | Holdings | `hands`, `pack` — the `O` channel's decoded identities | an object moved between pack and hand |
 | Torch | `lit_torch` — the `O` channel's torch entry (minutes, light) | the torch lit, true state |
-| Creatures | `creatureCount`, `nearCreatureType`, `nearCreatureDY`, `nearCreatureDX`, `nearCreatureStrength`, `nearCreatureDamage` | a change in combat |
+| Creatures | the `C` channel (`alive`/`type`/`X`/`Y`), plus the engaged creature's `damage`/`strength` | a hit or a death |
 
-**Reading safely.** Both children follow the same rule (`gym/docs/findings/ram-signals.md`): read `displayFunction` (0x02B2) **first**, and read no other memory until the game is live (`0xCE66` for LOOK, `0xD495` for EXAMINE). Reading memory before the machine finishes booting crashes MAME outright. They share the boot sequence too: wait a fixed number of frames, press CR CR to leave the demo loop, and only then start posting commands.
+**Reading safely.** The production plugin already gates on `displayFunction` and primes the keyboard itself, so the sandbox reads state through the environment and never touches raw RAM — the readiness crash is the environment's problem, not the sandbox's.
 
 **Reading a run.** For each command, the analysis starts from the state just before it was posted. It then finds the first frame where *matched* is set, and the first frame where any watched field changes. That second one is the effect, and how far it is from the post is the measurement.
 
-**Why read RAM directly.** Both children read memory rather than going through the Python environment, because the environment sends neither `perfectMatch` nor every frame — it only sends a record when something changes, so it cannot show *when* inside a command the state moved.
+**Why read through the environment.** `report_every_frame` makes the sampler write a frame every frame, and `FIELDS` is the extension point, so the sandbox can read frame-by-frame and ask for new facts (`perfectMatch`) without a plugin of its own.
 
 ## The experiments
 
@@ -88,12 +87,14 @@ They share the log format and the analysis described above; neither re-describes
 
 ## Build order
 
-Nothing is built yet — this is a scaffold of structure and plans. The division above gives the order of work:
+The torch and perception refactor shipped first (see `gym/docs/3_decisions/perception.md`). What remains, in order:
 
-1. **The shared harness first.** One observation method and one log format, designed before either child, so both use it unchanged. This is the piece that is easy to duplicate by accident and should not be.
-2. **`lighting-torch/` second.** The anchor runs first, because if the harness cannot show a *known* effect landing after a *known* match, no later result can be trusted.
-3. **`fighting-monster/` third.** Reuses the harness unchanged; only its schedule and watched fields differ.
-4. **Read the two traces together.** The answer comes from comparing them, not from either one alone.
+1. **The observation wrapper.** A `FrameObservation` over `MameOperator` with `report_every_frame=True` — one frame per read, with a frame counter. Shared, built before either child, and easy to duplicate by accident if not.
+2. **The parser schema.** Add the command-consumption fields (`perfect_match` and its companions) per `gym/docs/2_plans/command-consumption.md`, so *matched* is on the wire.
+3. **The shared harness.** One log format and one analysis, built before either child.
+4. **`lighting-torch/`.** The anchor runs first, because if the harness cannot show a *known* effect landing after a *known* match, nothing later can be trusted.
+5. **`fighting-monster/`.** Reuses the harness unchanged; its watched fields need the combat-detection fields per `gym/docs/2_plans/combat-detection.md`.
+6. **Read the two traces together.** The answer comes from comparing them, not from either one alone.
 
 ## Success criteria
 
@@ -117,7 +118,7 @@ This is a measurement, not a pass or fail. What comes out is the timing, and wha
 
 ## Running
 
-Not built yet. When the shared harness lands, both children run from it; the plugin's `-pluginspath` must list the sandbox directory plus MAME's system plugins directory (since `boot.lua` lives there — see `daggorath_gym/paths.py`).
+Not built yet. When the harness lands, both children run through `MameOperator` (the environment's plugin), so no `-pluginspath` wiring is needed — `MameOperator` already lists the project and MAME's system plugin directories.
 
 
 
