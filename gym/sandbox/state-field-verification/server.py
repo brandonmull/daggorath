@@ -67,37 +67,59 @@ if mame_process.poll() is None:
 # ---- analysis -------------------------------------------------------------
 
 sys.path.insert(0, str(project_root))
-from daggorath_gym.state import DaggorathState, FRAME_LEN
+from daggorath_gym.state import (
+    CREATURE_BYTES,
+    FRAME_LEN,
+    HOLES_LADDERS_BYTES,
+    MAZE_BYTES,
+    OBJECTS_BYTES,
+    DaggorathState,
+)
 
 RECORD_LENGTHS = {
     ord("S"): 1 + FRAME_LEN,
     ord("T"): 1 + 1 + PIXEL_BYTES,
     ord("B"): 1 + FRAME_LEN + 1 + PIXEL_BYTES,
+    ord("M"): 1 + MAZE_BYTES,
+    ord("C"): 1 + CREATURE_BYTES,
+    ord("O"): 1 + OBJECTS_BYTES,
+    ord("H"): 1 + HOLES_LADDERS_BYTES,
 }
 
-EXPECTED = {
-    "torch_minutes": 100,
-    "torch_physical_light": 7,
-    "torch_magic_light": 3,
-    "ambient_light": 0x0102,
+# Scalar fields verified by attribute name.
+EXPECTED_SCALARS = {
+    "ambient_light_physical": 0x01,
+    "ambient_light_magical": 0x02,
     "m0221": 0x000A,
+}
+
+# Lit-torch entry verified by index: class, proper, reveal, minutes, physical
+# light, magic light. Only the special data is poked, so only it is checked.
+EXPECTED_TORCH = {
+    3: 100,  # minutes
+    4: 7,    # physical light
+    5: 3,    # magic light
 }
 
 
 def decode_records(data):
+    """Reconstruct a DaggorathState per record, carrying the latest frame and object record."""
     records = []
+    frame = None
+    objects = None
     i = 0
     while i < len(data):
         tag = data[i]
         length = RECORD_LENGTHS.get(tag)
-        if length is None:
-            i += 1
-            continue
-        if i + length > len(data):
+        if length is None or i + length > len(data):
             break
         record = data[i:i + length]
         if tag in (ord("S"), ord("B")):
-            records.append(DaggorathState(record[1:1 + FRAME_LEN]))
+            frame = record[1:1 + FRAME_LEN]
+        elif tag == ord("O"):
+            objects = record[1:1 + OBJECTS_BYTES]
+        if frame is not None:
+            records.append(DaggorathState(frame, objects=objects))
         i += length
     return records
 
@@ -110,19 +132,30 @@ def main():
     records = decode_records(log_file.read_bytes())
     print(f"Decoded {len(records)} state records", file=sys.stderr)
 
-    observed = {name: set() for name in EXPECTED}
+    observed_scalars = {name: set() for name in EXPECTED_SCALARS}
+    observed_torch = {index: set() for index in EXPECTED_TORCH}
     for state in records:
-        for name in EXPECTED:
-            observed[name].add(getattr(state, name))
+        for name in EXPECTED_SCALARS:
+            observed_scalars[name].add(getattr(state, name))
+        if state.lit_torch is not None:
+            for index in EXPECTED_TORCH:
+                observed_torch[index].add(int(state.lit_torch[index]))
 
     failures = []
-    for name, want in EXPECTED.items():
-        if want in observed[name]:
+    for name, want in EXPECTED_SCALARS.items():
+        if want in observed_scalars[name]:
             print(f"PASS  {name} == {want}")
         else:
-            preview = sorted(observed[name])[:8]
+            preview = sorted(observed_scalars[name])[:8]
             print(f"FAIL  {name}: expected {want}, saw {preview}...")
             failures.append(name)
+    for index, want in EXPECTED_TORCH.items():
+        if want in observed_torch[index]:
+            print(f"PASS  lit_torch[{index}] == {want}")
+        else:
+            preview = sorted(observed_torch[index])[:8]
+            print(f"FAIL  lit_torch[{index}]: expected {want}, saw {preview}...")
+            failures.append(f"lit_torch[{index}]")
 
     if failures:
         print(f"\nRESULT: FAIL ({len(failures)} field(s) not observed)")

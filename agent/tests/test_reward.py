@@ -32,7 +32,7 @@ from daggorath_gym.state import (
 def _build_frame(**field_values):
     """Build a zero-filled frame with the named fields set (little-endian)."""
     frame = bytearray(FRAME_LEN)
-    offsets = {name: (offset, width) for name, offset, width in FIELDS}
+    offsets = {field.name: (field.offset, field.width) for field in FIELDS}
     for name, value in field_values.items():
         offset, width = offsets[name]
         if width == 1:

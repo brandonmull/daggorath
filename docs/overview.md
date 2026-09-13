@@ -68,11 +68,11 @@ Perception has to give the agent something to act on. Self-state alone — posit
 
 ### Perception vs. proprioception.
 
-World state — creatures, floor objects, walls, light — is perception-gated: the agent gets only what sight and sound convey. Self state — strength, heart, exertion, carried weight, hands, pack, torch-in-hand — is full precision. The argument: the player knows their own body through experience even without a display, and RL agents conventionally read their own internal state; only the outside world is ever hidden from them.
+World state — creatures, floor objects, walls, light — is perception-gated: the agent gets only what sight and sound convey. Self state — strength, heart, exertion, carried weight, hands, pack — is full precision. Light is the sharpest case: the player sees the *effect* (how bright the dungeon is, whether magic doors show), never the components (the torch's own light, the ambient level), so those stay true-state. The argument: the player knows their own body through experience even without a display, and RL agents conventionally read their own internal state; only the outside world is ever hidden from them.
 
 ### Hidden vs. imprecise.
 
-Gate what the player *cannot* know (a creature's hitpoints, a threat around the corner). Give precision for what the player knows only *imprecisely* (their own strength, their racing heart, the torch's remaining life). "Not displayed as a number" is not "not known" — the game teaches strength through kill efficiency, so the player knows it without seeing it.
+Gate what the player *cannot* know (a creature's hitpoints, a threat around the corner). Give precision for what the player knows only *imprecisely* (their own strength, their racing heart). The torch's remaining life is the same kind of imprecise knowledge, but it stays true-state — the reward reads it, while the player sees only the dimming. "Not displayed as a number" is not "not known" — the game teaches strength through kill efficiency, so the player knows it without seeing it.
 
 ### The environment owns true state; the observation is sensory.
 

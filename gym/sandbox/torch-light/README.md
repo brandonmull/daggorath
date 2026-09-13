@@ -14,8 +14,8 @@ No RAM poking and no new Lua plugin: the driver uses the production `MameOperato
 
 1. Boot to live play; record the initial state (torch fields all 0 — no lit torch).
 2. Send `PULL LEFT TORCH`; read the command-area text until the echo appears (confirms the command was typed and accepted).
-3. Send `USE LEFT`; read until `torch_minutes` goes non-zero (confirms the torch lit).
-4. Read until `effective_light` reaches its recomputed value, then assert.
+3. Send `USE LEFT`; read until the lit torch's physical light goes non-zero (confirms the torch lit).
+4. Read until `effective_light_physical` reaches its recomputed value, then assert.
 
 The player always starts with a Pine torch in the backpack (grammar: "a backpack containing a PINE TORCH and a WOODEN SWORD"), so the procedure is deterministic.
 
@@ -23,18 +23,20 @@ The player always starts with a Pine torch in the backpack (grammar: "a backpack
 
 | Field | Before | After USE |
 |---|---|---|
-| `torch_minutes` | 0 | 15 (14 if a minute ticked) |
-| `torch_physical_light` | 0 | 7 |
-| `torch_magic_light` | 0 | 0 |
-| `effective_light` | 0x0000 | 0x0700 (ambient 0 + physical 7, magic 0) |
-| `ambient_light` | 0 | 0 |
+| `lit_torch` minutes | 0 | 15 (14 if a minute ticked) |
+| `lit_torch` physical light | 0 | 7 |
+| `lit_torch` magic light | 0 | 0 |
+| `effective_light_physical` | 0 | 7 |
+| `effective_light_magical` | 0 | 0 |
+| `ambient_light_physical` | 0 | 0 |
+| `ambient_light_magical` | 0 | 0 |
 
-`torchPtr` is not a schema field; the three torch fields leaving 0 is the proof the sampler followed the now-non-zero `torchPtr` to the lit torch object.
+The torch's fields are object data — the `O` record's lit-torch entry (class, proper, reveal, minutes, physical light, magic light) — not scalars. The three leaving 0 before USE and filling in after is the proof the sampler followed the now-non-zero `torchPtr` to the lit torch object.
 
 ## Success criteria
 
 - The command area echoes `PULL LEFT TORCH` and `USE LEFT` (no `???`).
-- After `USE LEFT`, `torch_minutes`, `torch_physical_light`, and `torch_magic_light` match the Pine torch values, and `effective_light` rises to `0x0700`.
+- After `USE LEFT`, the lit-torch record's minutes, physical light, and magic light match the Pine torch values, and `effective_light_physical` rises to 7.
 
 ## Running
 

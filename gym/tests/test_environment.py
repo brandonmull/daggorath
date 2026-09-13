@@ -31,7 +31,7 @@ importlib.reload(daggorath_gym)
 from daggorath_gym.commands import NUM_OBJECT_SPECIFIERS, NUM_VERB_FORMS
 from daggorath_gym.emulator import IpcConfig
 from daggorath_gym.environment import DaggorathEnv
-from daggorath_gym.state import FIELDS, FRAME_LEN, OBJECTS_BYTES, DaggorathState
+from daggorath_gym.state import FIELDS, FRAME_LEN, OBJECTS_BYTES, PERCEIVED_FIELDS, DaggorathState
 
 _IPC = IpcConfig(state_fifo_path="/tmp/daggorath-test-env", command_port=15201)
 _IPC_CONTRACT = IpcConfig(
@@ -47,7 +47,7 @@ def test_reset_returns_valid_observation():
 
         assert isinstance(observation, dict)
         assert observation["scalars"].dtype == np.uint16
-        assert len(observation["scalars"]) == len(FIELDS)
+        assert len(observation["scalars"]) == len(PERCEIVED_FIELDS)
     finally:
         env.close()
 
@@ -80,7 +80,7 @@ def test_gymnasium_consumer_contract():
 
         # ---------- observation space ----------
         assert isinstance(env.observation_space, spaces.Dict)
-        assert env.observation_space["scalars"].shape == (len(FIELDS),)
+        assert env.observation_space["scalars"].shape == (len(PERCEIVED_FIELDS),)
         assert env.observation_space["scalars"].dtype == np.uint16
 
         # ---------- reset ----------
@@ -99,7 +99,7 @@ def test_gymnasium_consumer_contract():
 
 def _build_frame(**field_values):
     frame = bytearray(FRAME_LEN)
-    offsets = {name: (offset, width) for name, offset, width in FIELDS}
+    offsets = {field.name: (field.offset, field.width) for field in FIELDS}
     for name, value in field_values.items():
         offset, width = offsets[name]
         if width == 1:

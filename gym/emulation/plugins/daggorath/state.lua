@@ -9,12 +9,12 @@
 --     report_every_frame: write the numeric frame every sampled frame (default false)
 --
 -- Wire format (fixed-size, no delimiter — the pixel payload is binary):
---   "S" + 23-byte frame                              state only changed
+--   "S" + 20-byte frame                              state only changed
 --   "T" + 1-byte comColor + 1024 pixel bytes         text only changed
---   "B" + 23-byte frame + 1-byte comColor + 1024 px  both changed
+--   "B" + 20-byte frame + 1-byte comColor + 1024 px  both changed
 --   "M" + 1024-byte maze                             maze changed
 --   "C" + 128-byte creature array                    creatures changed
---   "O" + 70-byte object record                      objects changed
+--   "O" + 76-byte object record                      objects changed
 --   "H" + 24-byte holes/ladders record               holes/ladders changed
 
 local state = {}
@@ -58,13 +58,14 @@ local CREATURE_BYTES = CREATURE_SLOTS * CREATURE_FIELDS
 local OBJECT_SLOT_BYTES = 14
 local OBJECT_RAW_BYTES = 3
 local FLOOR_OBJECT_RAW_BYTES = 5
+local TORCH_RAW_BYTES = 6
 local HAND_COUNT = 2
 local PACK_CAPACITY = 8
 local FLOOR_OBJECT_CAPACITY = 8
 local HANDS_BYTES = HAND_COUNT * OBJECT_RAW_BYTES
 local PACK_BYTES = PACK_CAPACITY * OBJECT_RAW_BYTES
 local FLOOR_OBJECTS_BYTES = FLOOR_OBJECT_CAPACITY * FLOOR_OBJECT_RAW_BYTES
-local OBJECTS_BYTES = HANDS_BYTES + PACK_BYTES + FLOOR_OBJECTS_BYTES
+local OBJECTS_BYTES = HANDS_BYTES + PACK_BYTES + FLOOR_OBJECTS_BYTES + TORCH_RAW_BYTES
 
 -- Creature slot field offsets (17-byte slots).
 local CREATURE_ALIVE_OFFSET = 12
@@ -77,6 +78,9 @@ local OBJECT_Y_OFFSET = 2
 local OBJECT_X_OFFSET = 3
 local OBJECT_LEVEL_OFFSET = 4
 local OBJECT_LOCATION_OFFSET = 5
+local OBJECT_SPECIAL1_OFFSET = 6
+local OBJECT_SPECIAL2_OFFSET = 7
+local OBJECT_SPECIAL3_OFFSET = 8
 local OBJECT_PROPER_OFFSET = 9
 local OBJECT_CLASS_OFFSET = 10
 local OBJECT_REVEAL_OFFSET = 11
@@ -88,6 +92,9 @@ local EMPTY_OBJECT_IDENTITY = string.char(
 local EMPTY_FLOOR_OBJECT = string.char(
     OBJECT_SENTINEL, OBJECT_SENTINEL, OBJECT_SENTINEL,
     OBJECT_SENTINEL, OBJECT_SENTINEL)
+-- An unlit torch: empty identity plus zero light.
+local EMPTY_TORCH = string.char(
+    OBJECT_SENTINEL, OBJECT_SENTINEL, OBJECT_SENTINEL, 0, 0, 0)
 
 -- Holes and ladders. The game keeps them in a hand-authored ROM table, one
 -- list per level boundary: a run of 3-byte entries (type, Y, X) ended by an
@@ -104,10 +111,9 @@ local EMPTY_HOLE_LADDER = string.char(
     HOLE_LADDER_SENTINEL, HOLE_LADDER_SENTINEL, HOLE_LADDER_SENTINEL)
 
 -- Schema: ordered array of { name, addr, width } tables, grouped by category.
--- The lit torch's three fields use { name, torchOffset, width } instead of
--- addr — they are read through torchPtr, the game's pointer to the lit torch
--- (0 = none lit). The byte order is the shared contract with
--- DaggorathStateSchema.FIELDS in Python.
+-- The byte order is the shared contract with DaggorathStateSchema.FIELDS in
+-- Python. The lit torch's fields are object data and live in the object
+-- record, not here.
 local SCHEMA = {
     -- mode
     { name = "gameMode",        addr = 0x0277, width = 1 },
@@ -122,10 +128,6 @@ local SCHEMA = {
     { name = "ambientLightMagical",    addr = 0x0227, width = 1 },
     { name = "effectiveLightPhysical", addr = 0x026E, width = 1 },
     { name = "effectiveLightMagical",  addr = 0x026F, width = 1 },
-    -- torch
-    { name = "torchMinutes",       torchOffset = 6, width = 1 },
-    { name = "torchPhysicalLight", torchOffset = 7, width = 1 },
-    { name = "torchMagicLight",    torchOffset = 8, width = 1 },
     -- body
     { name = "playerWeight",   addr = 0x0215, width = 2 },
     { name = "playerStrength", addr = 0x0217, width = 2 },
@@ -171,24 +173,13 @@ local function _isLive()
     return fn == DISPLAY_LOOK or fn == DISPLAY_EXAMINE
 end
 
--- Read all fields and serialize as a 21-byte string. Returns nil if any read
+-- Read all fields and serialize as a 20-byte string. Returns nil if any read
 -- fails, so the caller can skip the frame instead of crashing.
 local function _sampleState()
     local ok, result = pcall(function()
-        -- Resolve the lit torch once: torchPtr is 0 when no torch is lit, in
-        -- which case every torch field reports 0.
-        local torchBase = _memory:read_u8(TORCH_PTR_HI) * 256
-            + _memory:read_u8(TORCH_PTR_LO)
-
         local raw = {}
         for _, field in ipairs(SCHEMA) do
-            if field.torchOffset then
-                local value = 0
-                if torchBase ~= 0 then
-                    value = _memory:read_u8(torchBase + field.torchOffset)
-                end
-                raw[#raw + 1] = string.char(value)
-            elseif field.width == 2 then
+            if field.width == 2 then
                 -- 6809 is big-endian (MSB at addr, LSB at addr+1).
                 -- Wire format is little-endian: LSB first, then MSB.
                 local lo = _memory:read_u8(field.addr + 1)
@@ -317,6 +308,20 @@ local function _sampleObjects()
         end
         for _ = floorCount, FLOOR_OBJECT_CAPACITY - 1 do
             bytes[#bytes + 1] = EMPTY_FLOOR_OBJECT
+        end
+
+        -- Lit torch: torchPtr points at the lit torch (0 = none lit). Its
+        -- identity and special data (minutes, physical light, magic light)
+        -- ship here as object data, not as pointer-dereferenced scalars.
+        local torchPointer = _memory:read_u8(TORCH_PTR_HI) * 256
+            + _memory:read_u8(TORCH_PTR_LO)
+        if torchPointer == 0 then
+            bytes[#bytes + 1] = EMPTY_TORCH
+        else
+            bytes[#bytes + 1] = _readObjectIdentity(torchPointer) .. string.char(
+                _memory:read_u8(torchPointer + OBJECT_SPECIAL1_OFFSET),
+                _memory:read_u8(torchPointer + OBJECT_SPECIAL2_OFFSET),
+                _memory:read_u8(torchPointer + OBJECT_SPECIAL3_OFFSET))
         end
 
         return table.concat(bytes)

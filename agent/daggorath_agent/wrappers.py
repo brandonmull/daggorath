@@ -21,7 +21,7 @@ _SCALARS_KEY = "scalars"
 class CastScalarsWrapper(gym.ObservationWrapper):
     """Cast the observation's uint16 scalars to int32.
 
-    The scalars are the nineteen always-present state fields. Their values
+    The scalars are the fourteen perceived state fields. Their values
     (0-65535) fit int32 losslessly, so this is a pure widen-and-relabel — no
     normalization, no value change. The remaining channels pass through
     untouched.

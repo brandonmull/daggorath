@@ -3,11 +3,13 @@
 Receives raw byte frames from the Lua state module, deserializes them
 into immutable DaggorathState value objects. Derives agent-facing values
 (heart rate) that are not shipped over the wire. Defines the true-state
-schema (FIELDS) and the perceived-state schema (PERCEIVED_SPACE) that the
-environment exposes as the observation.
+schema (FIELDS), its perceived subset (PERCEIVED_FIELDS), and the
+perceived-state schema (PERCEIVED_SPACE) that the environment exposes as the
+observation.
 """
 
 import struct
+from dataclasses import dataclass
 
 import numpy as np
 from gymnasium import spaces
@@ -15,43 +17,63 @@ from gymnasium import spaces
 from .commands import derive_specifier_index
 from .navigation import REACH_CAP, rewrite_magic_doors, walk_corridor
 
-# Schema: ordered tuple of (name, offset, width) 3-tuples, grouped by
-# category. The byte order is the shared contract with Lua's SCHEMA; a new
-# fact is added by filing it into its category.
-FIELDS: list[tuple[str, int, int]] = [
+
+@dataclass(frozen=True)
+class StateField:
+    """One scalar field of the true-state schema.
+
+    name — the field name shared with Lua's SCHEMA; offset — its byte position
+    in the wire frame; width — 1 (u8) or 2 (u16, little-endian on the wire);
+    perceived — whether the field reaches the observation's scalars channel.
+    A fact the player does not honestly see is true-state-only and defaults to
+    perceived=False.
+    """
+
+    name: str
+    offset: int
+    width: int
+    perceived: bool = False
+
+
+# Schema: ordered list of StateField entries, grouped by category. The byte
+# order is the shared contract with Lua's SCHEMA; a new fact is filed into its
+# category and marks perceived=True only when the player genuinely sees it.
+FIELDS: list[StateField] = [
     # mode
-    ("game_mode", 0, 1),
-    ("display_function", 1, 2),
+    StateField("game_mode", 0, 1, perceived=True),
+    StateField("display_function", 1, 2, perceived=True),
     # position
-    ("at_floor", 3, 1),
-    ("at_cell_x", 4, 1),
-    ("at_cell_y", 5, 1),
-    ("at_heading", 6, 1),
-    # light
-    ("ambient_light_physical", 7, 1),
-    ("ambient_light_magical", 8, 1),
-    ("effective_light_physical", 9, 1),
-    ("effective_light_magical", 10, 1),
-    # torch
-    ("torch_minutes", 11, 1),
-    ("torch_physical_light", 12, 1),
-    ("torch_magic_light", 13, 1),
+    StateField("at_floor", 3, 1, perceived=True),
+    StateField("at_cell_x", 4, 1, perceived=True),
+    StateField("at_cell_y", 5, 1, perceived=True),
+    StateField("at_heading", 6, 1, perceived=True),
+    # light — the components (ambient) are true-state only; the player sees
+    # the two sums (effective light).
+    StateField("ambient_light_physical", 7, 1),
+    StateField("ambient_light_magical", 8, 1),
+    StateField("effective_light_physical", 9, 1, perceived=True),
+    StateField("effective_light_magical", 10, 1, perceived=True),
     # body
-    ("player_weight", 14, 2),
-    ("player_strength", 16, 2),
-    ("m0221", 18, 2),
-    ("player_fainting", 20, 1),
+    StateField("player_weight", 11, 2, perceived=True),
+    StateField("player_strength", 13, 2, perceived=True),
+    StateField("m0221", 15, 2, perceived=True),
+    StateField("player_fainting", 17, 1, perceived=True),
     # heart
-    ("heart_beat_interval", 21, 1),
+    StateField("heart_beat_interval", 18, 1, perceived=True),
     # wizard
-    ("evil_wizard_dead", 22, 1),
+    StateField("evil_wizard_dead", 19, 1, perceived=True),
 ]
 
-# Total frame length in bytes: 15 u8 + 4 u16 = 15 + 8 = 23
-FRAME_LEN = 23
+# Total frame length in bytes: 12 u8 + 4 u16 = 12 + 8 = 20
+FRAME_LEN = 20
 
 # Number of fields
 NUM_FIELDS = len(FIELDS)
+
+# The perceived subset of FIELDS — what the player honestly sees. The filter
+# is positive: a field is perceived when its perceived flag is set.
+PERCEIVED_FIELDS: list[StateField] = [f for f in FIELDS if f.perceived]
+NUM_PERCEIVED_FIELDS = len(PERCEIVED_FIELDS)
 
 # Display-mode values (shared with state.lua's DISPLAY_LOOK / DISPLAY_EXAMINE).
 # The mode gates the perception channels: LOOK draws the dungeon, EXAMINE draws
@@ -78,17 +100,18 @@ FLOOR_OBJECT_CAPACITY = 8
 
 # World-channel wire sizes. The maze is 32×32 raw edge bytes (row-major); the
 # creature record is 32 slots × 4 fields; the object record is hands + pack +
-# floor objects, each a fixed-capacity sub-array. These are the shared contract
-# with state.lua's world-channel constants.
+# floor objects + the lit torch, each a fixed-capacity sub-array. These are the
+# shared contract with state.lua's world-channel constants.
 MAZE_BYTES = MAP_SIZE * MAP_SIZE
 CREATURE_FIELDS = 4
 CREATURE_BYTES = CREATURE_SLOTS * CREATURE_FIELDS
 OBJECT_RAW_BYTES = 3
 FLOOR_OBJECT_RAW_BYTES = 5
+TORCH_RAW_BYTES = 6
 HANDS_BYTES = HAND_COUNT * OBJECT_RAW_BYTES
 PACK_BYTES = PACK_CAPACITY * OBJECT_RAW_BYTES
 FLOOR_OBJECTS_BYTES = FLOOR_OBJECT_CAPACITY * FLOOR_OBJECT_RAW_BYTES
-OBJECTS_BYTES = HANDS_BYTES + PACK_BYTES + FLOOR_OBJECTS_BYTES
+OBJECTS_BYTES = HANDS_BYTES + PACK_BYTES + FLOOR_OBJECTS_BYTES + TORCH_RAW_BYTES
 
 # Holes/ladders wire sizes: two lists (ceiling then floor) × capacity 4 ×
 # a 3-byte entry (type, Y, X). The capacity matches the hand-authored ROM table.
@@ -100,7 +123,7 @@ HOLES_LADDERS_BYTES = 2 * HOLE_LADDER_CAPACITY * HOLE_LADDER_RAW_BYTES
 # through the perception gates (line-of-sight, display mode, light), reported
 # in absolute coordinates; agent-side wrappers translate to relative.
 PERCEIVED_SPACE = spaces.Dict({
-    "scalars": spaces.Box(low=0, high=65535, shape=(NUM_FIELDS,), dtype=np.uint16),
+    "scalars": spaces.Box(low=0, high=65535, shape=(NUM_PERCEIVED_FIELDS,), dtype=np.uint16),
     "hands": spaces.Box(low=0, high=255, shape=(HAND_COUNT,), dtype=np.uint8),
     "pack": spaces.Box(low=0, high=255, shape=(PACK_CAPACITY,), dtype=np.uint8),
     "creatures": spaces.Box(low=0, high=255, shape=(CREATURE_SLOTS, 4), dtype=np.uint8),
@@ -133,11 +156,11 @@ class DaggorathStateSchema:
             )
 
         result: dict[str, int] = {}
-        for name, offset, width in FIELDS:
-            if width == 1:
-                result[name] = data[offset]
+        for field in FIELDS:
+            if field.width == 1:
+                result[field.name] = data[field.offset]
             else:
-                result[name] = struct.unpack_from("<H", data, offset)[0]
+                result[field.name] = struct.unpack_from("<H", data, field.offset)[0]
         return result
 
 
@@ -163,11 +186,15 @@ def decode_creatures(payload: bytes) -> np.ndarray:
     return np.frombuffer(payload, dtype=np.uint8).reshape(CREATURE_SLOTS, CREATURE_FIELDS)
 
 
-def decode_objects(payload: bytes) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Decode a 70-byte object record into hands, pack, and floor objects.
+def decode_objects(
+    payload: bytes,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Decode a 76-byte object record into hands, pack, floor objects, and the lit torch.
 
-    Returns three uint8 arrays: hands (2, 3), pack (8, 3), and floor objects
-    (8, 5) — each entry's first byte is the class, with 0xFF marking empty.
+    Returns four uint8 arrays: hands (2, 3), pack (8, 3), floor objects
+    (8, 5), and the lit torch (6,) — identity (class, proper, reveal) followed
+    by its special data (minutes, physical light, magic light). Empty entries
+    carry a 0xFF class; an unlit torch carries 0xFF identity and zero light.
     """
     hands = np.frombuffer(payload, dtype=np.uint8, count=HANDS_BYTES).reshape(
         HAND_COUNT, OBJECT_RAW_BYTES
@@ -180,7 +207,11 @@ def decode_objects(payload: bytes) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     floor_objects = np.frombuffer(
         payload, dtype=np.uint8, count=FLOOR_OBJECTS_BYTES, offset=floor_start
     ).reshape(FLOOR_OBJECT_CAPACITY, FLOOR_OBJECT_RAW_BYTES)
-    return hands, pack, floor_objects
+    torch_start = HANDS_BYTES + PACK_BYTES + FLOOR_OBJECTS_BYTES
+    lit_torch = np.frombuffer(
+        payload, dtype=np.uint8, count=TORCH_RAW_BYTES, offset=torch_start
+    )
+    return hands, pack, floor_objects, lit_torch
 
 
 def decode_holes_ladders(payload: bytes) -> np.ndarray:
@@ -242,12 +273,12 @@ class DaggorathState:
     `holds_final_ring` is True when a hand holds the FINAL ring (the win's
     terminal). None of them is part of the wire format or as_perceived().
     The world attributes — `maze`, `creatures`, `hands`, `pack`, `objects`,
-    `holes_ladders` — hold the true, ungated state decoded from the M/C/O/H
-    records, and are None until the corresponding record has arrived.
+    `lit_torch`, `holes_ladders` — hold the true, ungated state decoded from
+    the M/C/O/H records, and are None until the corresponding record arrives.
     """
 
     __slots__ = (
-        tuple(name for name, _, _ in FIELDS)
+        tuple(f.name for f in FIELDS)
         + (
             "heart_rate",
             "command_text",
@@ -258,6 +289,7 @@ class DaggorathState:
             "hands",
             "pack",
             "objects",
+            "lit_torch",
             "holes_ladders",
         )
     )
@@ -272,8 +304,8 @@ class DaggorathState:
         holes_ladders: bytes | None = None,
     ) -> None:
         values = _schema.unpack(data)
-        for name, _, _ in FIELDS:
-            object.__setattr__(self, name, values[name])
+        for field in FIELDS:
+            object.__setattr__(self, field.name, values[field.name])
 
         interval = values["heart_beat_interval"]
         object.__setattr__(self, "heart_rate", 0.0 if interval == 0 else 60.0 / interval)
@@ -293,11 +325,13 @@ class DaggorathState:
             object.__setattr__(self, "hands", None)
             object.__setattr__(self, "pack", None)
             object.__setattr__(self, "objects", None)
+            object.__setattr__(self, "lit_torch", None)
         else:
-            hands, pack, floor_objects = decode_objects(objects)
+            hands, pack, floor_objects, lit_torch = decode_objects(objects)
             object.__setattr__(self, "hands", hands)
             object.__setattr__(self, "pack", pack)
             object.__setattr__(self, "objects", floor_objects)
+            object.__setattr__(self, "lit_torch", lit_torch)
 
         # The win's terminal: a hand holding the FINAL ring (0x12), set by
         # INCANT FINAL. A derived true-state fact used by both the env's
@@ -323,15 +357,15 @@ class DaggorathState:
     def as_perceived(self) -> dict[str, np.ndarray]:
         """Return the state as perceived by the player, as a Dict observation.
 
-        The scalars are the nineteen always-present fields, including the
-        display mode. The world channels are gated: hands are always present;
+        The scalars are the perceived subset of FIELDS — the facts the player
+        honestly sees. The world channels are gated: hands are always present;
         the pack appears only in EXAMINE; creatures, objects, and the map
         appear only in LOOK with physical light, within the line-of-sight
         corridor walk. Empty object slots and unseen map cells use the 0xFF
         sentinel.
         """
         scalars = np.array(
-            [getattr(self, name) for name, _, _ in FIELDS],
+            [getattr(self, field.name) for field in PERCEIVED_FIELDS],
             dtype=np.uint16,
         )
 

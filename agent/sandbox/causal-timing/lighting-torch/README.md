@@ -19,8 +19,8 @@ The changed fields can be named before the run, so a failure is unambiguous. Thi
 
 | When | Command | Expect *matched* | Expect *changed* |
 |---|---|---|---|
-| frame 1100 | `PULL LEFT TORCH` | yes | the torch moves pack → hand: `leftHandPtr`/`rightHandPtr`, `firstPackPtr`, `leftHandClass`/`rightHandClass` — and **no** torch-light scalar |
-| frame 2000 | `USE LEFT` | yes | the torch lights: `torchMinutes`, `torchPhysicalLight`, then `effectiveLightPhysical` |
+| frame 1100 | `PULL LEFT TORCH` | yes | the torch moves pack → hand: the `hands`/`pack` channels — and **no** light change |
+| frame 2000 | `USE LEFT` | yes | the torch lights: `lit_torch` (true state) lights, then `effectiveLightPhysical` brightens |
 
 The frames assume ~60 Hz and leave ~2.9 s of margin between boot and the first post. They are parameters to tune, not facts.
 
@@ -28,8 +28,8 @@ The frames assume ~60 Hz and leave ~2.9 s of margin between boot and the first p
 
 The columns this experiment treats as an effect, chosen from the shared signal set in the parent:
 
-- `leftHandPtr`, `rightHandPtr`, `firstPackPtr`, `leftHandClass`, `rightHandClass` — the object moved.
-- `torchMinutes`, `torchPhysicalLight`, `effectiveLightPhysical` — the torch lit.
+- the `hands`/`pack` channels — the object moved.
+- `lit_torch` (minutes, physical light) and `effectiveLightPhysical` — the torch lit.
 
 Every other column is recorded but ignored here.
 

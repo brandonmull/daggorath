@@ -25,6 +25,7 @@ from daggorath_gym.state import (
     FIELDS,
     FLOOR_OBJECT_CAPACITY,
     FLOOR_OBJECT_RAW_BYTES,
+    FLOOR_OBJECTS_BYTES,
     FRAME_LEN,
     HAND_COUNT,
     HANDS_BYTES,
@@ -37,6 +38,8 @@ from daggorath_gym.state import (
     OBJECTS_BYTES,
     PACK_BYTES,
     PACK_CAPACITY,
+    PERCEIVED_FIELDS,
+    TORCH_RAW_BYTES,
     _DISPLAY_EXAMINE,
     _DISPLAY_LOOK,
     DaggorathState,
@@ -55,12 +58,12 @@ def _build_test_frame() -> bytes:
     The frame is constructed from FIELDS itself — no hardcoded positions.
     """
     frame = bytearray(FRAME_LEN)
-    for field_index, (_name, offset, width) in enumerate(FIELDS):
-        if width == 1:
-            frame[offset] = field_index & 0xFF
+    for field_index, field in enumerate(FIELDS):
+        if field.width == 1:
+            frame[field.offset] = field_index & 0xFF
         else:
-            frame[offset] = field_index & 0xFF
-            frame[offset + 1] = (field_index >> 8) & 0xFF
+            frame[field.offset] = field_index & 0xFF
+            frame[field.offset + 1] = (field_index >> 8) & 0xFF
     return bytes(frame)
 
 
@@ -68,16 +71,18 @@ def _build_test_frame() -> bytes:
 
 def test_frame_length_matches_schema():
     """FRAME_LEN equals the sum of all field widths."""
-    expected = sum(width for _, _, width in FIELDS)
+    expected = sum(field.width for field in FIELDS)
     assert FRAME_LEN == expected
 
 
 def test_offsets_are_contiguous():
     """Every field starts exactly where the previous field ended."""
     position = 0
-    for name, offset, width in FIELDS:
-        assert offset == position, f"expected {name} at offset {position}, got {offset}"
-        position += width
+    for field in FIELDS:
+        assert field.offset == position, (
+            f"expected {field.name} at offset {position}, got {field.offset}"
+        )
+        position += field.width
     assert position == FRAME_LEN
 
 
@@ -87,8 +92,8 @@ def test_round_trip():
     """Every field in the schema survives a round trip through DaggorathState."""
     data = _build_test_frame()
     state = DaggorathState(data)
-    for field_index, (name, _offset, _width) in enumerate(FIELDS):
-        assert getattr(state, name) == field_index
+    for field_index, field in enumerate(FIELDS):
+        assert getattr(state, field.name) == field_index
 
 
 def test_rejects_wrong_length():
@@ -107,9 +112,9 @@ def test_heart_rate():
     frame = bytearray(FRAME_LEN)
 
     # interval = 20 → 60 / 20 = 3.0 beats/sec
-    for name, offset, width in FIELDS:
-        frame[offset] = 0
-    interval_offset = dict((n, o) for n, o, _ in FIELDS)["heart_beat_interval"]
+    for field in FIELDS:
+        frame[field.offset] = 0
+    interval_offset = {f.name: f.offset for f in FIELDS}["heart_beat_interval"]
     frame[interval_offset] = 20
     state = DaggorathState(bytes(frame))
     assert state.heart_rate == 3.0
@@ -166,7 +171,7 @@ def test_as_perceived():
     perceived = state.as_perceived()
     assert isinstance(perceived, dict)
     assert perceived["scalars"].dtype == np.uint16
-    assert len(perceived["scalars"]) == len(FIELDS)
+    assert len(perceived["scalars"]) == len(PERCEIVED_FIELDS)
 
 
 # ---- world-channel decoding -------------------------------------------------
@@ -196,24 +201,30 @@ def test_decode_creatures_shape_and_order():
 
 
 def test_decode_objects_shapes():
-    """decode_objects yields hands (2, 3), pack (8, 3), and floor (8, 5)."""
-    hands, pack, floor_objects = decode_objects(bytes(OBJECTS_BYTES))
+    """decode_objects yields hands (2, 3), pack (8, 3), floor (8, 5), torch (6,)."""
+    hands, pack, floor_objects, lit_torch = decode_objects(bytes(OBJECTS_BYTES))
     assert hands.shape == (HAND_COUNT, OBJECT_RAW_BYTES)
     assert pack.shape == (PACK_CAPACITY, OBJECT_RAW_BYTES)
     assert floor_objects.shape == (FLOOR_OBJECT_CAPACITY, FLOOR_OBJECT_RAW_BYTES)
+    assert lit_torch.shape == (TORCH_RAW_BYTES,)
 
 
 def test_decode_objects_layout():
-    """decode_objects splits the record into hands, pack, and floor correctly."""
+    """decode_objects splits the record into hands, pack, floor, and torch correctly."""
     payload = bytearray(OBJECTS_BYTES)
     floor_start = HANDS_BYTES + PACK_BYTES
     payload[floor_start] = 0x04  # first floor entry's class (SWORD)
     payload[floor_start + 3] = 9  # X
     payload[floor_start + 4] = 5  # Y
-    _hands, _pack, floor_objects = decode_objects(bytes(payload))
+    torch_start = HANDS_BYTES + PACK_BYTES + FLOOR_OBJECTS_BYTES
+    payload[torch_start] = 0x05  # torch class (TORCH)
+    payload[torch_start + 4] = 7  # torch physical light
+    _hands, _pack, floor_objects, lit_torch = decode_objects(bytes(payload))
     assert floor_objects[0][0] == 0x04
     assert floor_objects[0][3] == 9
     assert floor_objects[0][4] == 5
+    assert lit_torch[0] == 0x05
+    assert lit_torch[4] == 7
 
 
 def test_decode_holes_ladders_shape_and_layout():
@@ -274,7 +285,7 @@ def _build_frame(**field_values) -> bytes:
     Width-2 fields are written little-endian, matching the wire format.
     """
     frame = bytearray(FRAME_LEN)
-    offsets = {name: (offset, width) for name, offset, width in FIELDS}
+    offsets = {field.name: (field.offset, field.width) for field in FIELDS}
     for name, value in field_values.items():
         offset, width = offsets[name]
         if width == 1:
@@ -312,9 +323,10 @@ def _build_creatures_bytes(slots):
     return bytes(creatures)
 
 
-def _build_objects_bytes(hands=(), pack=(), floor=()):
-    """Build an object record from hands/pack (class, proper, reveal) and
-    floor (class, proper, reveal, X, Y) entries; empty slots are 0xFF."""
+def _build_objects_bytes(hands=(), pack=(), floor=(), torch=(0xFF, 0xFF, 0xFF, 0, 0, 0)):
+    """Build an object record from hands/pack (class, proper, reveal), floor
+    (class, proper, reveal, X, Y), and torch (class, proper, reveal, minutes,
+    physical light, magic light) entries; empty slots are 0xFF."""
     payload = bytearray([0xFF] * OBJECTS_BYTES)
     for index, (class_byte, proper, reveal) in enumerate(hands):
         offset = index * OBJECT_RAW_BYTES
@@ -333,6 +345,8 @@ def _build_objects_bytes(hands=(), pack=(), floor=()):
         payload[offset + 2] = reveal
         payload[offset + 3] = x
         payload[offset + 4] = y
+    torch_offset = HANDS_BYTES + PACK_BYTES + FLOOR_OBJECTS_BYTES
+    payload[torch_offset:torch_offset + TORCH_RAW_BYTES] = torch
     return bytes(payload)
 
 

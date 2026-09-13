@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Causal-diff probe: verify the state diff and the primitive-field choice.
+"""Causal-diff probe: verify the state diff and the cause/effect split.
 
 Drives the real Daggorath environment through the torch-lighting event —
-PULL LEFT TORCH, then USE LEFT — and diffs the perceived scalar fields
-before and after each command. It checks that the USE diff recovers
-"light the torch" as one primitive cause (`torch_physical_light`), with every
-other change reported as noise.
+PULL LEFT TORCH, then USE LEFT — and diffs the perceived scalars before and
+after each command. It checks that the USE diff recovers "light the torch"
+as one perceived effect (effective_light_physical rising) and that the true
+state's lit-torch record reports the primitive cause (its physical light),
+with every other change reported as noise.
 
 Run: python agent/sandbox/causal-diff/server.py
 """
@@ -26,19 +27,22 @@ from daggorath_gym.commands import (
 )
 from daggorath_gym.emulator import MameConfig
 from daggorath_gym.environment import DaggorathEnv
-from daggorath_gym.state import FIELDS
+from daggorath_gym.state import PERCEIVED_FIELDS
 
-# The torch event's primitive cause. The disassembly is the authority
-# (gym/docs/references/game/code.md): torch_physical_light is the number USE
-# writes into the lit torch's object slot. Every other scalar that changes —
-# the heartbeat, the tiredness, the burn-down timer — is noise.
-_PRIMITIVE_FIELDS = ("torch_physical_light",)
+# The torch event splits across the fact/valuation boundary. The perceived
+# effect — what the player sees — is effective_light_physical rising as the
+# dungeon brightens. The primitive cause — what USE writes directly — is the
+# torch's own light, a true-state fact in the lit-torch object record
+# (physical light sits at index 4 of the 6-byte torch entry). Every other
+# perceived scalar that changes — the heartbeat, the tiredness — is noise.
+_PERCEIVED_EFFECT_FIELDS = ("effective_light_physical",)
+_TORCH_PHYSICAL_LIGHT_INDEX = 4
 
 # Maximum no-op frames to wait for a command's effect to settle before failing.
 _SETTLE_STEPS = 100
 
-# Field name -> its position in the perceived scalars array (FIELDS order).
-_FIELD_INDEX = {name: index for index, (name, _, _) in enumerate(FIELDS)}
+# Field name -> its position in the perceived scalars array.
+_FIELD_INDEX = {field.name: index for index, field in enumerate(PERCEIVED_FIELDS)}
 
 
 def _find_action(phrase):
@@ -84,9 +88,9 @@ def _diff_scalar_fields(before, after):
 
 
 def _classify_field(name):
-    """Label a changed scalar field: cause or noise."""
-    if name in _PRIMITIVE_FIELDS:
-        return "cause"
+    """Label a changed scalar field: effect or noise."""
+    if name in _PERCEIVED_EFFECT_FIELDS:
+        return "effect"
     return "noise"
 
 
@@ -103,8 +107,8 @@ def _hand_holds_torch(observation):
 
 
 def _torch_lit(observation):
-    """True once the torch's own light is on — the primitive cause."""
-    return _scalar(observation, "torch_physical_light") > 0
+    """True once the dungeon brightens — the perceived effect of a lit torch."""
+    return _scalar(observation, "effective_light_physical") > 0
 
 
 def _action_phrase(action):
@@ -157,13 +161,13 @@ def main():
 
         baseline = _scalar_values(observation)
         print("Causal-diff probe: torch-lighting event")
-        print(f"baseline: torch_physical_light={baseline['torch_physical_light']}")
+        print(f"baseline: effective_light_physical={baseline['effective_light_physical']}")
 
         failures = []
-        for name in _PRIMITIVE_FIELDS:
+        for name in _PERCEIVED_EFFECT_FIELDS:
             if baseline[name] != 0:
                 failures.append(
-                    f"baseline {name} is {baseline[name]}, expected 0 (torch not unlit)"
+                    f"baseline {name} is {baseline[name]}, expected 0 (dungeon dark)"
                 )
 
         # PULL LEFT TORCH: move the torch to hand. No torch field may change.
@@ -177,9 +181,9 @@ def main():
         _report_command(
             _PULL_ACTION, pull_changes, before_pull_hands, _hand_slots(observation)
         )
-        for name in _PRIMITIVE_FIELDS:
+        for name in _PERCEIVED_EFFECT_FIELDS:
             if name in pull_changes:
-                failures.append(f"PULL changed {name}; the torch lit before USE")
+                failures.append(f"PULL changed {name}; the dungeon brightened before USE")
 
         # USE LEFT: light the torch.
         before_use = _scalar_values(observation)
@@ -190,19 +194,23 @@ def main():
         use_changes = _diff_scalar_fields(before_use, after_use)
         _report_command(_USE_ACTION, use_changes, before_use_hands, _hand_slots(observation))
 
-        # Success criterion: torch_physical_light 0 -> N as the single cause.
-        # Every other change — heartbeat, tiredness, the burn-down timer — is
+        # Success criteria: the perceived effect (effective_light_physical) goes
+        # 0 -> N as the single change, and the true-state cause (the torch's
+        # own light) is now on. Every other change — heartbeat, tiredness — is
         # noise, reported but not failed.
-        torch_change = use_changes.get("torch_physical_light")
-        if torch_change is None or torch_change[0] != 0 or torch_change[1] <= 0:
-            failures.append("torch_physical_light did not go 0 -> N as the single cause")
+        light_change = use_changes.get("effective_light_physical")
+        if light_change is None or light_change[0] != 0 or light_change[1] <= 0:
+            failures.append("effective_light_physical did not go 0 -> N (dungeon stayed dark)")
+        torch_light = int(environment.current_state.lit_torch[_TORCH_PHYSICAL_LIGHT_INDEX])
+        if torch_light <= 0:
+            failures.append("the lit torch's physical light is 0; USE did not light it")
 
         if failures:
             print("\nRESULT: FAIL")
             for failure in failures:
                 print(f"  - {failure}")
             return 1
-        print("\nRESULT: PASS — one cause, the rest noise")
+        print("\nRESULT: PASS — the dungeon brightened (perceived), the torch lit (true state)")
         return 0
     finally:
         environment.close()

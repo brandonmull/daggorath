@@ -1,8 +1,8 @@
 -- State-field-verification plugin.
 -- Pokes known values into Daggorath RAM and verifies that the production
--- state.lua sampler reads them back correctly — proving the new state fields
--- (torch minutes/physical/magic via torchPtr, effective_light, m0221,
--- ambient_light) come from the right addresses with the right byte order.
+-- state.lua sampler reads them back correctly — proving the sampler's fields
+-- (the lit-torch record via torchPtr, ambient light, m0221) come from the
+-- right addresses with the right byte order.
 
 local exports = {}
 exports.name = "state-field-verification"

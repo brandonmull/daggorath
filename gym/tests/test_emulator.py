@@ -40,6 +40,7 @@ from daggorath_gym.state import (
     MAP_SIZE,
     OBJECT_RAW_BYTES,
     PACK_CAPACITY,
+    PERCEIVED_FIELDS,
     DaggorathState,
 )
 
@@ -84,7 +85,7 @@ def test_state_as_perceived_shape():
 
         assert isinstance(perceived, dict)
         assert perceived["scalars"].dtype == np.uint16
-        assert len(perceived["scalars"]) == len(FIELDS)
+        assert len(perceived["scalars"]) == len(PERCEIVED_FIELDS)
     finally:
         operator.stop()
 

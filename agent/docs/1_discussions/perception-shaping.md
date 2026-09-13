@@ -20,7 +20,7 @@ Uniformity suggested a flat structure, and the doubt surfaced it.
 
 > **the doubt** — "Isn't the perceived state a flat structure? I guess maybe it's not."
 
-It isn't. Six heterogeneous channels — a nineteen-value scalar vector, two small specifier vectors, a 32×4 creature table, an 8×3 object table, and a 2×32×32 map. Only the scalars are a flat list of facts; the map alone is a hundred times their size. So there is no single flat shape to filter over.
+It isn't. Six heterogeneous channels — a fourteen-value scalar vector, two small specifier vectors, a 32×4 creature table, an 8×3 object table, and a 2×32×32 map. Only the scalars are a flat list of facts; the map alone is a hundred times their size. So there is no single flat shape to filter over.
 
 ## Can a declarative interface express the shaping?
 

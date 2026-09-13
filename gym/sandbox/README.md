@@ -9,8 +9,8 @@ Short, focused experiments to validate design assumptions before they reach the 
 | `command-buffering/` | How fast can we send commands? Do we need rate management? | ✅ Proven |
 | `lua-module-loading/` | Verify `require()` works in MAME's Lua (vs `dofile()` fallback) | ✅ Proven |
 | `read-atomicity/` | Is the 32-slot creature scan torn? (frame-notifier timing) | ⏳ Deferred |
-| `state-field-verification/` | Do the new state fields (torch via torchPtr, effective_light, m0221) read the right addresses? | ✅ Passing |
-| `torch-light/` | Does lighting a torch via PULL + USE update the torch/light fields? | ✅ Passing |
+| `state-field-verification/` | Do the sampler's fields (the lit-torch record, ambient light, m0221) read the right addresses? | ✅ Passing |
+| `torch-light/` | Does lighting a torch via PULL + USE update the lit-torch record and effective light? | ✅ Passing |
 
 ## Running a sandbox
 

@@ -4,7 +4,7 @@ _1 Sep 2026_
 
 ## Decision
 
-The observation is a six-channel `Dict` — `scalars` (19, uint16), `hands` (2), `pack` (8), `creatures` (32×4), `objects` (8×3), and a two-plane `map` (2×32×32) — assembled by `as_perceived()` and gated by light (line-of-sight) and mode (LOOK vs EXAMINE).
+The observation is a six-channel `Dict` — `scalars` (14, uint16), `hands` (2), `pack` (8), `creatures` (32×4), `objects` (8×3), and a two-plane `map` (2×32×32) — assembled by `as_perceived()` and gated by light (line-of-sight) and mode (LOOK vs EXAMINE). The light scalars are the two effective sums only; the ambient and torch components are true-state.
 
 ## Why
 

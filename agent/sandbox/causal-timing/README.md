@@ -67,8 +67,8 @@ If the anchor shows *changed* tracking *matched* by a small, consistent gap, and
 | Consumption | `gameMode`, `perfectMatch`, `foundMatch`, `numWords`, `whereToPrint`, `nextToParse`, `comTextCursor` | *matched*, and the parser's progress |
 | Display | `displayFunction` | the EXAMINE / LOOK view switch |
 | Player | `atCellX`, `atCellY`, `atHeading`, `effectiveLightPhysical`, `playerStrength`, `m0221`, `heartBeatInterval` | movement, light, body |
-| Holdings | `leftHandPtr`, `rightHandPtr`, `firstPackPtr`, `torchPtr`, `leftHandClass`, `rightHandClass` | an object moved between pack and hand |
-| Torch | `torchMinutes`, `torchPhysicalLight` | the torch lit |
+| Holdings | `hands`, `pack` — the `O` channel's decoded identities | an object moved between pack and hand |
+| Torch | `lit_torch` — the `O` channel's torch entry (minutes, light) | the torch lit, true state |
 | Creatures | `creatureCount`, `nearCreatureType`, `nearCreatureDY`, `nearCreatureDX`, `nearCreatureStrength`, `nearCreatureDamage` | a change in combat |
 
 **Reading safely.** Both children follow the same rule (`gym/docs/findings/ram-signals.md`): read `displayFunction` (0x02B2) **first**, and read no other memory until the game is live (`0xCE66` for LOOK, `0xD495` for EXAMINE). Reading memory before the machine finishes booting crashes MAME outright. They share the boot sequence too: wait a fixed number of frames, press CR CR to leave the demo loop, and only then start posting commands.

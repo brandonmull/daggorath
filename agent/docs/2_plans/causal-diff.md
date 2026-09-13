@@ -28,28 +28,28 @@ Lighting a torch changes one number that matters — the torch's own light comin
 
 ## Technical details
 
-The probe is one Python script on nothing but the environment's public surface — `DaggorathEnv`, the perceived observation, the command API (`derive_command_index` and `DaggorathCommand.phrase`), and the `FIELDS` schema — with numpy for the array types.
+The probe is one Python script on nothing but the environment's public surface — `DaggorathEnv`, the perceived observation, the command API (`derive_command_index` and `DaggorathCommand.phrase`), and the `PERCEIVED_FIELDS` schema, plus the true state's `lit_torch` record for the cause — with numpy for the array types.
 
-It reads two perceived channels. `scalars` is a uint16 array holding the nineteen `FIELDS` in schema order, read by field name through `_FIELD_INDEX`, a name → position map built from `FIELDS`. `hands` is a uint8 array of two slots: `0xFF` for an empty hand, otherwise the held object's specifier index. Both channels are diffed before and after each command, so the PULL step's change — a hand now holding the torch — shows in the report, not just the USE step's scalar change.
+It reads two perceived channels. `scalars` is a uint16 array holding the fourteen `PERCEIVED_FIELDS` in schema order, read by field name through `_FIELD_INDEX`, a name → position map built from `PERCEIVED_FIELDS`. `hands` is a uint8 array of two slots: `0xFF` for an empty hand, otherwise the held object's specifier index. Both channels are diffed before and after each command, so the PULL step's change — a hand now holding the torch — shows in the report, not just the USE step's scalar change.
 
 The factored action space is verb form (0–25) × object specifier (0–30). `_find_action` scans it with `derive_command_index` and `DaggorathCommand.phrase` to recover the factored action for a phrase; `_find_noop_action` returns the first syntactically invalid pair — INCANT with a non-ring — which maps to no command, so the step advances a frame without acting. The scripted actions resolve to verb form 23 with object specifier 5 (PULL LEFT TORCH), verb form 11 with object specifier 0 (USE LEFT), and verb form 25 with object specifier 0 (the no-op).
 
-`_PRIMITIVE_FIELDS` is a one-field tuple holding torch_physical_light, the single cause; there is no derived field, because the burn-down timer is noise. `_SETTLE_STEPS` caps each settle wait at 100 no-op frames.
+`_PERCEIVED_EFFECT_FIELDS` is a one-field tuple holding effective_light_physical, the perceived effect; the primitive cause — the torch's own light — is read from the true state's `lit_torch` record, not a scalar. `_SETTLE_STEPS` caps each settle wait at 100 no-op frames.
 
 The flow of `main()`:
 
 ```
 main()
     → builds the environment headless
-    → resets and reads the baseline; the torch must be unlit
+    → resets and reads the baseline; the dungeon must be dark
     → plays PULL LEFT TORCH
         → sends the command through the environment's step
         → advances frames until a hand holds the torch
         → checks that a hand holds the torch
     → plays USE LEFT
         → sends the command through the environment's step
-        → advances frames until the torch lights
-        → checks that the torch's light is on
+        → advances frames until the dungeon brightens
+        → checks the perceived effect and the true-state torch light
     → prints the report and returns pass or fail
 ```
 
@@ -76,7 +76,7 @@ _diff_scalar_fields()
 
 _classify_field()
     → takes a field name
-    → returns cause or noise
+    → returns effect or noise
 
 _hand_slots()
     → reads the hands channel
@@ -87,7 +87,7 @@ _hand_holds_torch()
     → returns true when either hand slot is not the empty sentinel
 
 _torch_lit()
-    → returns true once the torch's light is on
+    → returns true once the dungeon brightens
 
 _action_phrase()
     → returns the command phrase for a factored action, for the report
@@ -112,4 +112,4 @@ _report_command()
 |----------|-----------------|
 | `../1_discussions/knowledge-and-reasoning.md` | The reasoning this probe checks — the diff, the three-part unit, the deferred contingency |
 | `gym/docs/3_decisions/state.md` | The true-state schema the diff reads |
-| `gym/docs/references/game/code.md` | The disassembly — the single primitive cause, torch_physical_light |
+| `gym/docs/references/game/code.md` | The disassembly — the primitive cause (torch_physical_light) and the perceived effect |
