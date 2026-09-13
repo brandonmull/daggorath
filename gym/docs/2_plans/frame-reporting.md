@@ -6,9 +6,17 @@ _See [overview.md](../../../docs/overview.md) for project context and architectu
 
 The state channel is change-gated: it writes a record only when something differs from the last snapshot, and writes nothing at all while the game sits still. That hides the frame number and the still frames, which the agent needs to attribute causes — the argument is in [`../1_discussions/frame-reporting.md`](../1_discussions/frame-reporting.md). This plan changes the channel to report every frame.
 
-The scope is the wire format and its two sides — the Lua sampler and `MameOperator`. The producer gains a frame marker and always writes one report per game frame; the reader parses the marker, skips empty frames, and returns the frame number alongside the state. The environment's `step` keeps its outward behavior.
+The scope is the wire format and its two sides — the Lua sampler and `MameOperator`. The producer gains a frame marker and always writes one report per game frame; the reader parses the marker, skips empty frames, and returns the frame number alongside the state. The environment's `reset`/`step` unpack the pair.
 
 Out of scope: the sandbox's frame-by-frame reader (a subclass that keeps empty frames rather than skipping them), the parser schema, and the step-unit choice. Those are separate plans.
+
+## Build order
+
+Each stage ships with a verification test, and each is gated on the one before:
+
+1. **Producer.** The sampler writes the frame marker and change-gated content every frame. Verified by `tests/test_frame_reporting.py`, reading the raw FIFO bytes and checking the wire format.
+2. **Reader.** `recv()` assembles a whole frame, skips empty ones, and returns `(frame_number, state)`. Gated on the producer test. Verified by a `recv()` test.
+3. **Environment.** `reset`/`step` unpack the pair, keeping their outward behavior. Gated on the reader test. Verified by the existing `test_environment.py`.
 
 ## The wire format
 
@@ -32,18 +40,21 @@ _onFrame()
 
 The `report_every_frame` field and the `REPORT_EVERY_FRAME` environment variable go away; the plugin entry stops reading and passing them. The snapshot comparison stays — it is what keeps the content change-gated even while the marker is every-frame.
 
+A producer-only integration test, `tests/test_frame_reporting.py`, reads the raw FIFO bytes the sampler writes — not `recv` — and checks the wire format: an `F` marker on every frame, an advancing 4-byte little-endian frame number, empty frames as a marker alone, and change-gated content only between markers.
+
 ## The reader
 
 `MameOperator` gains the marker and returns the frame number alongside the state:
 
 ```
 recv()
-    → reads records until it reaches a frame that carried content
-    → skips empty frames
+    → reads records, treating the next F marker as the frame boundary
+    → assembles every content record of the frame into one state
+    → skips empty frames (a marker with no content)
     → returns the frame number and the state for the next changed frame
 ```
 
-`_RECORD_LENGTHS` gains the `F` tag at five bytes — the tag plus the 4-byte number — and the number is unpacked little-endian. The environment's `reset` and `step` unpack the pair and ignore the number; their outward behavior — send, read the next change, return it — is unchanged. The tests that call `recv` directly unpack the pair too, and the every-frame test is rewritten to assert the heartbeat and the advancing frame number.
+`_RECORD_LENGTHS` gains the `F` tag at five bytes — the tag plus the 4-byte number — and the number is unpacked little-endian.
 
 ## Reference Documents
 
