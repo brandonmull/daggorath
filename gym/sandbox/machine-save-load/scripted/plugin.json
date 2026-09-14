@@ -1,0 +1,10 @@
+{
+	"plugin": {
+		"name": "scripted",
+		"description": "Plays a scripted situation and freezes it with machine:save, or reports a frozen machine after loading one",
+		"version": "0.0.1",
+		"author": "Daggorath Gym",
+		"type": "plugin",
+		"start": "true"
+	}
+}

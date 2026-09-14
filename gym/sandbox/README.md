@@ -11,6 +11,7 @@ Short, focused experiments to validate design assumptions before they reach the 
 | `read-atomicity/` | Is the 32-slot creature scan torn? (frame-notifier timing) | ⏳ Deferred |
 | `state-field-verification/` | Do the sampler's fields (the lit-torch record, ambient light, m0221) read the right addresses? | ✅ Passing |
 | `torch-light/` | Does lighting a torch via PULL + USE update the lit-torch record and effective light? | ✅ Passing |
+| `machine-save-load/` | Can a frozen machine be resumed on demand, and does it still take commands? | ✅ Passing |
 
 ## Running a sandbox
 
