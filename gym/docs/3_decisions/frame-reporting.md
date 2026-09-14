@@ -13,7 +13,7 @@ The state channel writes an `F` marker — a 4-byte little-endian frame number �
 - **Change detection was about bytes, not frames.** The original objection was to rewriting the full ~154-byte state every idle frame. Content stays change-gated, and the frame number, written only on the frames that changed, costs next to nothing.
 - **The reader is a pipe, not a judge.** It reports every change as `(frame_number, state)` and never decides a change is uninteresting — the consumer does. The environment keeps the latest state; the sandbox counts the gaps to measure stillness.
 - **No heartbeat; the timeout is the liveness signal.** The empty marker's one remaining value was certainty against missed frames, which the notifier already provides. A stuck MAME surfaces as a `TimeoutError` from the reader's `_STATE_READ_TIMEOUT`.
-- **The step unit is the consumer's choice.** Frame versus change versus settled command is decided downstream — a predicate in the environment's step loop, measured by the causal-timing sandbox — not by a knob on the sampler.
+- **The step unit is the consumer's choice.** Frame versus change versus settled command is decided downstream — a predicate in the environment's step loop, measured by the command-latency sandbox — not by a knob on the sampler.
 
 ## What Changed
 

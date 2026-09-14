@@ -19,7 +19,7 @@ Three levels of evidence, in increasing strength:
 ## Open questions
 
 - **Which situations, for which fields.** A catalog of "situation → must-change field" pairs, starting with the deterministic ones (torch PULL/USE, EXAMINE, ATTACK) before the nondeterministic (combat, creatures).
-- **The control.** The state just before the command versus just after — the same post-to-changed window the causal-timing sandbox already measures.
+- **The control.** The state just before the command versus just after — the same post-to-changed window the command-latency sandbox already measures.
 - **Reproduce versus poke.** Whether reproduction replaces the poke sandbox or sits beside it — wiring is the poke's job, meaning is the reproduction's.
 - **Transients.** Whether every-frame reporting is required to catch a one-frame change, or the change persists long enough to observe change-gated.
 

@@ -76,7 +76,7 @@ The consumer never extends. A need prompts the environment to add a fact to true
 
 A consumer needs state on its own schedule, independent of the command that produced the state.
 
-> **the proposal** — "We should avoid DaggorathEnv for the causal-timing sandbox and use MameOperator directly, so we aren't hampered by the discrete nature of step() and can issue a command independently of observing frames."
+> **the proposal** — "We should avoid DaggorathEnv for the command-latency sandbox and use MameOperator directly, so we aren't hampered by the discrete nature of step() and can issue a command independently of observing frames."
 >
 > **the agreement** — "That's the right layer. step() sends the command and takes the next record in one call, while a sandbox that wants to watch the frames after a command needs the command and the observation apart. MameOperator keeps send and recv separate already."
 
@@ -97,4 +97,4 @@ So a consumer that wants the command and the observation apart reaches for MameO
 | `../2_plans/extensibility.md` | The plan this discussion leads to |
 | `events.md` | The deferred event channel and the transient-signal proposal |
 | `../3_decisions/state.md` | The state module as it stands |
-| `../../../agent/sandbox/causal-timing/README.md` | The experiment that raised the need |
+| `../../../agent/sandbox/command-latency/README.md` | The experiment that raised the need |

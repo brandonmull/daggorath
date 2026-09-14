@@ -4,7 +4,7 @@ _See [overview.md](../../../docs/overview.md) for project context and architectu
 
 ## Purpose and scope
 
-The causal-timing sandbox's `fighting-monster` experiment needs to see a hit land, not just a death — its control is "an attack with nothing in range changes nothing," and its test is "an attack that connects changes a combat field." The discussion in `../1_discussions/combat-detection.md` narrows that to two creature-array fields the `C` record omits: `damage` (slot + 10) and `strength` (slot + 0), the player's no-health-bar facts.
+The command-latency sandbox's `fighting-monster` experiment needs to see a hit land, not just a death — its control is "an attack with nothing in range changes nothing," and its test is "an attack that connects changes a combat field." The discussion in `../1_discussions/combat-detection.md` narrows that to two creature-array fields the `C` record omits: `damage` (slot + 10) and `strength` (slot + 0), the player's no-health-bar facts.
 
 The scope is to put those on the wire as true-state facts, so a non-lethal hit is observable. This document is a pre-build spec; the open questions below must settle before implementation.
 
@@ -28,4 +28,4 @@ The creature array is already scanned single-pass into the `C` record — `alive
 | `../2_plans/creatures.md` | The creature array scan this extends |
 | `gym/docs/references/game/ram.md` | The creature array layout — `strength` and `damage` slots |
 | `docs/game/combat-model.md` | The strength-vs-damage combat model |
-| `../../../agent/sandbox/causal-timing/fighting-monster/README.md` | The experiment these fields serve |
+| `../../../agent/sandbox/command-latency/fighting-monster/README.md` | The experiment these fields serve |

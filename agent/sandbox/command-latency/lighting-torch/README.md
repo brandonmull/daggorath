@@ -1,6 +1,6 @@
 # Lighting a Torch
 
-_Experiment 1 of [`causal-timing/`](../README.md) — the deterministic anchor._
+_Experiment 1 of [`command-latency/`](../README.md) — the deterministic anchor._
 
 ## Goal
 

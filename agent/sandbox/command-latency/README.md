@@ -1,4 +1,4 @@
-# Causal Timing
+# Command Latency
 
 _Observe the three signals of a command — matched, written, executed — and their temporal relation, to decide how one training step should be defined._
 
@@ -30,7 +30,7 @@ Of the three signals, *written* and *executed* are on the wire; *matched* is not
 It is the same question asked twice — *for this command, when did it match, and when did the state change?* So the sandbox is one shared harness with two sets of parameters, not two separate experiments. Everything the two commands have in common lives here; only what differs lives in a child folder.
 
 ```
-causal-timing/
+command-latency/
 ├── README.md            this document — the shared framing, the harness, and the division
 ├── lighting-torch/      experiment 1 — the deterministic anchor
 └── fighting-monster/    experiment 2 — the opportunistic case

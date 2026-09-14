@@ -109,7 +109,7 @@ The exchange that produced this is worth keeping:
 
 So the approach is to **separate the action from its effect and wait out a window**: issue one action, block further actions, watch what changes during the window, then close it and record the effect. While the agent is unsure whether a cause is real, the window can stay open longer; as its confidence grows, it can shorten. A window that changes length makes the reward's time discount harder to reason about, so a fixed-length window is simpler.
 
-The sandbox at [`../../sandbox/causal-timing/`](../../sandbox/causal-timing/README.md) is measuring these three moments. This doc lays out the question; the sandbox is where the answer comes from.
+The sandbox at [`../../sandbox/command-latency/`](../../sandbox/command-latency/README.md) is measuring these three moments. This doc lays out the question; the sandbox is where the answer comes from.
 
 The three moments and the no-action control are the two halves of one need — causal attribution — named in [`causal-attribution.md`](causal-attribution.md).
 
@@ -147,5 +147,5 @@ The match does not have to be exact. A loose match, weighted by how well the rem
 |---|---|
 | [`knowledge-and-reasoning.md`](knowledge-and-reasoning.md) | The theory — why knowledge lives outside the weights |
 | [`curriculum.md`](curriculum.md) | The lesson ordering and the per-lesson rewards the valuation layer feeds |
-| [`../../sandbox/causal-timing/`](../../sandbox/causal-timing/README.md) | The experiment measuring the three moments |
+| [`../../sandbox/command-latency/`](../../sandbox/command-latency/README.md) | The experiment measuring the three moments |
 | [`../../sandbox/causal-diff/`](../../sandbox/causal-diff/README.md) | The probe computing the effect diff |

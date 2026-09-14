@@ -4,7 +4,7 @@ _See [overview.md](../../../docs/overview.md) for project context and architectu
 
 ## Purpose and scope
 
-The causal-timing sandbox triangulates three signals of a command's life — *matched*, *written*, *executed*. This plan adds only *matched*; *written* (`command_text`) and *executed* (the state change) already ship. The parser leaves four transient markers in RAM: `perfectMatch` (0x027B), the one that fires only on a complete, valid match, and three that change at the same instant — `foundMatch` (0x0278), `numWords` (0x0279), and `whereToPrint` (0x02B7) — which together form the "command-consumed fingerprint" catalogued in `gym/docs/findings/ram-signals.md`.
+The command-latency sandbox triangulates three signals of a command's life — *matched*, *written*, *executed*. This plan adds only *matched*; *written* (`command_text`) and *executed* (the state change) already ship. The parser leaves four transient markers in RAM: `perfectMatch` (0x027B), the one that fires only on a complete, valid match, and three that change at the same instant — `foundMatch` (0x0278), `numWords` (0x0279), and `whereToPrint` (0x02B7) — which together form the "command-consumed fingerprint" catalogued in `gym/docs/findings/ram-signals.md`.
 
 The scope is those four bytes, filed into the state schema as a new `consumption` category, non-perceived. This resolves the open question left in `../1_discussions/extensibility.md` — whether the recognition flag ships as a state field or as the separate event record `../1_discussions/events.md` proposes. The answer here is a state field: it is a fact about the parser, read every frame like the other scalars, and the sandbox reads it through the environment rather than an event channel.
 
@@ -30,4 +30,4 @@ Each field is filed into `FIELDS` (Python) and `SCHEMA` (Lua) under a new `consu
 | `gym/docs/findings/ram-signals.md` | The command-consumed fingerprint — the four addresses and their meanings |
 | `../1_discussions/extensibility.md` | The open question this plan resolves |
 | `../1_discussions/events.md` | The deferred event channel this plan declines |
-| `../../../agent/sandbox/causal-timing/README.md` | The sandbox whose *matched* moment these fields serve |
+| `../../../agent/sandbox/command-latency/README.md` | The sandbox whose *matched* moment these fields serve |

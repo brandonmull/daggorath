@@ -53,4 +53,4 @@ The environment's part is the complete temporal record — every frame, numbered
 | `sb3-capabilities.md` | Why the edges cannot live in the weights — SB3 is model-free and holds no explicit model |
 | `../../../gym/docs/3_decisions/frame-reporting.md` | The environment-side reporting the temporal record demands |
 | `../../../gym/docs/1_discussions/extensibility.md` | The two consumers the environment must serve |
-| `../../sandbox/causal-timing/README.md` | The experiment measuring the three moments |
+| `../../sandbox/command-latency/README.md` | The experiment measuring the three moments |

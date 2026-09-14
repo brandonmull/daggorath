@@ -1,6 +1,6 @@
 # Fighting a Monster
 
-_Experiment 2 of [`causal-timing/`](../README.md) — the opportunistic case._
+_Experiment 2 of [`command-latency/`](../README.md) — the opportunistic case._
 
 ## Goal
 
