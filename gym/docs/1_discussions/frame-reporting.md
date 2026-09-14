@@ -42,7 +42,7 @@ Reporting every frame appears to contradict a settled principle. The project's o
 >
 > **the answer** — "The issue was sending the state every frame — roughly 154 bytes. Change detection existed because writing that much on every idle frame was wasteful, and a blocked write inside the frame notifier freezes MAME. An empty heartbeat is five bytes. The objection was about bytes, not about frames."
 
-The principle was never about frames; it was about not rewriting the full state when nothing moved. The heartbeat keeps the spirit — content is still change-gated, only what changed is sent — while the frame number, five bytes on an idle frame, costs next to nothing. Reporting every frame does not resurrect the problem the principle solved.
+The principle was never about frames; it was about not rewriting the full state when nothing moved. The design keeps the spirit — content is still change-gated, only what changed is sent — and the frame number, written only on the frames that changed, costs next to nothing. Numbering the changed frames does not resurrect the problem the principle solved.
 
 ## Should the reader skip empty frames, or expose every frame?
 

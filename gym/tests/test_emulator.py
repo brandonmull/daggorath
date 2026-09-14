@@ -71,7 +71,7 @@ def _read_raw_records(operator, count, timeout):
     """Read up to `count` complete records from the producer's FIFO.
 
     Reads the FIFO directly — not through `recv` — so the test sees the
-    producer's raw bytes, empty frames included.
+    producer's raw bytes, frame-number gaps included.
     """
     records = []
     buffer = b""
