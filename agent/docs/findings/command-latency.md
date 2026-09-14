@@ -32,3 +32,4 @@ The first reading reported USE matching six frames after the post: a latched fla
 | Document | What it contains |
 |---|---|
 | [`../../sandbox/command-latency/README.md`](../../sandbox/command-latency/README.md) | The sandbox these readings come from |
+| [`../1_discussions/command-abbreviation.md`](../1_discussions/command-abbreviation.md) | The delivery follow-up these readings opened — whether to post abbreviated phrases |
