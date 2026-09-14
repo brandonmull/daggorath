@@ -2,7 +2,7 @@
 
 _What the agent is ultimately trying to learn — telling what it caused apart from what the world does on its own — and why that one need shapes the environment's reporting and the knowledge the agent keeps. Open discussion; it names the motivation the other threads hang from, and keeps the exchanges that named it._
 
-The agent's deepest task is causal attribution: telling "I caused this" from "the world does this on its own." The three moments, the no-action control, and the frame reporting are not separate concerns — they are the two halves of that one need. This discussion names the need and argues why it matters. The shape of the knowledge it forces is in [`knowledge-representation.md`](knowledge-representation.md); the reporting it demands is in [`frame-reporting.md`](../../../gym/docs/1_discussions/frame-reporting.md).
+The agent's deepest task is causal attribution: telling "I caused this" from "the world does this on its own." The three moments, the no-action control, and the frame reporting are not separate concerns — they are the two halves of that one need. This discussion names the need and argues why it matters. The shape of the knowledge it forces is in [`knowledge-representation.md`](knowledge-representation.md); the reporting it demands is in [`frame-reporting.md`](../../../gym/docs/3_decisions/frame-reporting.md).
 
 ## What is the agent trying to tell apart?
 
@@ -42,7 +42,7 @@ If the two halves are to be observed, the environment has to report the record t
 
 > **the requirement** — "Attribution needs time and stillness, and a change-gated channel gives neither. You see the creature move, but not that it held still for twelve frames first, and not how far apart its steps are. 'The world does this on its own' is precisely the knowledge change-gating throws away."
 
-The environment's part is the complete temporal record — every frame, numbered, with what changed on it — and that part is argued on the environment side in [`frame-reporting.md`](../../../gym/docs/1_discussions/frame-reporting.md). The consumer's part is what to do with that record: how to group frames into a step, and whether "no action" is a command or just the absence of one — observe-only in the knowledge base, an action in the Gym step. Both are the consumer's choices, not the producer's. The two halves also leave two open questions behind: the settle signal — how to know a command finished — and false causation — how to catch a link labeled causal that later turns out wrong. And the command edges and world edges must be explicit — readable and chainable — so they cannot live in the weights: SB3 is model-free and holds no explicit model, so the edges live in the knowledge base, and SB3 learns only the value that ranks them.
+The environment's part is the complete temporal record — every frame, numbered, with what changed on it — and that part is argued on the environment side in [`frame-reporting.md`](../../../gym/docs/3_decisions/frame-reporting.md). The consumer's part is what to do with that record: how to group frames into a step, and whether "no action" is a command or just the absence of one — observe-only in the knowledge base, an action in the Gym step. Both are the consumer's choices, not the producer's. The two halves also leave two open questions behind: the settle signal — how to know a command finished — and false causation — how to catch a link labeled causal that later turns out wrong. And the command edges and world edges must be explicit — readable and chainable — so they cannot live in the weights: SB3 is model-free and holds no explicit model, so the edges live in the knowledge base, and SB3 learns only the value that ranks them.
 
 ## Reference
 
@@ -51,6 +51,6 @@ The environment's part is the complete temporal record — every frame, numbered
 | `knowledge-representation.md` | The shape of the knowledge this motivation forces — the three moments, the no-action control, false causation |
 | `knowledge-and-reasoning.md` | Why that knowledge must live outside the weights |
 | `sb3-capabilities.md` | Why the edges cannot live in the weights — SB3 is model-free and holds no explicit model |
-| `../../../gym/docs/1_discussions/frame-reporting.md` | The environment-side reporting the temporal record demands |
+| `../../../gym/docs/3_decisions/frame-reporting.md` | The environment-side reporting the temporal record demands |
 | `../../../gym/docs/1_discussions/extensibility.md` | The two consumers the environment must serve |
 | `../../sandbox/causal-timing/README.md` | The experiment measuring the three moments |
