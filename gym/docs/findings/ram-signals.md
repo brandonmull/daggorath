@@ -37,7 +37,7 @@ The transition from 0x0000 happens when the game exits the demo loop, regardless
 
 <br>
 
-## How do I know a command was accepted?
+## How do I know a command was matched?
 
 **perfectMatch** at `0x027B`. A 1-byte flag set by the game's command parser when it successfully matches a complete input line against the command word tables.
 
@@ -47,6 +47,8 @@ The transition from 0x0000 happens when the game exits the demo loop, regardless
 | 0xFF | Parser found a complete, valid command match |
 
 This signal fires once per command — it flips from 0 to 0xFF at the moment the parser finishes consuming a `\r`-terminated line and matching it against the command word tables. It resets to 0 shortly after as the parser returns to idle.
+
+`perfectMatch` marks the *matched* moment — the parser finished matching the line — not the *executed* moment. Executed is the command's effect, observed as a state change; the handler running in between has no flag of its own.
 
 Three other signals change at the same moment, forming a reliable command-consumed fingerprint:
 

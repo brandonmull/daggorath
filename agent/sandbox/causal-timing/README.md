@@ -1,6 +1,6 @@
 # Causal Timing
 
-_Observe the three moments of a command — matched, executed, changed — and their temporal relation, to decide how one training step should be defined._
+_Observe the three signals of a command — matched, written, executed — and their temporal relation, to decide how one training step should be defined._
 
 The design argument behind it — what a transition is, and why the three moments matter — is in [`../../docs/1_discussions/knowledge-representation.md`](../../docs/1_discussions/knowledge-representation.md).
 
@@ -8,22 +8,22 @@ This sandbox is agent-side, not part of the environment. It nails down the basic
 
 ## Goal
 
-Measure the three moments of a command and how far apart they are:
+Measure the three signals of a command and how far apart they are:
 
-- **Matched** — the parser recognizes a complete command. `perfectMatch` (0x027B) flags this.
-- **Executed** — the command's handler runs.
-- **Changed** — the game state actually differs as a result.
+- **Matched** — the parser finishes matching the line. `perfectMatch` (0x027B) flags this.
+- **Written** — the game writes its response to the command area: the echoed command, or `???` on rejection. `command_text` (screen-derived) carries this.
+- **Executed** — the game actually executes the command and the state changes as a result.
 
-The measurement is the gap between *matched* and *changed*: when a command is recognized, how long until the state actually changes — and is that gap always about the same, or unrelated? *Matched* can be read from memory; *executed* and *changed* cannot, so the sandbox measures them. Why that gap matters to the agent's knowledge is in the design doc linked above.
+The measurement is the gap between *matched* and *executed*: when the command is recognized, how long until its effect lands — and is that gap always about the same, or unrelated? *Matched* is a RAM flag; *executed* has no flag — it is the effect, read off the state change — and the handler running in between is inferred, not observed. *Written* is a third signal, already on the wire, checked against the other two. Why that gap matters to the agent's knowledge is in the design doc linked above.
 
 ## What the code does today
 
 - `gym/daggorath_gym/emulator.py` — `MameOperator` keeps `send` and `recv` separate, and `IpcConfig(report_every_frame=True)` makes the sampler write a numeric frame every frame, not only on change. That is the hook the sandbox uses to watch frames after a command.
 - `gym/daggorath_gym/state.py` — `FIELDS` is a list of `StateField(name, offset, width, perceived)` grouped by category, and is the extension point: a new fact is filed into its category and picked up on both sides of the wire.
-- `perfectMatch` is **not yet on the wire**: the sixteen `FIELDS` do not include the parser's flags. What is shipped is `command_text` (the command-area echo, decoded from screen pixels) and the derived `command_rejected` (`"???" in command_text`).
+- `perfectMatch` is **not yet on the wire**: the sixteen `FIELDS` do not include the parser's flags. What is shipped is *written* — `command_text` (the command-area echo, decoded from screen pixels) and the derived `command_rejected` (`"???" in command_text`) — and *executed*, the state change.
 - `agent/sandbox/causal-diff/server.py` — its probe settles with `_step_until_settled(env, obs, predicate)`, capped at `_SETTLE_STEPS = 100` no-op frames, waiting for a *command-specific* observable (hand holds torch / dungeon brightens). That is right for a probe checking a known answer, but a per-command predicate does not scale to 154 commands.
 
-Two candidate general signals exist, and neither is certainly "changed": `perfectMatch` (a RAM flag, not on the wire) and `command_text` (an echo, screen-derived). The echo filling marks the command going in and the echo clearing marks the parser finishing with it — plausibly closer to "processing complete," but still not "state changed."
+Of the three signals, *written* and *executed* are on the wire; *matched* is not. Neither `perfectMatch` nor `command_text` is certainly *executed*: the echo filling marks the command going in and the echo clearing marks the parser finishing with it — plausibly closer to "processing complete," but still not "state changed."
 
 ## How the problem divides
 
@@ -59,7 +59,7 @@ If the anchor shows *changed* tracking *matched* by a small, consistent gap, and
 
 ## The shared core
 
-**Reading the three moments.** Nothing in memory says "the handler ran," so *executed* can't be read directly. Only the two ends can: the parser's recognition flag `perfectMatch` (0x027B) marks *matched*, and a difference in the state marks *changed*. *Executed* is whatever happens between them, guessed from the gap. Every frame records:
+**Reading the three signals.** Nothing in memory says "the handler ran," so *executed* has no flag — it is the effect, read off the state change. The other two can be read: the parser's recognition flag `perfectMatch` (0x027B) marks *matched*, and the command-area text `command_text` marks *written*. The handler running between them is inferred, not observed. Every frame records:
 
 | Group | Columns | Witnesses |
 |---|---|---|
