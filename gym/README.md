@@ -29,6 +29,7 @@ The root `setup.sh` handles all of this interactively. To do it by hand instead:
 Usage tips:
 - **Headless training**: `-video none -sound none` (pass `MameConfig(window=False, sound="none")` to MameOperator)
 - **With sound**: `-sound sdl` (best quality on WSLg); upgrade SDL2 with `sudo apt install --only-upgrade libsdl2-2.0-0`
+- **Inspecting a running machine**: MAME's Lua console (`-console`) opens a REPL in the terminal alongside the window, where `manager.machine:save("name")` and `manager.machine:load("name")` freeze and restore the machine mid-run — see `sandbox/machine-save-load/`. It works on the CoCo 2B, whose save states are supported; the CoCo 3's are not.
 
 ## Known Issues
 

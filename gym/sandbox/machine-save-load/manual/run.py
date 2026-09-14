@@ -86,7 +86,11 @@ def main():
     STATE_DIRECTORY.mkdir(parents=True, exist_ok=True)
     before = _state_files()
     _print_instructions(autosave)
-    subprocess.run(_build_command(autosave), check=False)
+    # The console plugin writes its command history beside the process, so run
+    # from the scratch directory rather than wherever this was launched.
+    subprocess.run(
+        _build_command(autosave), check=False, cwd=str(GYM_PATH / ".mame")
+    )
     _print_states(before)
     return 0
 

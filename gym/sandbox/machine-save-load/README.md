@@ -17,6 +17,17 @@ A state saved by hand can be verified by the scripted check, which is what makes
 - **The directory.** States land under `gym/.mame/state/coco2b/`, one file per name, and both `logs/` and `.mame/` are gitignored.
 - **The proof of a load.** Emulated machine time is the address-free witness — a restored state carries its own, so it reads as the moment that was saved rather than as a fresh boot — and the game's own fields say whether the situation came back.
 
+## Using a state
+
+A state resumes with MAME's own flag, on the machine that wrote it:
+
+```bash
+mame coco2b daggorath -rompath <gym>/emulation/roms -hashpath <gym>/emulation/hash \
+  -state_directory <gym>/.mame/state -state torch-walk -window
+```
+
+The environment launches `coco3`, which cannot load one of these, so a state is a `coco2b` session's starting point rather than a training run's. And nothing should post a command the instant a state resumes: the machine is still busy and the priming Return is in flight, so an immediate post lands hundreds of frames late. Give it about ten seconds first.
+
 ## Running
 
 ```bash

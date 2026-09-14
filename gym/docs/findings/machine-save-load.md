@@ -33,6 +33,8 @@ The in-game menu works, but not as a way to name a state. **Tab** both opens it 
 
 A state frozen in live play resumes live: the sampler reported on frame 4, where a fresh boot shows the demo loop for hundreds of frames first. It is not immediately receptive, though — a command posted the instant the state came back matched 416 frames late, with the machine still busy and the plugin's own keyboard priming in flight. Ten seconds of quiet and the same command behaved normally.
 
+A load in the middle of a session behaved the same way: the machine came back to the saved moment with the game still running afterwards, which is what a launch flag cannot do.
+
 A consumer that loads a state and then posts should settle first; one that only asks "does it still take a command" can post at once and ignore the offset.
 
 ## Reaching these calls
@@ -51,7 +53,7 @@ A consumer that loads a state and then posts should settle first; one that only 
 
 The environment trains on `coco3`. Episode-start states are a `coco2b` capability, so a lesson that begins from a chosen situation — the unit the curriculum is built from — needs either the CoCo 2B or save/restore support for the GIME inside MAME.
 
-There is also a gap between the sandbox and the environment that the sandbox does not close: it can call `machine:save` because it *is* a plugin, while the environment drives MAME from Python and has no way to ask for a save at a chosen moment. Starting an episode from a state needs only the `-state` flag, but producing one from a scripted play would need a control path from Python into the plugin — a channel that does not exist yet.
+There is also a gap between the sandbox and the environment that the sandbox does not close: it can call `machine:save` because it *is* a plugin, while the environment drives MAME from Python and has no way to ask for a save at a chosen moment. Starting a session from a state is the easier half — the operator would pass `-state` and `-state_directory` on its launch — but it would have to run on a machine that can load states, which the CoCo 3 cannot.
 
 ## Reference
 
