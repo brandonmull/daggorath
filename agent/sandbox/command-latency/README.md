@@ -4,7 +4,7 @@ _Observe the three signals of a command — matched, written, executed — and t
 
 The design argument behind it — what a transition is, and why the three moments matter — is in [`../../docs/1_discussions/knowledge-representation.md`](../../docs/1_discussions/knowledge-representation.md).
 
-This sandbox is agent-side, not part of the environment. It nails down the basic unit the agent's experience is built from — the same job as its sibling [`../causal-diff/`](../causal-diff/README.md). It reads state through the environment's reporting (`MameOperator` with `report_every_frame`), but what it measures belongs to the agent's knowledge, not to the game.
+This sandbox is agent-side, not part of the environment. It nails down the basic unit the agent's experience is built from — the same job as its sibling [`../causal-diff/`](../causal-diff/README.md). It reads state through the environment's reporting — `MameOperator`, whose `recv()` reports each changed frame with its frame number — but what it measures belongs to the agent's knowledge, not to the game.
 
 ## Goal
 
@@ -74,7 +74,11 @@ If the anchor shows *changed* tracking *matched* by a small, consistent gap, and
 
 **Reading a run.** For each command, the analysis starts from the state just before it was posted. It then finds the first frame where *matched* is set, and the first frame where any watched field changes. That second one is the effect, and how far it is from the post is the measurement.
 
-**Why read through the environment.** `report_every_frame` makes the sampler write a frame every frame, and `FIELDS` is the extension point, so the sandbox can read frame-by-frame and ask for new facts (`perfectMatch`) without a plugin of its own.
+**Recording, then reading.** A session decides nothing while it runs: it records every changed frame's columns and every post. The interpretation — which columns count as a command's effect, where the echo appeared, where the parser matched — is a second pass over the written trace, so the same trace can be read again with a different field set.
+
+**Repeating a session.** A session is one fresh boot, and the game's opening state is deterministic, so the same schedule replays from the same situation every time. A run is several sessions; the spread of their offsets is the variability.
+
+**Why read through the environment.** The sampler writes a frame marker with its frame number on every frame a channel changed, and `FIELDS` is the extension point, so the sandbox reads frame by frame and asks for new facts (`perfectMatch`) through the environment rather than a plugin of its own.
 
 ## The experiments
 
@@ -83,16 +87,16 @@ Each child is planned in its own folder and states its own schedule, watched fie
 - [`lighting-torch/`](lighting-torch/README.md) — the deterministic anchor.
 - [`fighting-monster/`](fighting-monster/README.md) — the opportunistic case.
 
-They share the log format and the analysis described above; neither re-describes them.
+They share the log format and the analysis described above; neither re-describes them. The first run's readings are in [`../../docs/findings/command-latency.md`](../../docs/findings/command-latency.md).
 
 ## Build order
 
 The torch and perception refactor shipped first (see `gym/docs/3_decisions/perception.md`). What remains, in order:
 
-1. **The observation wrapper.** A `FrameObservation` over `MameOperator` with `report_every_frame=True` — one frame per read, with a frame counter. Shared, built before either child, and easy to duplicate by accident if not.
+1. **The observation wrapper.** Shipped — `frame_observation.py`'s `FrameObservation` reads `recv()`'s `(frame_number, state)` change list: one change per read, with the frame number and the gap since the last change. Shared, built before either child, and easy to duplicate by accident if not.
 2. **The parser schema.** Shipped — `matched` is on the wire (`perfect_match` and its companions, the `consumption` category).
-3. **The shared harness.** One log format and one analysis, built before either child.
-4. **`lighting-torch/`.** The anchor runs first, because if the harness cannot show a *known* effect landing after a *known* match, nothing later can be trusted.
+3. **The shared harness.** Shipped — `harness.py`: one log format, one analysis, and the session loop that reboots between samples.
+4. **`lighting-torch/`.** Shipped — the anchor, which records the torch sequence in three fresh sessions.
 5. **`fighting-monster/`.** Reuses the harness unchanged; its watched fields need the combat-detection fields per `gym/docs/2_plans/combat-detection.md`.
 6. **Read the two traces together.** The answer comes from comparing them, not from either one alone.
 
@@ -118,7 +122,11 @@ This is a measurement, not a pass or fail. What comes out is the timing, and wha
 
 ## Running
 
-Not built yet. When the harness lands, both children run through `MameOperator` (the environment's plugin), so no `-pluginspath` wiring is needed — `MameOperator` already lists the project and MAME's system plugin directories.
+```bash
+python agent/sandbox/command-latency/lighting-torch/run.py
+```
+
+Both children run through `MameOperator` (the environment's plugin), so no `-pluginspath` wiring is needed — `MameOperator` already lists the project and MAME's system plugin directories. The torch experiment records three fresh sessions; each session boots the game, waits for live play, posts its schedule, and writes a trace to `logs/`.
 
 
 
