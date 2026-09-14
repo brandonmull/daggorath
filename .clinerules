@@ -197,3 +197,19 @@ When writing or revising files in `gym/docs/1_discussions/` or `agent/docs/1_dis
 
 18. **Hold one question form across the headings.**
     Sections read as a chain when they share a shape. Mixing "Does…?", "Why…?", "What…?", and "Should…?" reads as a list even when the argument isn't one. Fix the form and let the answers carry the variation.
+
+## Seed Prompt Writing Principles
+
+When writing a seed prompt to hand the work to a fresh session:
+
+1. **The goal comes first, stated plainly.**
+    Open with the concrete task the new session must do, in plain words. No preamble — a seed prompt is a handoff, not an introduction.
+
+2. **Don't restate the project's purpose.**
+    The repo already says what this project is (`README` and this file). Repeating "we're training an RL agent to play Daggorath" burns the opening on something the reader can see for itself.
+
+3. **Keep it short.**
+    A seed is a pointer, not a briefing: the goal, the current state in a sentence or two, and the next step. The reader hunts down the rest.
+
+4. **Name only the critical references.**
+    One or two files that frame the current work — the README or plan that matters now — and stop. The reader follows links and searches; a wall of references is a briefing again.
