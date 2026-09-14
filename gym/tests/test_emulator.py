@@ -99,8 +99,16 @@ def _read_raw_records(operator, count, timeout):
     return records
 
 
-def test_producer_reports_every_frame():
-    """The producer writes an F marker every frame, at ~60 Hz."""
+def _receive_latest_state(operator):
+    """Block until a changed frame arrives and return its state."""
+    while True:
+        changes = operator.recv()
+        if changes:
+            return changes[-1][1]
+
+
+def test_producer_reports_changed_frames():
+    """The producer writes an F marker only on changed frames, at ~60 Hz."""
     operator = MameOperator(
         mame_config=MameConfig(window=False, sound="none"),
         ipc_config=_IPC,
@@ -121,28 +129,22 @@ def test_producer_reports_every_frame():
         records = first + records
 
         frame_numbers = []
-        saw_content = False
         for record in records:
             if record[:1] == b"F":
                 frame_numbers.append(struct.unpack("<I", record[1:5])[0])
             else:
                 assert record[:1] in _CONTENT_TAGS
-                saw_content = True
 
         # Frame numbers advance, and are sane (little-endian, not byte-swapped).
         assert len(frame_numbers) >= 2
         assert all(a < b for a, b in zip(frame_numbers, frame_numbers[1:]))
         assert all(0 < n < 10_000_000 for n in frame_numbers)
 
-        # The heartbeat: at least one empty frame (a marker followed directly
-        # by the next marker, with no content in between).
+        # Empty frames are not written: consecutive markers are separated by a
+        # gap in the frame number, never by a bare marker.
         assert any(
-            records[i][:1] == b"F" and records[i + 1][:1] == b"F"
-            for i in range(len(records) - 1)
-        ), "no empty frame (marker alone) appeared"
-
-        # Content also flowed, so the marker is not the only thing written.
-        assert saw_content
+            b > a + 1 for a, b in zip(frame_numbers, frame_numbers[1:])
+        ), "no gap between consecutive frame markers appeared"
 
         # The frame number advances at ~60 Hz over the 10-second run.
         hz = (frame_numbers[-1] - first_frame) / (end_time - start_time)
@@ -151,25 +153,35 @@ def test_producer_reports_every_frame():
         operator.stop()
 
 
-def test_recv_returns_frame_number_and_state():
-    """recv() returns (frame_number, state) with advancing frame numbers."""
+def test_recv_returns_a_list_of_changes():
+    """recv() returns a list of (frame_number, state), one per changed frame."""
     operator = MameOperator(
         mame_config=MameConfig(window=False, sound="none"),
         ipc_config=_IPC,
     )
     try:
         operator.start()
-        frame_number, state = operator.recv()
-        assert isinstance(frame_number, int)
-        assert isinstance(state, DaggorathState)
-
-        previous = frame_number
-        for _ in range(20):
-            frame_number, state = operator.recv()
+        changes = operator.recv()
+        assert isinstance(changes, list)
+        assert len(changes) >= 1
+        for frame_number, state in changes:
             assert isinstance(frame_number, int)
             assert isinstance(state, DaggorathState)
-            assert frame_number > previous
-            previous = frame_number
+
+        # Frame numbers advance across calls, and empty frames are dropped, so
+        # gaps appear between consecutive changed frames.
+        previous = changes[-1][0]
+        saw_gap = False
+        for _ in range(50):
+            for frame_number, state in operator.recv():
+                assert isinstance(state, DaggorathState)
+                assert frame_number > previous
+                if frame_number > previous + 1:
+                    saw_gap = True
+                previous = frame_number
+            if saw_gap:
+                break
+        assert saw_gap
     finally:
         operator.stop()
 
@@ -179,7 +191,7 @@ def test_operator_starts_and_stops():
     operator = MameOperator(ipc_config=_IPC)
     try:
         operator.start()
-        _, state = operator.recv()
+        state = _receive_latest_state(operator)
         assert isinstance(state, DaggorathState)
     finally:
         operator.stop()
@@ -190,7 +202,7 @@ def test_state_has_valid_values():
     operator = MameOperator(ipc_config=_IPC)
     try:
         operator.start()
-        _, state = operator.recv()
+        state = _receive_latest_state(operator)
 
         # Game mode: demo (0xFF) or live (0x00) — both are valid at startup
         assert state.game_mode in (0x00, 0xFF)
@@ -206,7 +218,7 @@ def test_state_as_perceived_shape():
     operator = MameOperator(ipc_config=_IPC)
     try:
         operator.start()
-        _, state = operator.recv()
+        state = _receive_latest_state(operator)
         perceived = state.as_perceived()
 
         assert isinstance(perceived, dict)
@@ -223,7 +235,7 @@ def test_world_channels_arrive_and_decode():
         operator.start()
         state = None
         for _ in range(50):
-            _, state = operator.recv()
+            state = _receive_latest_state(operator)
             if (
                 state.maze is not None
                 and state.creatures is not None

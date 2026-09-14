@@ -32,12 +32,20 @@ _TORCH_PHYSICAL_LIGHT_INDEX = 4
 _TORCH_MAGIC_LIGHT_INDEX = 5
 
 
+def _receive_latest_state(operator):
+    """Block until a change arrives and return the latest state."""
+    while True:
+        changes = operator.recv()
+        if changes:
+            return changes[-1][1]
+
+
 def _read_until(operator, predicate, max_records=100):
-    """Read records until predicate(state) is true, the cap, or a read timeout."""
+    """Read states until predicate(state) is true, the cap, or a read timeout."""
     seen = []
     for _ in range(max_records):
         try:
-            state = operator.recv()
+            state = _receive_latest_state(operator)
         except TimeoutError:
             break
         seen.append(state)
@@ -73,7 +81,7 @@ def main():
         operator.start()
 
         print("=== Initial state (torch unlit) ===")
-        initial = operator.recv()
+        initial = _receive_latest_state(operator)
         print(f"command area: {initial.command_text!r}")
         _print_torch_light("initial", initial)
 

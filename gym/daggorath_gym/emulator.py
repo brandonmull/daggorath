@@ -6,11 +6,12 @@ a simple start/stop/recv/send API.
     State channel:   named pipe (FIFO) — MAME writes, Python reads
     Command channel: TCP socket         — Python writes, MAME reads
 
-The state channel carries fixed-size tagged records (no delimiter). Every
-frame emits an F marker followed by the records that changed that frame,
-written and flushed together; a frame with no changes is the marker alone:
+The state channel carries fixed-size tagged records (no delimiter). A frame
+with at least one changed channel emits an F marker followed by the records
+that changed, written and flushed together; a frame with no change emits
+nothing, and the gap between consecutive frame numbers marks the still frames:
 
-    F  + 4-byte little-endian frame number             frame marker, every frame
+    F  + 4-byte little-endian frame number             frame marker, on changed frames
     S  + 20-byte frame                                 state only changed
     T  + 1-byte comColor + 1024 pixel bytes            text only changed
     B  + 20-byte frame + 1-byte comColor + 1024 px     both changed
@@ -193,27 +194,41 @@ class MameOperator:
 
     # ---------- communication ----------
 
-    def recv(self) -> tuple[int, DaggorathState]:
-        """Block until the next changed frame arrives, returning (frame_number, state).
+    def recv(self) -> list[tuple[int, DaggorathState]]:
+        """Block until a change arrives, then return every buffered change.
 
-        A frame is the F marker followed by every record that changed that
-        frame, up to the next marker. Empty frames (a marker with no content)
-        are skipped; the returned state reflects all of a frame's content
-        records, reconstructed from the last-known values.
+        Returns a list of (frame_number, state) pairs, one per changed frame,
+        in arrival order. Empty frames are dropped; their presence shows as a
+        gap between consecutive frame numbers.
         """
-        while True:
-            record = self._read_record()
+        changes: list[tuple[int, DaggorathState]] = []
+
+        record = self._read_record()
+        while record is not None:
             if record[0:1] == b"F":
                 frame_number = struct.unpack("<I", record[1:5])[0]
                 if self._frame_state is not None:
-                    completed_number = self._frame_number
-                    completed_state = self._frame_state
-                    self._frame_number = frame_number
-                    self._frame_state = None
-                    return completed_number, completed_state
+                    changes.append((self._frame_number, self._frame_state))
                 self._frame_number = frame_number
-                continue
-            self._frame_state = self._parse_record(record)
+                self._frame_state = None
+            else:
+                self._frame_state = self._parse_record(record)
+
+            record = self._extract_record()
+            if record is None:
+                try:
+                    chunk = os.read(self._state_fd, 4096)
+                except OSError:
+                    chunk = b""
+                if chunk:
+                    self._receive_buffer += chunk
+                    record = self._extract_record()
+
+        if self._frame_state is not None:
+            changes.append((self._frame_number, self._frame_state))
+        self._frame_number = None
+        self._frame_state = None
+        return changes
 
     def send(self, command: commands.DaggorathCommand) -> None:
         """Send a command index (one byte) to MAME on the command socket."""

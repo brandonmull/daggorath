@@ -26,6 +26,14 @@ With the frame number settled, the question turns to the frames that carry nothi
 
 Silence is ambiguous in a way an empty frame is not. A reader that sees nothing cannot tell "the game is quiet" from "the game is stuck or a record was missed." The empty frame resolves that — it says the frame passed and nothing changed — and it doubles as a liveness signal, because a heartbeat that stops is a fault, not a quiet room.
 
+The empty marker was revisited once the reader stopped keeping empty frames. The remaining question was whether the marker's certainty of completeness was worth a report for every quiet frame.
+
+> **the correction** — "There's no reason for Lua to report empty frames, as long as it reports frame numbers."
+>
+> **the doubt** — "The only reason to write empty frames is for certainty that it didn't accidentally miss any."
+
+The frame number alone makes the still frames visible — the gap between consecutive numbers is the record of the frames that passed with nothing changed. The certainty the empty marker would add is already given by the frame notifier, which fires once per frame and counts the frame before any gate, so a missed frame would be a bug the marker could only detect, never prevent. The marker is written only when something changed.
+
 ## Should change detection drop the whole frame when quiet, or only the content?
 
 Reporting every frame appears to contradict a settled principle. The project's own overview says the state channel emits a record only when something meaningful changes, never every frame.
@@ -35,6 +43,22 @@ Reporting every frame appears to contradict a settled principle. The project's o
 > **the answer** — "The issue was sending the state every frame — roughly 154 bytes. Change detection existed because writing that much on every idle frame was wasteful, and a blocked write inside the frame notifier freezes MAME. An empty heartbeat is five bytes. The objection was about bytes, not about frames."
 
 The principle was never about frames; it was about not rewriting the full state when nothing moved. The heartbeat keeps the spirit — content is still change-gated, only what changed is sent — while the frame number, five bytes on an idle frame, costs next to nothing. Reporting every frame does not resurrect the problem the principle solved.
+
+## Should the reader skip empty frames, or expose every frame?
+
+The wire carries every frame, but the reader sits between it and the consumer, and could hide the empty ones. Whether it does decides whether the consumer can still choose its own step unit.
+
+> **the proposal** — "The reader should report the changes — each change as a new state, every frame numbered — and mark the frames where nothing changed. The consumer decides which changes matter."
+>
+> **the agreement** — "Right. The reader is a pipe, not a judge: it turns the wire's records into a list of changes, but it never decides a change is uninteresting. The environment drops the unchanged frames; the sandbox keeps them to measure the stillness."
+
+The reader stays uniform for the same reason the sampler does: only the consumer knows which changes it needs. If the reader drops the empties, the sandbox can no longer see the stillness it is measuring.
+
+The decision to expose every empty frame was revisited when the reader's return type was pinned down. A list of `(frame_number, state)` pairs leaves no slot for `None`, so an empty frame had to either repeat the previous state or drop out entirely.
+
+> **the correction** — "I'm fine with dropping empty frames. It doesn't really help to have them."
+
+An empty frame is still visible once it is dropped. The gap between the frame numbers on either side of it is the record that a frame passed with nothing changed, and the sandbox measures stillness by counting that gap. The reader's type stays honest — every entry is a real change.
 
 ## Should the step-unit be the sampler's setting, or the consumer's choice?
 

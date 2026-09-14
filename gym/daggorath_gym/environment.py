@@ -67,7 +67,7 @@ class DaggorathEnv(gym.Env):
         )
         self._emulator.start()
 
-        state = self._emulator.recv()
+        state = self._receive_latest_state()
         self._current_state = state
 
         info: dict = {}
@@ -84,12 +84,12 @@ class DaggorathEnv(gym.Env):
         if command_index is not None:
             self._emulator.send(DaggorathCommand(index=command_index))
 
-        # Receive the next game state. Step/frame sync is "latest": one
-        # record per recv(), merged into the latest known state. The command's
+        # Receive the next game state. recv() returns a list of changes; the
+        # empty frames are already dropped by the reader. The command's
         # effect may land a step later — harmless, because the reward wrapper
         # computes from state transitions. "Wait-for-settle" (perfectMatch on
         # the wire) is the follow-up.
-        state = self._emulator.recv()
+        state = self._receive_latest_state()
         self._current_state = state
 
         reward = self._compute_reward(state)
@@ -109,6 +109,13 @@ class DaggorathEnv(gym.Env):
     def current_state(self) -> DaggorathState | None:
         """The most recent true (ungated) state, for the reward wrapper."""
         return self._current_state
+
+    def _receive_latest_state(self) -> DaggorathState:
+        """Block until a change arrives and return the latest state."""
+        while True:
+            changes = self._emulator.recv()
+            if changes:
+                return changes[-1][1]
 
     def _compute_reward(self, state) -> float:
         # The environment returns a placeholder reward; the agent-side reward
