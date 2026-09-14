@@ -42,30 +42,35 @@ FIELDS: list[StateField] = [
     # mode
     StateField("game_mode", 0, 1, perceived=True),
     StateField("display_function", 1, 2, perceived=True),
+    # consumption — the parser's command-consumed fingerprint, true-state only
+    StateField("perfect_match", 3, 1),
+    StateField("found_match", 4, 1),
+    StateField("num_words", 5, 1),
+    StateField("where_to_print", 6, 1),
     # position
-    StateField("at_floor", 3, 1, perceived=True),
-    StateField("at_cell_x", 4, 1, perceived=True),
-    StateField("at_cell_y", 5, 1, perceived=True),
-    StateField("at_heading", 6, 1, perceived=True),
+    StateField("at_floor", 7, 1, perceived=True),
+    StateField("at_cell_x", 8, 1, perceived=True),
+    StateField("at_cell_y", 9, 1, perceived=True),
+    StateField("at_heading", 10, 1, perceived=True),
     # light — the components (ambient) are true-state only; the player sees
     # the two sums (effective light).
-    StateField("ambient_light_physical", 7, 1),
-    StateField("ambient_light_magical", 8, 1),
-    StateField("effective_light_physical", 9, 1, perceived=True),
-    StateField("effective_light_magical", 10, 1, perceived=True),
+    StateField("ambient_light_physical", 11, 1),
+    StateField("ambient_light_magical", 12, 1),
+    StateField("effective_light_physical", 13, 1, perceived=True),
+    StateField("effective_light_magical", 14, 1, perceived=True),
     # body
-    StateField("player_weight", 11, 2, perceived=True),
-    StateField("player_strength", 13, 2, perceived=True),
-    StateField("m0221", 15, 2, perceived=True),
-    StateField("player_fainting", 17, 1, perceived=True),
+    StateField("player_weight", 15, 2, perceived=True),
+    StateField("player_strength", 17, 2, perceived=True),
+    StateField("m0221", 19, 2, perceived=True),
+    StateField("player_fainting", 21, 1, perceived=True),
     # heart
-    StateField("heart_beat_interval", 18, 1, perceived=True),
+    StateField("heart_beat_interval", 22, 1, perceived=True),
     # wizard
-    StateField("evil_wizard_dead", 19, 1, perceived=True),
+    StateField("evil_wizard_dead", 23, 1, perceived=True),
 ]
 
-# Total frame length in bytes: 12 u8 + 4 u16 = 12 + 8 = 20
-FRAME_LEN = 20
+# Total frame length in bytes: 16 u8 + 4 u16 = 16 + 8 = 24
+FRAME_LEN = 24
 
 # Number of fields
 NUM_FIELDS = len(FIELDS)

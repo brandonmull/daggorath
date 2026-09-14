@@ -122,6 +122,11 @@ local SCHEMA = {
     -- mode
     { name = "gameMode",        addr = 0x0277, width = 1 },
     { name = "displayFunction", addr = 0x02B2, width = 2 },
+    -- consumption
+    { name = "perfectMatch",  addr = 0x027B, width = 1 },
+    { name = "foundMatch",    addr = 0x0278, width = 1 },
+    { name = "numWords",      addr = 0x0279, width = 1 },
+    { name = "whereToPrint",  addr = 0x02B7, width = 1 },
     -- position
     { name = "atFloor",         addr = 0x0281, width = 1 },
     { name = "atCellX",         addr = 0x0214, width = 1 },

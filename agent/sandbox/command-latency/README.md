@@ -18,12 +18,12 @@ The measurement is the gap between *matched* and *executed*: when the command is
 
 ## What the code does today
 
-- `gym/daggorath_gym/emulator.py` — `MameOperator` keeps `send` and `recv` separate, and `IpcConfig(report_every_frame=True)` makes the sampler write a numeric frame every frame, not only on change. That is the hook the sandbox uses to watch frames after a command.
+- `gym/daggorath_gym/emulator.py` — `MameOperator` keeps `send` and `recv` separate, and the frame number advances every frame. That is the hook the sandbox uses to watch frames after a command.
 - `gym/daggorath_gym/state.py` — `FIELDS` is a list of `StateField(name, offset, width, perceived)` grouped by category, and is the extension point: a new fact is filed into its category and picked up on both sides of the wire.
-- `perfectMatch` is **not yet on the wire**: the sixteen `FIELDS` do not include the parser's flags. What is shipped is *written* — `command_text` (the command-area echo, decoded from screen pixels) and the derived `command_rejected` (`"???" in command_text`) — and *executed*, the state change.
+- All three signals ship: *matched* is the `consumption` category in `FIELDS` (`perfect_match`, `found_match`, `num_words`, `where_to_print`); *written* is `command_text` (the command-area echo, decoded from screen pixels) and the derived `command_rejected` (`"???" in command_text`); *executed* is the state change.
 - `agent/sandbox/causal-diff/server.py` — its probe settles with `_step_until_settled(env, obs, predicate)`, capped at `_SETTLE_STEPS = 100` no-op frames, waiting for a *command-specific* observable (hand holds torch / dungeon brightens). That is right for a probe checking a known answer, but a per-command predicate does not scale to 154 commands.
 
-Of the three signals, *written* and *executed* are on the wire; *matched* is not. Neither `perfectMatch` nor `command_text` is certainly *executed*: the echo filling marks the command going in and the echo clearing marks the parser finishing with it — plausibly closer to "processing complete," but still not "state changed."
+Neither `perfectMatch` nor `command_text` is certainly *executed*: the echo filling marks the command going in and the echo clearing marks the parser finishing with it — plausibly closer to "processing complete," but still not "state changed."
 
 ## How the problem divides
 
@@ -90,7 +90,7 @@ They share the log format and the analysis described above; neither re-describes
 The torch and perception refactor shipped first (see `gym/docs/3_decisions/perception.md`). What remains, in order:
 
 1. **The observation wrapper.** A `FrameObservation` over `MameOperator` with `report_every_frame=True` — one frame per read, with a frame counter. Shared, built before either child, and easy to duplicate by accident if not.
-2. **The parser schema.** Add the command-consumption fields (`perfect_match` and its companions) per `gym/docs/2_plans/command-consumption.md`, so *matched* is on the wire.
+2. **The parser schema.** Shipped — `matched` is on the wire (`perfect_match` and its companions, the `consumption` category).
 3. **The shared harness.** One log format and one analysis, built before either child.
 4. **`lighting-torch/`.** The anchor runs first, because if the harness cannot show a *known* effect landing after a *known* match, nothing later can be trusted.
 5. **`fighting-monster/`.** Reuses the harness unchanged; its watched fields need the combat-detection fields per `gym/docs/2_plans/combat-detection.md`.
