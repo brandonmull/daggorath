@@ -47,7 +47,9 @@ None is scheduled here — both commands are expected to change something. If ei
 
 ## Plan
 
-When the shared harness is built, this folder adds only its schedule and this list of watched fields; the way state is read and analyzed stays in the parent. A first version can follow the example in `agent/sandbox/causal-diff/server.py`, which waits for a known outcome — except here we measure the wait instead of assuming it.
+`run.py` declares only the schedule and the watched-field reading; the recording, the session loop, and the analysis live in the parent's `harness.py`.
+
+Three fresh sessions are recorded, each a full boot, so the deterministic sequence replays from the same starting state every time and the offsets can be compared across sessions. A session writes every changed frame and every post without interpreting anything; the offsets to the echo, to the parser's match, and to the watched change are read from the traces afterward.
 
 ## Open questions
 
@@ -57,4 +59,8 @@ When the shared harness is built, this folder adds only its schedule and this li
 
 ## Running
 
-Not built yet.
+```bash
+python agent/sandbox/command-latency/lighting-torch/run.py
+```
+
+Traces land in `agent/sandbox/command-latency/logs/lighting-torch-<session>.log`.
