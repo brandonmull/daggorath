@@ -12,7 +12,16 @@ Training an RL bot to play Dungeons of Daggorath (1982) in MAME + Gymnasium.
 
 ## Git
 - **Never commit to git** — do not run `git add`, `git commit`, or any git command that modifies the repository. The user handles all git operations.
-- **Commit messages stay terse and conventional** — when suggesting one, give a short summary line and a brief body at most. Do not suggest commit messages that resemble documentation (no bulleted change-lists or long explanatory prose).
+- **Commit messages stay terse and conventional** — a short summary line, then a brief body at most. The summary names what the work delivers, the body says what it does and, when the commit carries one, what it found. No file lists, no bulleted change-lists, no documentation.
+- **Write the deed, not the token** — the body names what a command does ("pulling the torch", "lighting it"), not the game phrase or the code identifier, and uses the project's own vocabulary (`matched`, `written`, `executed`). Quote a name only when the change is about that name. Every verb keeps its object, and no term of art goes unexplained.
+
+  ```
+  feat: add the torch command-latency experiment
+
+  Records commands for pulling the torch and lighting it across three fresh
+  boots, and writes up the findings: the effect lands one frame after the
+  command is matched.
+  ```
 
 ## MAME & Lua
 - **MAME uses its own embedded Lua** — not the system Lua. LuaRocks packages cannot be loaded. Don't suggest LuaRocks.
