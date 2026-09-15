@@ -6,7 +6,7 @@ _How the agent's mind should be organized: what knowledge is, where it lives, an
 
 This discussion did not start as philosophy. It began as a concrete task: implement the first curriculum course, a reward machine for lighting a torch. It tracks the four-command recipe EXAMINE → PULL → LOOK → USE across five states (start, examined, held, looked, lit), detected from the true state. It grades each transition +1.0 to light the torch, +0.1 per step, and −0.1 for no advance, then composes that into the reward's existing layers.
 
-The first problem appeared while discussing it. The EXAMINE step was never there because the game requires it, and the game does not; a torch can be pulled and lit without examining. It was there to build the *habit* of examining before acting. That reversed the task: the first lesson was the habit, not the torch recipe. The torch machine, it turns out, teaches the *form* of that habit (examine, then pull) but not its *substance* (act on what was learned), because the boot pack is fixed and examining it reveals nothing new.
+The first problem appeared while discussing it. The EXAMINE step was never there because the game requires it, and the game does not; a torch can be pulled and lit without examining. It was there to build the *habit* of examining before acting. That reversed the task: the first lesson was the habit, not the torch recipe. The torch machine, it turns out, teaches the *form* of that habit (examine, then pull) and leaves out the *substance* (act on what was learned), because the boot pack is fixed, so examining always reveals the same contents and the choice never depends on what it reveals.
 
 Then a question about equipping opened the discussion: *how does the desire to have something of use become part of an acting agent*. The concrete task was abandoned. From there the discussion proceeds through a sequence: desire is the value function; a toddler cannot reason without experience; experience must be captured as knowledge; knowledge cannot live in the weights; on down to a symbol being a discretized vector and learning being the act of drawing walls.
 
@@ -22,7 +22,7 @@ Equipping an object is driven by wanting it, and that wanting had never been exp
 >
 > **the agreement** — "That's exactly it. So, what options do we have for modifying the agent's reasoning?"
 
-What "desire is the value function" means, mechanically: the agent has no separate wanting drive. It has V(s), a learned estimate of the expected future reward from each state, and wanting something is nothing other than V being higher in the states that have it than in the states that lack it. V is built up one Bellman step at a time as actual rewards (a kill, a new cell, survival) propagate backward to the states that preceded them. So desire is a *prediction* the agent has learned ("holding this predicts reward"), never a value the designer injected. To reward possession would be to fake that prediction, and the agent would learn to hold things rather than use them.
+What "desire is the value function" means, mechanically: the agent has no separate wanting drive. It has V(s), a learned estimate of the expected future reward from each state, and wanting something is nothing other than V being higher in the states that have it than in the states that lack it. V is built up one Bellman step at a time as actual rewards (a kill, a new cell, survival) propagate backward to the states that preceded them. So desire is a *prediction* the agent has learned ("holding this predicts reward"), taught by reward. To reward possession would be to fake that prediction, and the agent would learn to hold things rather than use them.
 
 ## Reasoning comes from experience
 
@@ -48,7 +48,7 @@ Experience must be captured as knowledge before it can be used for prediction, a
 
 The last line is the turn this doc follows. The premise, which was not a conclusion, was overturned. A weight is a static, compiled number, a mapping from observation to prediction, and it cannot hold the specific, episodic knowledge that must survive a display change. So knowledge lives in a **preliminary, reusable form**: a durable structure that the weights are *produced from* and *operate on*, and that, combined with per-task or per-episode data, produces the actionable weights for that task.
 
-Later, near the discussion of symbols, the reason the weights fail as a store was made clearer: knowledge captured in weights is **distributed**. "PULL moves pack→hand" is not stored anywhere you can point to; it is spread across the whole network. So when the task changes, the gradient disturbs the other facts stored in the same weights, and the knowledge is overwritten rather than reused. The contrast the composability argument later runs on is local versus distributed: a symbol is discrete, has clear identity, and composes by rules, while a weight is a coordinate in a continuous space with no meaning except through the other weights around it.
+Later, near the discussion of symbols, the reason the weights fail as a store was made clearer: knowledge captured in weights is **distributed**. "PULL moves pack→hand" is not stored anywhere you can point to; it is spread across all the weights. So when the task changes, the gradient disturbs the other facts stored in the same weights, and the knowledge is overwritten rather than reused. The contrast the composability argument later runs on is local versus distributed: a symbol is discrete, has clear identity, and composes by rules, while a weight is a coordinate in a continuous space with no meaning except through the other weights around it.
 
 ## What is knowledge, and what isn't it?
 
@@ -69,11 +69,11 @@ They had to be distinguished, and what separates most of them is generality:
 - **Reasoning**: knowledge applied to memory, producing predictions and decisions.
 - **Skill**: a procedural capability, executed after and selected by reasoning. Its weights are its implementation, not knowledge.
 
-Read against the list, the distinction becomes clear. Knowledge is what is true *across* situations, and memory is what is true *in this episode*: the general and the specific, which is exactly the generality the claim names. Causal structure is general, since it is the primary knowledge. The world model is broader only because it includes the specific (the state, the beliefs, the utility of one situation). Reasoning is what applies the general to the specific, and skill is not knowledge at all, executed only after reasoning has chosen it.
+Read against the list, the distinction becomes clear. Knowledge is what is true *across* situations, and memory is what is true *in this episode*: the general and the specific, which is exactly the generality the claim names. Causal structure is general, since it is the primary knowledge. The world model is broader only because it includes the specific (the state, the beliefs, the utility of one situation). Reasoning is what applies the general to the specific, and skill is separate from knowledge, executed only after reasoning has chosen it.
 
 ## How knowledge produces action
 
-Knowledge lives in a preliminary, reusable form, not in the weights. That answered *where* knowledge lives, but not *how* that form produces behavior. The how was the next question, and it led to a refinement that gave the conversation its shorthand:
+Knowledge lives in a preliminary, reusable form. That answered *where* knowledge lives, but not *how* that form produces behavior. The how was the next question, and it led to a refinement that gave the conversation its shorthand:
 
 > **the refinement** — "I really think of knowledge as some preliminary, reusable form that can be combined with some other set of learned data to produce actionable weights, per task."
 
@@ -81,9 +81,9 @@ That shorthand (knowledge plus data produces actionable weights) was then standi
 
 The torch chain was the shared ground: EXAMINE reveals the pack, PULL moves the torch to hand, USE lights it, light reveals the dungeon. The three candidate models each represented that chain differently:
 
-**Rules-as-knowledge.** The chain is a set of explicit rules (a transition relation) held outside any network. Reasoning composes them: from the goal *light*, chain backward. Light needs USE on a held torch, which needs PULL, which needs the torch in pack. The plan EXAMINE → PULL → LOOK → USE follows, inspectable. The limitation: the rules must be written or learned.
+**Rules-as-knowledge.** The chain is a set of explicit rules (a transition relation) held outside any reasoner. Reasoning composes them: from the goal *light*, chain backward. Light needs USE on a held torch, which needs PULL, which needs the torch in pack. The plan EXAMINE → PULL → LOOK → USE follows, inspectable. The limitation: the rules must be written or learned.
 
-**World-model-as-knowledge.** The chain is a learned transition model, a network separate from the policy, trained to predict PULL → torch in hand, USE → light, light → sight. Reasoning is rollout: from *dark, torch in pack*, the agent imagines PULL then USE and sees light → sight → new cells. The policy is produced by training inside those imagined rollouts, so the same model, given a different reward, trains *equip* without re-learning the dynamics.
+**World-model-as-knowledge.** The chain is a learned transition model, separate from the policy, trained to predict PULL → torch in hand, USE → light, light → sight. Reasoning is rollout: from *dark, torch in pack*, the agent imagines PULL then USE and sees light → sight → new cells. The policy is produced by training inside those imagined rollouts, so the same model, given a different reward, trains *equip* without re-learning the dynamics.
 
 **A goal-conditioned value.** The chain is compressed into one value/policy V(s, g). For g = light, V rises as the torch moves pack → hand → lit; conditioning on the goal produces the behavior. Cheap and reusable, but the causal structure is encoded in the policy's weights.
 
@@ -126,13 +126,13 @@ Then, when the distinction felt too compressed, it was restated plainly:
 
 > **the plain version** — "A fluent is just a named fact about the situation, like 'where the torch is' or 'how much light.' A link reads some facts and writes others. Most links connect because they touch the same fact — PULL changes 'torch location,' and USE cares about 'torch location,' so they snap together. But EXAMINE doesn't touch 'torch location' at all; it changes what the agent can see. So EXAMINE connects through the agent's knowing, not through the game's state."
 
-That is why EXAMINE leads the recipe: it is the perception link, the one that writes the knowledge fluent, the known pack, that the first action link needs.
+That is why EXAMINE leads the recipe: it is the perception link, the one that writes the fact of what the pack holds, which the first action link needs.
 
 ## Does composability demand symbols?
 
 Unstructured weights do not compose. They interfere with one another and lose earlier learning. Symbols compose by construction. But the property that makes symbols compose is *locality* (each fact is a unit nothing else touches), and weights can have that too if factorized into modules. So the real axis is **monolithic vs. modular**, not symbolic vs. weights.
 
-But there is a complication: composition is *matching interfaces*, and weights have no type. So composable weights must be wrapped in discrete interfaces, and those interfaces are symbols. That conclusion was challenged twice:
+There is a complication: composition is *matching interfaces*, and weights have no type. So composable weights must be wrapped in discrete interfaces, and those interfaces are symbols. That conclusion was challenged twice:
 
 > **the challenge** — "What's stopping us from constructing a system that constructs sets of weights that remain separate from one another and are still composable with one another?"
 >
@@ -176,13 +176,13 @@ The argument reached "knowledge lives in a preliminary form that produces weight
 
 > **the premise** — "The basic premise starts with causal detection. We need a method for computing a cause/effect, which I believe should be done by diffing game state. Consider the difference in game state before and after a torch is lit. Also, consider that the agent needs memory of action to result."
 
-One boundary follows from that premise: the state being diffed is the **perceived** state, the observation, and not the true state. The agent builds its causal model from what it observes, so the diff is computed over perception, and its "state fluents" are game facts *as observed*. The reward, by contrast, reads true state, and valuation is over facts whether or not the player saw them. For the torch event the two coincide, because the light and timer fields are the player's own frame, shipped ungated. The split is the rule, not an accident: the chain is learned from what is perceived, and the reward is computed from what is true.
+One boundary follows from that premise: the state being diffed is the **perceived** state, the observation, and not the true state. The agent builds its causal model from what it observes, so the diff is computed over perception, and its "state fluents" are game facts *as observed*. The reward reads true state, and valuation is over facts whether or not the player saw them. For the torch event the two coincide, because the light and timer fields are the player's own frame, shipped ungated. The split is deliberate: the chain is learned from what is perceived, and the reward is computed from what is true.
 
 The diff is the raw material, but "action → result" is too thin: a command's effect depends on the state it was issued in, so the record is really precondition, command, effect. The first reduction turned the diff itself into something indexable:
 
 > **the reduction** — "What if this was reduced to a simple vector of zeros and ones, like a mask that indicates the parameters involved in change, and what if you somehow paired that with the indexes representing action? This at least is some kind of representation, right?"
 
-It is. The mask is the **record** of which fields an action changes, the answer to "what does this command touch?" But a mask says *what* changed, never *how*, and the attempt to fold direction into the mask was complicated by the state's mixed types:
+It is. The mask is the **record** of which fields an action changes, the answer to "what does this command touch?" A mask says *what* changed and leaves out *how*, and the attempt to fold direction into the mask was complicated by the state's mixed types:
 
 > **the question** — "Would it be noisy to let the mask encode three values {-1, 0, 1}?"
 
@@ -214,7 +214,7 @@ The chain is knowledge, but building it and using it are not the same thing, and
 
 > **the pushback** — "It's just that there should be some part of the model that is 'learning' how to make causal inferences and 'learning' how to reason over them. This indicates a neural network for at least some portion of that work."
 
-The earlier conclusion, that knowledge lives outside the weights, had been interpreted too broadly, as "everything must be hand-coded." The correction restores three tiers: **knowledge is symbolic structure; reasoning over it is a learned process; the policy is learned skill.** The mask, the value, the triple stay symbolic, because a symbol's value is that it can be *operated on* (matched, chained, unified, inspected). The chain must be readable, one can look at it and see "USE TORCH lights the torch," or the whole approach is just weights again. What is learned is the *reasoning*: judging which candidate edges are real causes and which are confounds, selecting which are relevant now, choosing which to chain toward a goal. The network reads the chain, judges it, and plans with it. It never writes it.
+The earlier conclusion, that knowledge lives outside the weights, had been interpreted too broadly, as "everything must be hand-coded." The correction restores three tiers: **knowledge is symbolic structure; reasoning over it is a learned process; the policy is learned skill.** The mask, the value, the triple stay symbolic, because a symbol's value is that it can be *operated on* (matched, chained, unified, inspected). The chain must be readable, one can look at it and see "USE TORCH lights the torch," or the whole approach is just weights again. What is learned is the *reasoning*: judging which candidate edges are real causes and which are confounds, selecting which are relevant now, choosing which to chain toward a goal. The reasoner reads the chain, judges it, and plans with it. It never writes it.
 
 ## Learning without ground truth
 
@@ -230,17 +230,17 @@ A learned reasoner needs a training signal, and the search for one found nothing
 
 Self-consistency, then, is a stability check over the evidence the chain has already gathered, not a forecast. Each edge accumulates many instances (the same precondition and action, observed again and again), and the reductive process asks whether those instances agree:
 
-- a field that changes the same way every time → real effect, keep it
-- a field that changes sometimes and not others → noise, remove it
+- a fact that changes the same way every time → real effect, keep it
+- a fact that changes sometimes and not others → noise, remove it
 - an edge whose whole effect scatters → no stable cause behind it, drop the edge
 
 The direction is retrospective (pruning the past, never forecasting the future), which is why "predict what the agent observes next" was the wrong description, and why forecasting was already rejected along with the world model.
 
-But stability alone does not tell a real cause from a reliable confound. A field that changes every step regardless of the action is stable but not caused. So the stability must be measured **interventionally**: does the effect hold under the action and not under no-action; the action in the triple is what separates a cause from a coincidence. And stability needs a pressure toward compression, or the chain keeps every field that merely co-occurs; the network's limited capacity is that pressure. Its bottleneck is what forces the chain to keep the few stable causes rather than the noise.
+Stability alone does not tell a real cause from a reliable confound. A fact that changes every step regardless of the action is stable but not caused. So the stability must be measured **interventionally**: does the effect hold under the action and not under no-action; the action in the triple is what separates a cause from a coincidence. And stability needs a pressure toward compression, or the chain keeps every fact that merely co-occurs; the reasoner's limited capacity is that pressure. Its bottleneck is what forces the chain to keep the few stable causes at the cost of the noise.
 
-## The two networks
+## Consolidation and execution
 
-The preceding section described the network as a reader that never writes the chain, a framing that was then challenged:
+The preceding section described the reasoner as a reader that never writes the chain, a framing that was then challenged:
 
 > **the framing** — "The network reads the chain and returns reasoning decisions — it never writes the chain. The symbolic layer stays the ground truth the network reasons about."
 >
@@ -248,9 +248,9 @@ The preceding section described the network as a reader that never writes the ch
 >
 > **the correction** — "My fault. I think that constructing the chain vs read the chain is a misnomer. What's really going on is there needs to be a network for reading the knowledge base to construct a chain, at least. I'm not sure how we handle reasoning over the chain though. That is where I think there should be a separate network if any."
 
-The two networks come from two different timescales. **Consolidation** reads the accumulated raw observations and extracts the clean chain from them, offline, in the background. **Execution** uses the chain at action time, online.
+Consolidation and execution are two jobs at two different timescales. **Consolidation** reads the accumulated raw observations and extracts the clean chain from them, offline, in the background. **Execution** uses the chain at action time, online.
 
-Execution must stay a **symbolic search with a learned heuristic**, not a network that reasons wholesale. Backward chaining over the chain is exact and inspectable; the network only ranks which edge to try first. If it emits plans directly, the chain served no purpose.
+Execution must stay a **symbolic search with a learned heuristic**. Backward chaining over the chain is exact and inspectable; the reasoner only ranks which edge to try first. If it emits plans directly, the chain served no purpose.
 
 This is where the discussion currently stops. The two networks and self-consistency are named but not yet planned.
 
@@ -262,8 +262,8 @@ The argument records what was abandoned along the way, because each rejection fi
 
 - **A world model**: "What if we used a temporal series of conditions (with changes maybe) plus an action to train a model that predicts effect?" It removes the noise and bootstrapping problems outright, but it is prediction, not knowledge: it cannot be read, chained, or transferred, and it does not compose outside its training distribution. It answered a different question.
 - **Knowledge as input to a model**: "What if we augmented the model's input with causal chain knowledge — after selecting a relevant subset from the knowledge base that is." Selecting the relevant edges is the entire hard problem; if the selection is learned attention the reasoning is back in the weights, and if it is symbolic matching a planner already exists and the predictor is redundant. Knowledge-as-input keeps the encoding and discards the manipulability.
-- **A mini-network per mask**: "Crazy, vague idea: what if we created a mini neural network per mask?" A real architecture, but it makes the network the *author* of the knowledge content (the one thing that must stay symbolic) and it overfits the sparse instances a single mask accumulates.
-- **A powerset lattice**: "I was thinking of organizing the index in layers, starting with a single parameter." Correct and elegant, but premature: the flat index is the lossless raw record, and all overlap reasoning is a later inference pass over it. Merging early destroys the evidence that would have shown which field was noise.
+- **A mini-network per mask**: "Crazy, vague idea: what if we created a mini neural network per mask?" A real architecture, but it makes the reasoner the *author* of the knowledge content (the one thing that must stay symbolic) and it overfits the sparse instances a single mask accumulates.
+- **A powerset lattice**: "I was thinking of organizing the index in layers, starting with a single parameter." Correct and elegant, but premature: the flat index is the lossless raw record, and all overlap reasoning is a later inference pass over it. Merging early destroys the evidence that would have shown which fact was noise.
 
 ## Open questions
 
