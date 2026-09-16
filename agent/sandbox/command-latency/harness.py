@@ -49,7 +49,7 @@ _SETTLE_FRAMES = 200
 # scalar (so a schema extension is recorded without a change here), the
 # command-area text, and the world channels the signal set names.
 _SCALAR_NAMES = tuple(field_definition.name for field_definition in FIELDS)
-_WORLD_NAMES = ("command_text", "hands", "pack", "lit_torch", "creatures")
+_WORLD_NAMES = ("command_area_text", "hands", "pack", "lit_torch", "creatures")
 _COLUMN_NAMES = ("event", "frame", "gap") + _SCALAR_NAMES + _WORLD_NAMES
 
 # Creature-channel fields the reading can watch: per-slot values decoded from
@@ -99,7 +99,7 @@ def _write_header(log_file) -> None:
 def _write_frame(log_file, frame_number: int, gap: int, state) -> None:
     """Write one changed frame's full signal row."""
     scalars = [str(getattr(state, field_name)) for field_name in _SCALAR_NAMES]
-    command_text = state.command_text.replace("\n", "|")
+    command_area_text = state.command_area_text.replace("\n", "|")
     hands = _format_int_list(state.hands)
     pack = _format_int_list(state.pack)
     lit_torch = _format_int_list(state.lit_torch)
@@ -109,7 +109,7 @@ def _write_frame(log_file, frame_number: int, gap: int, state) -> None:
         creatures = state.creatures.tobytes().hex()
     row = ["frame", str(frame_number), str(gap)]
     row.extend(scalars)
-    row.extend([command_text, hands, pack, lit_torch, creatures])
+    row.extend([command_area_text, hands, pack, lit_torch, creatures])
     log_file.write("\t".join(row) + "\n")
 
 
@@ -225,7 +225,7 @@ def _parse_trace(log_path):
         for field_name in _SCALAR_NAMES:
             frame["scalars"][field_name] = int(parts[cursor])
             cursor += 1
-        frame["command_text"] = parts[cursor]
+        frame["command_area_text"] = parts[cursor]
         cursor += 1
         frame["hands"] = _parse_int_list(parts[cursor])
         cursor += 1
@@ -314,15 +314,15 @@ def _changed_fields(baseline, frame, watched_fields) -> dict:
 
 
 def _first_match_edge(window, initial_value):
-    """The first 0 -> non-zero rising edge of num_words in the window.
+    """The first 0 -> non-zero rising edge of command_parser_word_count in the window.
 
-    num_words resets to 0 once the word table is exhausted, so every match
-    starts with a fresh 0 -> N edge. perfect_match latches and stays 0xFF
-    across matches, so it cannot mark the later ones.
+    command_parser_word_count resets to 0 once the word table is exhausted, so
+    every match starts with a fresh 0 -> N edge. command_parser_matched_exactly
+    latches and stays 0xFF across matches, so it cannot mark the later ones.
     """
     previous = initial_value
     for frame in window:
-        value = frame["scalars"]["num_words"]
+        value = frame["scalars"]["command_parser_word_count"]
         if previous == 0 and value != 0:
             return frame
         previous = value
@@ -349,11 +349,11 @@ def analyze_trace(log_path, watched_fields) -> list:
             baseline_text = ""
             baseline_words = 0
         else:
-            baseline_text = baseline["command_text"]
-            baseline_words = baseline["scalars"]["num_words"]
+            baseline_text = baseline["command_area_text"]
+            baseline_words = baseline["scalars"]["command_parser_word_count"]
 
         written_frame = _first_frame(
-            window, lambda frame: frame["command_text"] != baseline_text
+            window, lambda frame: frame["command_area_text"] != baseline_text
         )
         echo_cleared_frame = None
         if written_frame is not None:
@@ -361,7 +361,7 @@ def analyze_trace(log_path, watched_fields) -> list:
                 frame for frame in window if frame["frame"] > written_frame["frame"]
             ]
             echo_cleared_frame = _first_frame(
-                after_written, lambda frame: frame["command_text"] == baseline_text
+                after_written, lambda frame: frame["command_area_text"] == baseline_text
             )
 
         matched_frame = _first_match_edge(window, baseline_words)

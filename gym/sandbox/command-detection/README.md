@@ -2,6 +2,8 @@
 
 Discovers what RAM addresses reliably signal that the in-game parser has consumed a posted command — purely from memory reads, no visual processing.
 
+> **Names.** This sandbox uses the game's RAM names (`perfectMatch`, `foundMatch`, `numWords`, `nextToParse`). The wire schema later renamed them; see the Names table in [`../../docs/findings/ram-signals.md`](../../docs/findings/ram-signals.md).
+
 ## Quick Start
 
 ```bash

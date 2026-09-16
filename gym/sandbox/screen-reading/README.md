@@ -2,6 +2,8 @@
 
 The command area is a small strip at the bottom of the screen where the game echoes what you type and prints responses: "PULL LEFT TORCH", "???", "!!!" — everything you need to know what just happened. Right now we can detect that the game finished printing there. But we can't read what it said, because the game stores it as raw pixels, not text.
 
+> **Names.** `perfectMatch` in this sandbox is the game's RAM name; the wire schema later renamed it `command_parser_matched_exactly`. See the Names table in [`../../docs/findings/ram-signals.md`](../../docs/findings/ram-signals.md).
+
 ## Plan
 
 This sandbox is split into two experiments, each with its own `run.py` and `analyze.py`. Both share `shared.lua` (screen capture) and `shared.py` (decoding).

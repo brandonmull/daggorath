@@ -9,7 +9,7 @@ observation.
 
 Scalar schema:
 - `FIELDS`: ordered true-state scalar schema, the shared contract with Lua's SCHEMA.
-- `FRAME_LEN`: total scalar wire-frame length in bytes (24).
+- `FRAME_LEN`: total scalar wire-frame length in bytes (26).
 - `NUM_FIELDS`: number of true-state scalar fields.
 - `NUM_PERCEIVED_FIELDS`: number of perceived scalar fields.
 - `PERCEIVED_FIELDS`: perceived subset of `FIELDS` (where `perceived=True`).
@@ -80,34 +80,35 @@ FIELDS: list[StateField] = [
     StateField("game_mode", 0, 1, perceived=True),
     StateField("display_function", 1, 2, perceived=True),
     # consumption — the parser's command-consumed fingerprint, true-state only
-    StateField("perfect_match", 3, 1),
-    StateField("found_match", 4, 1),
-    StateField("num_words", 5, 1),
+    StateField("command_parser_matched", 3, 1),
+    StateField("command_parser_matched_exactly", 4, 1),
+    StateField("command_parser_word_count", 5, 1),
     StateField("where_to_print", 6, 1),
+    StateField("command_parser_position", 7, 2),
     # position
-    StateField("at_floor", 7, 1, perceived=True),
-    StateField("at_cell_x", 8, 1, perceived=True),
-    StateField("at_cell_y", 9, 1, perceived=True),
-    StateField("at_heading", 10, 1, perceived=True),
+    StateField("at_floor", 9, 1, perceived=True),
+    StateField("at_cell_x", 10, 1, perceived=True),
+    StateField("at_cell_y", 11, 1, perceived=True),
+    StateField("at_heading", 12, 1, perceived=True),
     # light — the components (ambient) are true-state only; the player sees
     # the two sums (effective light).
-    StateField("ambient_light_physical", 11, 1),
-    StateField("ambient_light_magical", 12, 1),
-    StateField("effective_light_physical", 13, 1, perceived=True),
-    StateField("effective_light_magical", 14, 1, perceived=True),
+    StateField("ambient_light_physical", 13, 1),
+    StateField("ambient_light_magical", 14, 1),
+    StateField("effective_light_physical", 15, 1, perceived=True),
+    StateField("effective_light_magical", 16, 1, perceived=True),
     # body
-    StateField("player_weight", 15, 2, perceived=True),
-    StateField("player_strength", 17, 2, perceived=True),
-    StateField("m0221", 19, 2, perceived=True),
-    StateField("player_fainting", 21, 1, perceived=True),
+    StateField("player_weight", 17, 2, perceived=True),
+    StateField("player_strength", 19, 2, perceived=True),
+    StateField("m0221", 21, 2, perceived=True),
+    StateField("player_fainting", 23, 1, perceived=True),
     # heart
-    StateField("heart_beat_interval", 22, 1, perceived=True),
+    StateField("heart_beat_interval", 24, 1, perceived=True),
     # wizard
-    StateField("evil_wizard_dead", 23, 1, perceived=True),
+    StateField("evil_wizard_dead", 25, 1, perceived=True),
 ]
 
-# Total frame length in bytes: 16 u8 + 4 u16 = 16 + 8 = 24
-FRAME_LEN = 24
+# Total frame length in bytes: 16 u8 + 5 u16 = 16 + 10 = 26
+FRAME_LEN = 26
 
 # Number of fields
 NUM_FIELDS = len(FIELDS)
@@ -313,7 +314,7 @@ class DaggorathState:
     attribute raises AttributeError.
 
     `heart_rate` is a derived attribute (beats per second) computed from
-    `heart_beat_interval`; `command_rejected` is derived from `command_text`
+    `heart_beat_interval`; `command_rejected` is derived from `command_area_text`
     (True when the command area shows the game's "???" rejection); and
     `holds_final_ring` is True when a hand holds the FINAL ring (the win's
     terminal). None of them is part of the wire format or as_perceived().
@@ -326,7 +327,7 @@ class DaggorathState:
         tuple(f.name for f in FIELDS)
         + (
             "heart_rate",
-            "command_text",
+            "command_area_text",
             "command_rejected",
             "holds_final_ring",
             "maze",
@@ -342,7 +343,7 @@ class DaggorathState:
     def __init__(
         self,
         data: bytes,
-        command_text: str = "",
+        command_area_text: str = "",
         maze: bytes | None = None,
         creatures: bytes | None = None,
         objects: bytes | None = None,
@@ -355,12 +356,12 @@ class DaggorathState:
         interval = values["heart_beat_interval"]
         object.__setattr__(self, "heart_rate", 0.0 if interval == 0 else 60.0 / interval)
 
-        object.__setattr__(self, "command_text", command_text)
+        object.__setattr__(self, "command_area_text", command_area_text)
 
         # The game prints "???" in the command area when it rejects the last
         # command — a true-state fact the reward wrapper prices, not a
         # perception channel.
-        object.__setattr__(self, "command_rejected", "???" in command_text)
+        object.__setattr__(self, "command_rejected", "???" in command_area_text)
 
         object.__setattr__(self, "maze", decode_maze(maze) if maze is not None else None)
         object.__setattr__(

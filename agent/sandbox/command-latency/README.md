@@ -10,8 +10,8 @@ This sandbox is agent-side, not part of the environment. It nails down the basic
 
 Measure the three signals of a command and how far apart they are:
 
-- **Matched** — the parser finishes matching the line. `num_words` (0x0279) jumps from 0 when this happens.
-- **Written** — the game writes its response to the command area: the echoed command, or `???` on rejection. `command_text` (screen-derived) carries this.
+- **Matched** — the parser finishes matching the line. `command_parser_word_count` (0x0279) jumps from 0 when this happens.
+- **Written** — the game writes its response to the command area: the echoed command, or `???` on rejection. `command_area_text` (screen-derived) carries this.
 - **Executed** — the game runs the command handler to completion.
 
 The measurement is the gap between *matched* and *executed*: when the command is recognized, how long until its effect lands — and is that gap always about the same, or unrelated? *Matched* is a RAM flag; *executed* has no flag — it is the effect, read off the state change — and the handler running in between is inferred, not observed. *Written* is a third signal, already on the wire, checked against the other two. Why that gap matters to the agent's knowledge is in the design doc linked above.
@@ -20,14 +20,14 @@ The measurement is the gap between *matched* and *executed*: when the command is
 
 - `gym/daggorath_gym/emulator.py` — `MameOperator` keeps `send` and `recv` separate, and the frame number advances every frame. That is the hook the sandbox uses to watch frames after a command.
 - `gym/daggorath_gym/state.py` — `FIELDS` is a list of `StateField(name, offset, width, perceived)` grouped by category, and is the extension point: a new fact is filed into its category and picked up on both sides of the wire.
-- All three signals ship: *matched* is the `num_words` jump in the `consumption` category in `FIELDS` (`perfect_match`, `found_match`, `num_words`, `where_to_print`); *written* is `command_text` (the command-area echo, decoded from screen pixels) and the derived `command_rejected` (`"???" in command_text`); *executed* is the state change.
+- All three signals ship: *matched* is the `command_parser_word_count` jump in the `consumption` category in `FIELDS` (`command_parser_matched_exactly`, `command_parser_matched`, `command_parser_word_count`, `where_to_print`); *written* is `command_area_text` (the command-area echo, decoded from screen pixels) and the derived `command_rejected` (`"???" in command_area_text`); *executed* is the state change.
 - `agent/sandbox/causal-diff/server.py` — its probe settles with `_step_until_settled(env, obs, predicate)`, capped at `_SETTLE_STEPS = 100` no-op frames, waiting for a *command-specific* observable (hand holds torch / dungeon brightens). That is right for a probe checking a known answer, but a per-command predicate does not scale to 154 commands.
 
-Neither `num_words` nor `command_text` is certainly *executed*: the echo filling marks the command going in and the echo clearing marks the parser finishing with it — plausibly closer to "processing complete," but still not "state changed."
+Neither `command_parser_word_count` nor `command_area_text` is certainly *executed*: the echo filling marks the command going in and the echo clearing marks the parser finishing with it — plausibly closer to "processing complete," but still not "state changed."
 
 ## The executed signal
 
-Since the sandbox first ran, the executed moment has been found: `input_cursor` (0x0211) snaps back to 0x02F1 once a command has run, even one that does nothing visible. Paired with the `???` the game prints (`command_rejected`) it separates executed from rejected. It is not on the wire yet; the full field entry is in [`../../../gym/docs/findings/ram-signals.md`](../../../gym/docs/findings/ram-signals.md).
+Since the sandbox first ran, the executed moment has been found: `command_parser_position` (0x0211) snaps back to 0x02F1 once a command has run, even one that does nothing visible. Paired with the `???` the game prints (`command_rejected`) it separates executed from rejected. It is not on the wire yet; the full field entry is in [`../../../gym/docs/findings/ram-signals.md`](../../../gym/docs/findings/ram-signals.md).
 
 ## How the problem divides
 
@@ -63,11 +63,11 @@ If the anchor shows *changed* tracking *matched* by a small, consistent gap, and
 
 ## The shared core
 
-**Reading the three signals.** Nothing in memory says "the handler ran," so *executed* has no flag — it is the effect, read off the state change. The other two can be read: the parser's word-table counter `num_words` (0x0279) marks *matched*, and the command-area text `command_text` marks *written*. The handler running between them is inferred, not observed. Every frame records:
+**Reading the three signals.** Nothing in memory says "the handler ran," so *executed* has no flag — it is the effect, read off the state change. The other two can be read: the parser's word-table counter `command_parser_word_count` (0x0279) marks *matched*, and the command-area text `command_area_text` marks *written*. The handler running between them is inferred, not observed. Every frame records:
 
 | Group | Columns | Witnesses |
 |---|---|---|
-| Consumption | `gameMode`, `perfectMatch`, `foundMatch`, `numWords`, `whereToPrint`, `inputCursor`, `comTextCursor` | matched (`numWords`), executed (`inputCursor`), and the parser's progress |
+| Consumption | `gameMode`, `commandParserMatched`, `commandParserMatchedExactly`, `commandParserWordCount`, `whereToPrint`, `commandParserPosition`, `comTextCursor` | matched (`commandParserWordCount`), executed (`commandParserPosition`), and the parser's progress |
 | Display | `displayFunction` | the EXAMINE / LOOK view switch |
 | Player | `atCellX`, `atCellY`, `atHeading`, `effectiveLightPhysical`, `playerStrength`, `m0221`, `heartBeatInterval` | movement, light, body |
 | Holdings | `hands`, `pack` — the `O` channel's decoded identities | an object moved between pack and hand |
@@ -82,7 +82,7 @@ If the anchor shows *changed* tracking *matched* by a small, consistent gap, and
 
 **Repeating a session.** A session is one launch. The torch child is a fresh boot, and the game's opening state is deterministic; the fighting child resumes a saved state on the CoCo 2B. Either way, the same schedule replays from the same situation every time, and a run is several sessions whose spread of offsets is the variability.
 
-**Why read through the environment.** The sampler writes a frame marker with its frame number on every frame a channel changed, and `FIELDS` is the extension point, so the sandbox reads frame by frame and asks for new facts (`num_words`) through the environment rather than a plugin of its own.
+**Why read through the environment.** The sampler writes a frame marker with its frame number on every frame a channel changed, and `FIELDS` is the extension point, so the sandbox reads frame by frame and asks for new facts (`command_parser_word_count`) through the environment rather than a plugin of its own.
 
 ## The experiments
 
@@ -98,7 +98,7 @@ They share the log format and the analysis described above; neither re-describes
 The torch and perception refactor shipped first (see `gym/docs/3_decisions/perception.md`). What remains, in order:
 
 1. **The observation wrapper.** Shipped — `frame_observation.py`'s `FrameObservation` reads `recv()`'s `(frame_number, state)` change list: one change per read, with the frame number and the gap since the last change. Shared, built before either child, and easy to duplicate by accident if not.
-2. **The parser schema.** Shipped — `matched` is on the wire (`num_words` and its companions, the `consumption` category).
+2. **The parser schema.** Shipped — `matched` is on the wire (`command_parser_word_count` and its companions, the `consumption` category).
 3. **The shared harness.** Shipped — `harness.py`: one log format, one analysis, and the session loop that reboots between samples.
 4. **`lighting-torch/`.** Shipped — the anchor, which records the torch sequence in three fresh sessions.
 5. **`fighting-monster/`.** Shipped — the rotation schedule and its watched-field set, with the combat-detection fields now on the wire.
@@ -120,7 +120,7 @@ This is a measurement, not a pass or fail. What comes out is the timing, and wha
 
 - **Waiting for quiet.** Is "stop once the watched fields sit unchanged for a few frames" a workable rule? How many frames? A trace can be re-read with a smaller field set to see whether it goes quiet while the clocks keep ticking.
 - **Where the wait belongs.** In the environment, in a wrapper, or in the Lua plugin (which could send a record when a command is consumed)?
-- **The no-action window.** A no-action step has no `num_words` jump, so its window has to be a fixed length. How long should it be, next to a command's?
+- **The no-action window.** A no-action step has no `command_parser_word_count` jump, so its window has to be a fixed length. How long should it be, next to a command's?
 - **Window length and confidence.** Should the window shrink as the agent grows more sure of a cause? A window that changes length makes the reward's time discount harder to reason about — does that matter in practice?
 
 ## Running

@@ -82,17 +82,17 @@ def main():
 
         print("=== Initial state (torch unlit) ===")
         initial = _receive_latest_state(operator)
-        print(f"command area: {initial.command_text!r}")
+        print(f"command area: {initial.command_area_text!r}")
         _print_torch_light("initial", initial)
 
         # ---- Step 1: PULL LEFT TORCH (torch moves backpack → left hand) ----
         print("\n=== Step 1: PULL LEFT TORCH ===")
         operator.send(DaggorathCommand(index=PULL_INDEX))
         pull_states = _read_until(
-            operator, lambda s: "PULL" in s.command_text.upper()
+            operator, lambda s: "PULL" in s.command_area_text.upper()
         )
         pull_state = pull_states[-1]
-        print(f"command area: {pull_state.command_text!r}")
+        print(f"command area: {pull_state.command_area_text!r}")
         _print_torch_light("after PULL", pull_state)
 
         # Give PULL time to finish before posting the next command.
@@ -103,7 +103,7 @@ def main():
         operator.send(DaggorathCommand(index=USE_INDEX))
         use_states = _read_until(operator, lambda s: _torch_field(s, _TORCH_PHYSICAL_LIGHT_INDEX) > 0)
         lit_state = use_states[-1]
-        print(f"command area: {lit_state.command_text!r}")
+        print(f"command area: {lit_state.command_area_text!r}")
         _print_torch_light("after USE", lit_state)
 
         # effective_light is recomputed on the next display refresh.

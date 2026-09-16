@@ -13,9 +13,9 @@
 -- consecutive frame numbers marks the still frames. Reports are buffered and
 -- flushed at the reporting cadence.
 --   "F" + 4-byte little-endian frame number         frame marker, on changed frames
---   "S" + 20-byte frame                              state only changed
+--   "S" + 26-byte frame                              state only changed
 --   "T" + 1-byte comColor + 1024 pixel bytes         text only changed
---   "B" + 20-byte frame + 1-byte comColor + 1024 px  both changed
+--   "B" + 26-byte frame + 1-byte comColor + 1024 px  both changed
 --   "M" + 1024-byte maze                             maze changed
 --   "C" + 256-byte creature array                    creatures changed
 --   "O" + 76-byte object record                      objects changed
@@ -127,10 +127,11 @@ local SCHEMA = {
     { name = "gameMode",        addr = 0x0277, width = 1 },
     { name = "displayFunction", addr = 0x02B2, width = 2 },
     -- consumption
-    { name = "perfectMatch",  addr = 0x027B, width = 1 },
-    { name = "foundMatch",    addr = 0x0278, width = 1 },
-    { name = "numWords",      addr = 0x0279, width = 1 },
-    { name = "whereToPrint",  addr = 0x02B7, width = 1 },
+    { name = "commandParserMatched",        addr = 0x027B, width = 1 },
+    { name = "commandParserMatchedExactly", addr = 0x0278, width = 1 },
+    { name = "commandParserWordCount",      addr = 0x0279, width = 1 },
+    { name = "whereToPrint",                addr = 0x02B7, width = 1 },
+    { name = "commandParserPosition",       addr = 0x0211, width = 2 },
     -- position
     { name = "atFloor",         addr = 0x0281, width = 1 },
     { name = "atCellX",         addr = 0x0214, width = 1 },
@@ -186,7 +187,7 @@ local function _isLive()
     return fn == DISPLAY_LOOK or fn == DISPLAY_EXAMINE
 end
 
--- Read all fields and serialize as a 20-byte string. Returns nil if any read
+-- Read all fields and serialize as a 26-byte string. Returns nil if any read
 -- fails, so the caller can skip the frame instead of crashing.
 local function _sampleState()
     local ok, result = pcall(function()

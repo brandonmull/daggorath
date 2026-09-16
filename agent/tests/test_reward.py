@@ -186,7 +186,7 @@ def test_reject_penalty_edge_detected():
     """The reject penalty charges only on the False -> True edge."""
     reward = DaggorathReward()
     previous = DaggorathState(_build_frame())
-    rejected = DaggorathState(_build_frame(), command_text="???")
+    rejected = DaggorathState(_build_frame(), command_area_text="???")
     assert reward._reject_penalty(previous, rejected) == pytest.approx(
         _REJECT_REWARD
     )

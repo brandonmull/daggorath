@@ -125,16 +125,16 @@ def test_heart_rate():
     assert state.heart_rate == 0.0
 
 
-def test_command_text_defaults_to_empty():
-    """command_text defaults to an empty string when not provided."""
+def test_command_area_text_defaults_to_empty():
+    """command_area_text defaults to an empty string when not provided."""
     state = DaggorathState(_build_test_frame())
-    assert state.command_text == ""
+    assert state.command_area_text == ""
 
 
-def test_command_text_is_stored():
-    """command_text carries the decoded command-area text when provided."""
-    state = DaggorathState(_build_test_frame(), command_text="PULL LEFT TORCH")
-    assert state.command_text == "PULL LEFT TORCH"
+def test_command_area_text_is_stored():
+    """command_area_text carries the decoded command-area text when provided."""
+    state = DaggorathState(_build_test_frame(), command_area_text="PULL LEFT TORCH")
+    assert state.command_area_text == "PULL LEFT TORCH"
 
 
 def test_command_rejected_false_by_default():
@@ -144,13 +144,13 @@ def test_command_rejected_false_by_default():
 
 def test_command_rejected_detects_reject_text():
     """command_rejected is True when the command area shows the game's '???'."""
-    state = DaggorathState(_build_test_frame(), command_text="???")
+    state = DaggorathState(_build_test_frame(), command_area_text="???")
     assert state.command_rejected is True
 
 
 def test_command_rejected_false_for_normal_text():
     """command_rejected is False for an accepted command echo."""
-    state = DaggorathState(_build_test_frame(), command_text="PULL LEFT TORCH")
+    state = DaggorathState(_build_test_frame(), command_area_text="PULL LEFT TORCH")
     assert state.command_rejected is False
 
 

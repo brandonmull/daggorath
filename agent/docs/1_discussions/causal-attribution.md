@@ -46,7 +46,7 @@ The environment's part is the complete temporal record — every frame, numbered
 
 ## Has the settle signal been found?
 
-Yes: `input_cursor` (0x0211) snaps back to 0x02F1 once a command has run, and paired with the `???` the game prints (`command_rejected`) it tells executed from rejected. The finding is recorded in [`../findings/command-latency.md`](../findings/command-latency.md). The other open question, false causation, is still open.
+Yes: `command_parser_position` (0x0211) snaps back to 0x02F1 once a command has run, and paired with the `???` the game prints (`command_rejected`) it tells executed from rejected. The finding is recorded in [`../findings/command-latency.md`](../findings/command-latency.md). The other open question, false causation, is still open.
 
 ## Reference
 

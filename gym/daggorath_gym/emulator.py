@@ -12,9 +12,9 @@ that changed, written and flushed together; a frame with no change emits
 nothing, and the gap between consecutive frame numbers marks the still frames:
 
     F  + 4-byte little-endian frame number             frame marker, on changed frames
-    S  + 20-byte frame                                 state only changed
+    S  + 26-byte frame                                 state only changed
     T  + 1-byte comColor + 1024 pixel bytes            text only changed
-    B  + 20-byte frame + 1-byte comColor + 1024 px     both changed
+    B  + 26-byte frame + 1-byte comColor + 1024 px     both changed
     M  + 1024-byte maze                                maze changed
     C  + 256-byte creature array                       creatures changed
     O  + 76-byte object record                         objects changed
@@ -113,7 +113,7 @@ class MameOperator:
         self._frame_state: Optional[DaggorathState] = None
 
         self._last_frame: Optional[bytes] = None
-        self._last_command_text = ""
+        self._last_command_area_text = ""
         self._last_maze: Optional[bytes] = None
         self._last_creatures: Optional[bytes] = None
         self._last_objects: Optional[bytes] = None
@@ -189,7 +189,7 @@ class MameOperator:
         self._frame_number = None
         self._frame_state = None
         self._last_frame = None
-        self._last_command_text = ""
+        self._last_command_area_text = ""
         self._last_maze = None
         self._last_creatures = None
         self._last_objects = None
@@ -305,7 +305,7 @@ class MameOperator:
         tag = record[0:1]
 
         frame = self._last_frame
-        command_text = self._last_command_text
+        command_area_text = self._last_command_area_text
         maze = self._last_maze
         creatures = self._last_creatures
         objects = self._last_objects
@@ -318,7 +318,7 @@ class MameOperator:
             offset = 1 + (FRAME_LEN if tag == b"B" else 0)
             com_color = record[offset]
             pixels = record[offset + 1:offset + 1 + PIXEL_BYTES]
-            command_text = decode_command_area(pixels, com_color)
+            command_area_text = decode_command_area(pixels, com_color)
 
         if tag == b"M":
             maze = record[1:1 + MAZE_BYTES]
@@ -333,14 +333,14 @@ class MameOperator:
             raise ConnectionError("Received a record before any numeric state")
 
         self._last_frame = frame
-        self._last_command_text = command_text
+        self._last_command_area_text = command_area_text
         self._last_maze = maze
         self._last_creatures = creatures
         self._last_objects = objects
         self._last_holes_ladders = holes_ladders
         return DaggorathState(
             frame,
-            command_text=command_text,
+            command_area_text=command_area_text,
             maze=maze,
             creatures=creatures,
             objects=objects,

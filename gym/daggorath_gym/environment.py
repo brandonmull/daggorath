@@ -87,7 +87,7 @@ class DaggorathEnv(gym.Env):
         # Receive the next game state. recv() returns a list of changes; the
         # empty frames are already dropped by the reader. The command's
         # effect may land a step later — harmless, because the reward wrapper
-        # computes from state transitions. "Wait-for-settle" (perfectMatch on
+        # computes from state transitions. "Wait-for-settle" (command_parser_position on
         # the wire) is the follow-up.
         state = self._receive_latest_state()
         self._current_state = state

@@ -131,6 +131,8 @@ The exchange that produced this is worth keeping:
 >
 > **the synthesis** — "The world never goes fully quiet, so the window can't wait for the whole state to stop changing. But the lesson's own reduced facts can. Close the window once those facts hold still for a few frames — the reduction then does double duty: it quiets the noise and says when to stop waiting."
 
+`perfectMatch` and `command_text` in that exchange have since been renamed in the schema: `command_parser_matched_exactly` and `command_area_text`.
+
 So the approach is to **separate the action from its effect and wait out a window**: issue one action, block further actions, watch what changes during the window, then close it and record the effect. While the agent is unsure whether a cause is real, the window can stay open longer; as its confidence grows, it can shorten. A window that changes length makes the reward's time discount harder to reason about, so a fixed-length window is simpler.
 
 The sandbox at [`../../sandbox/command-latency/`](../../sandbox/command-latency/README.md) is measuring these three moments. This doc lays out the question; the sandbox is where the answer comes from.
@@ -139,7 +141,7 @@ The three moments and the no-action control are the two halves of one need — c
 
 ## What marks a command finished?
 
-The sandbox found the signal: `input_cursor` (0x0211) snaps back to 0x02F1 once a command has run, and paired with the `???` the game prints (`command_rejected`) it tells executed from rejected. The finding is recorded in [`../findings/command-latency.md`](../findings/command-latency.md). What remains open is only where the wait lives — the environment's step, a wrapper, or a plugin record.
+The sandbox found the signal: `command_parser_position` (0x0211) snaps back to 0x02F1 once a command has run, and paired with the `???` the game prints (`command_rejected`) it tells executed from rejected. The finding is recorded in [`../findings/command-latency.md`](../findings/command-latency.md). What remains open is only where the wait lives — the environment's step, a wrapper, or a plugin record.
 
 ## How do experience and expectation meet?
 
