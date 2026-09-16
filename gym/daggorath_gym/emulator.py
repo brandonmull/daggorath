@@ -16,7 +16,7 @@ nothing, and the gap between consecutive frame numbers marks the still frames:
     T  + 1-byte comColor + 1024 pixel bytes            text only changed
     B  + 20-byte frame + 1-byte comColor + 1024 px     both changed
     M  + 1024-byte maze                                maze changed
-    C  + 128-byte creature array                       creatures changed
+    C  + 256-byte creature array                       creatures changed
     O  + 76-byte object record                         objects changed
     H  + 24-byte holes/ladders record                  holes/ladders changed
 """
@@ -77,6 +77,9 @@ class MameConfig:
     plugin_name: str = "daggorath"
     sound: str = "sdl"
     window: bool = True
+    machine_name: str = "coco3"
+    state_name: Optional[str] = None
+    state_directory: str = os.path.join(PROJECT_PATH, ".mame", "state")
 
 
 # ---------- MameOperator ----------
@@ -371,7 +374,7 @@ class MameOperator:
 
         # ---------- assemble the command ----------
         command_line = [
-            "mame", "coco3", "daggorath",
+            "mame", config.machine_name, "daggorath",
             "-rompath", ROM_PATH,
             "-hashpath", HASH_PATH,
             "-pluginspath", PLUGINS_PATH,
@@ -383,6 +386,11 @@ class MameOperator:
         ]
         if config.window:
             command_line.append("-window")
+        if config.state_name:
+            command_line.extend([
+                "-state_directory", config.state_directory,
+                "-state", config.state_name,
+            ])
 
         # ---------- fire it up ----------
         env = os.environ.copy()

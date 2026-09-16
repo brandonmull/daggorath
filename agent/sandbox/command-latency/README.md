@@ -10,7 +10,7 @@ This sandbox is agent-side, not part of the environment. It nails down the basic
 
 Measure the three signals of a command and how far apart they are:
 
-- **Matched** — the parser finishes matching the line. `perfectMatch` (0x027B) flags this.
+- **Matched** — the parser finishes matching the line. `num_words` (0x0279) jumps from 0 when this happens.
 - **Written** — the game writes its response to the command area: the echoed command, or `???` on rejection. `command_text` (screen-derived) carries this.
 - **Executed** — the game actually executes the command and the state changes as a result.
 
@@ -20,10 +20,10 @@ The measurement is the gap between *matched* and *executed*: when the command is
 
 - `gym/daggorath_gym/emulator.py` — `MameOperator` keeps `send` and `recv` separate, and the frame number advances every frame. That is the hook the sandbox uses to watch frames after a command.
 - `gym/daggorath_gym/state.py` — `FIELDS` is a list of `StateField(name, offset, width, perceived)` grouped by category, and is the extension point: a new fact is filed into its category and picked up on both sides of the wire.
-- All three signals ship: *matched* is the `consumption` category in `FIELDS` (`perfect_match`, `found_match`, `num_words`, `where_to_print`); *written* is `command_text` (the command-area echo, decoded from screen pixels) and the derived `command_rejected` (`"???" in command_text`); *executed* is the state change.
+- All three signals ship: *matched* is the `num_words` jump in the `consumption` category in `FIELDS` (`perfect_match`, `found_match`, `num_words`, `where_to_print`); *written* is `command_text` (the command-area echo, decoded from screen pixels) and the derived `command_rejected` (`"???" in command_text`); *executed* is the state change.
 - `agent/sandbox/causal-diff/server.py` — its probe settles with `_step_until_settled(env, obs, predicate)`, capped at `_SETTLE_STEPS = 100` no-op frames, waiting for a *command-specific* observable (hand holds torch / dungeon brightens). That is right for a probe checking a known answer, but a per-command predicate does not scale to 154 commands.
 
-Neither `perfectMatch` nor `command_text` is certainly *executed*: the echo filling marks the command going in and the echo clearing marks the parser finishing with it — plausibly closer to "processing complete," but still not "state changed."
+Neither `num_words` nor `command_text` is certainly *executed*: the echo filling marks the command going in and the echo clearing marks the parser finishing with it — plausibly closer to "processing complete," but still not "state changed."
 
 ## How the problem divides
 
@@ -53,22 +53,22 @@ The two children exist because the question has two cases that behave differentl
 | Child | Commands | Effect is… | Why it is here |
 |---|---|---|---|
 | `lighting-torch/` | `PULL`, `USE` | known and deterministic | The anchor: the changed fields can be named in advance, so a wrong trace means the *method* is wrong. |
-| `fighting-monster/` | `ATTACK`, `MOVE` | opportunistic | The realistic case: the effect appears only when a creature is engaged, so the trace must be read, not predicted. |
+| `fighting-monster/` | `ATTACK LEFT`, `ATTACK RIGHT` | opportunistic | The realistic case: the effect appears only when a creature is engaged, so the trace must be read, not predicted. |
 
 If the anchor shows *changed* tracking *matched* by a small, consistent gap, and the opportunistic case shows *matched* **without** *changed* when nothing is engaged, then the three moments are separated and the step unit can be chosen.
 
 ## The shared core
 
-**Reading the three signals.** Nothing in memory says "the handler ran," so *executed* has no flag — it is the effect, read off the state change. The other two can be read: the parser's recognition flag `perfectMatch` (0x027B) marks *matched*, and the command-area text `command_text` marks *written*. The handler running between them is inferred, not observed. Every frame records:
+**Reading the three signals.** Nothing in memory says "the handler ran," so *executed* has no flag — it is the effect, read off the state change. The other two can be read: the parser's word-table counter `num_words` (0x0279) marks *matched*, and the command-area text `command_text` marks *written*. The handler running between them is inferred, not observed. Every frame records:
 
 | Group | Columns | Witnesses |
 |---|---|---|
-| Consumption | `gameMode`, `perfectMatch`, `foundMatch`, `numWords`, `whereToPrint`, `nextToParse`, `comTextCursor` | *matched*, and the parser's progress |
+| Consumption | `gameMode`, `perfectMatch`, `foundMatch`, `numWords`, `whereToPrint`, `nextToParse`, `comTextCursor` | matched (`numWords`), and the parser's progress |
 | Display | `displayFunction` | the EXAMINE / LOOK view switch |
 | Player | `atCellX`, `atCellY`, `atHeading`, `effectiveLightPhysical`, `playerStrength`, `m0221`, `heartBeatInterval` | movement, light, body |
 | Holdings | `hands`, `pack` — the `O` channel's decoded identities | an object moved between pack and hand |
 | Torch | `lit_torch` — the `O` channel's torch entry (minutes, light) | the torch lit, true state |
-| Creatures | the `C` channel (`alive`/`type`/`X`/`Y`), plus the engaged creature's `damage`/`strength` | a hit or a death |
+| Creatures | the `C` channel (`alive`/`type`/`X`/`Y`/`damage`/`strength`) | a hit or a death |
 
 **Reading safely.** The production plugin already gates on `displayFunction` and primes the keyboard itself, so the sandbox reads state through the environment and never touches raw RAM — the readiness crash is the environment's problem, not the sandbox's.
 
@@ -76,9 +76,9 @@ If the anchor shows *changed* tracking *matched* by a small, consistent gap, and
 
 **Recording, then reading.** A session decides nothing while it runs: it records every changed frame's columns and every post. The interpretation — which columns count as a command's effect, where the echo appeared, where the parser matched — is a second pass over the written trace, so the same trace can be read again with a different field set.
 
-**Repeating a session.** A session is one fresh boot, and the game's opening state is deterministic, so the same schedule replays from the same situation every time. A run is several sessions; the spread of their offsets is the variability.
+**Repeating a session.** A session is one launch. The torch child is a fresh boot, and the game's opening state is deterministic; the fighting child resumes a saved state on the CoCo 2B. Either way, the same schedule replays from the same situation every time, and a run is several sessions whose spread of offsets is the variability.
 
-**Why read through the environment.** The sampler writes a frame marker with its frame number on every frame a channel changed, and `FIELDS` is the extension point, so the sandbox reads frame by frame and asks for new facts (`perfectMatch`) through the environment rather than a plugin of its own.
+**Why read through the environment.** The sampler writes a frame marker with its frame number on every frame a channel changed, and `FIELDS` is the extension point, so the sandbox reads frame by frame and asks for new facts (`num_words`) through the environment rather than a plugin of its own.
 
 ## The experiments
 
@@ -94,17 +94,17 @@ They share the log format and the analysis described above; neither re-describes
 The torch and perception refactor shipped first (see `gym/docs/3_decisions/perception.md`). What remains, in order:
 
 1. **The observation wrapper.** Shipped — `frame_observation.py`'s `FrameObservation` reads `recv()`'s `(frame_number, state)` change list: one change per read, with the frame number and the gap since the last change. Shared, built before either child, and easy to duplicate by accident if not.
-2. **The parser schema.** Shipped — `matched` is on the wire (`perfect_match` and its companions, the `consumption` category).
+2. **The parser schema.** Shipped — `matched` is on the wire (`num_words` and its companions, the `consumption` category).
 3. **The shared harness.** Shipped — `harness.py`: one log format, one analysis, and the session loop that reboots between samples.
 4. **`lighting-torch/`.** Shipped — the anchor, which records the torch sequence in three fresh sessions.
-5. **`fighting-monster/`.** Reuses the harness unchanged; its watched fields need the combat-detection fields per `gym/docs/2_plans/combat-detection.md`.
+5. **`fighting-monster/`.** Shipped — the rotation schedule and its watched-field set, with the combat-detection fields now on the wire.
 6. **Read the two traces together.** The answer comes from comparing them, not from either one alone.
 
 ## Success criteria
 
 The sandbox succeeds when the traces answer these:
 
-- Does `perfectMatch` fire on a command that changes nothing? (If yes, matched ≠ changed is proven.)
+- Does a command that changes nothing still match? (If yes, matched ≠ changed is proven.)
 - How many frames after the post does *matched* arrive, and how variable is it?
 - How many frames after the post does *changed* arrive, and how does it relate to *matched*?
 - For the torch, does `PULL` show as a change in the holdings columns only, with the light columns unchanged until `USE`? (This is the scalar-only-diff miss, reproduced.)
@@ -114,19 +114,19 @@ This is a measurement, not a pass or fail. What comes out is the timing, and wha
 
 ## Open questions
 
-- **The exact signal.** If `perfectMatch` isn't reliable, is the command echo (when `command_text` clears) better — and worth sending over the wire?
 - **Waiting for quiet.** Is "stop once the watched fields sit unchanged for a few frames" a workable rule? How many frames? A trace can be re-read with a smaller field set to see whether it goes quiet while the clocks keep ticking.
 - **Where the wait belongs.** In the environment, in a wrapper, or in the Lua plugin (which could send a record when a command is consumed)?
-- **The no-action window.** A no-action step has no `perfectMatch`, so its window has to be a fixed length. How long should it be, next to a command's?
+- **The no-action window.** A no-action step has no `num_words` jump, so its window has to be a fixed length. How long should it be, next to a command's?
 - **Window length and confidence.** Should the window shrink as the agent grows more sure of a cause? A window that changes length makes the reward's time discount harder to reason about — does that matter in practice?
 
 ## Running
 
 ```bash
 python agent/sandbox/command-latency/lighting-torch/run.py
+python agent/sandbox/command-latency/fighting-monster/run.py
 ```
 
-Both children run through `MameOperator` (the environment's plugin), so no `-pluginspath` wiring is needed — `MameOperator` already lists the project and MAME's system plugin directories. The torch experiment records three fresh sessions; each session boots the game, waits for live play, posts its schedule, and writes a trace to `logs/`.
+Both children run through `MameOperator` (the environment's plugin), so no `-pluginspath` wiring is needed — `MameOperator` already lists the project and MAME's system plugin directories. The torch experiment records three fresh sessions; each session boots the game, waits for live play, posts its schedule, and writes a trace to `logs/`. The fighting experiment first needs the by-hand saved state `monster-near` (see its README), then records three sessions that resume that state.
 
 
 

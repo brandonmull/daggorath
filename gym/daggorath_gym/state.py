@@ -6,6 +6,43 @@ into immutable DaggorathState value objects. Derives agent-facing values
 schema (FIELDS), its perceived subset (PERCEIVED_FIELDS), and the
 perceived-state schema (PERCEIVED_SPACE) that the environment exposes as the
 observation.
+
+Scalar schema:
+- `FIELDS`: ordered true-state scalar schema, the shared contract with Lua's SCHEMA.
+- `FRAME_LEN`: total scalar wire-frame length in bytes (24).
+- `NUM_FIELDS`: number of true-state scalar fields.
+- `NUM_PERCEIVED_FIELDS`: number of perceived scalar fields.
+- `PERCEIVED_FIELDS`: perceived subset of `FIELDS` (where `perceived=True`).
+
+Maze:
+- `MAP_SIZE`: maze width and height in cells (32).
+- `MAZE_BYTES`: `M` record length, 32×32 raw edge bytes (1024).
+
+Creatures:
+- `CREATURE_BYTES`: `C` record length, 32 slots × 8 fields (256).
+- `CREATURE_FIELDS`: bytes per creature slot on the wire (8).
+- `CREATURE_PERCEIVED_FIELDS`: perceived fields per creature slot (4).
+- `CREATURE_SLOTS`: slots in the game's creature array (32).
+
+Objects:
+- `FLOOR_OBJECT_CAPACITY`: fixed floor-object slots per level (8, 0xFF-padded).
+- `FLOOR_OBJECT_RAW_BYTES`: bytes per floor-object entry (5).
+- `FLOOR_OBJECTS_BYTES`: floor-objects record length, 8 slots × 5 bytes (40).
+- `HAND_COUNT`: player hand slots (2).
+- `HANDS_BYTES`: hands record length (`HAND_COUNT × OBJECT_RAW_BYTES`).
+- `OBJECT_RAW_BYTES`: bytes per held or packed object identity (3).
+- `OBJECTS_BYTES`: `O` record length, hands + pack + floor objects + lit torch (76).
+- `PACK_BYTES`: pack record length (`PACK_CAPACITY × OBJECT_RAW_BYTES`).
+- `PACK_CAPACITY`: fixed backpack slots (8, 0xFF-padded).
+- `TORCH_RAW_BYTES`: bytes per lit-torch entry (6).
+
+Holes and ladders:
+- `HOLE_LADDER_CAPACITY`: hole/ladder entries per list (4).
+- `HOLE_LADDER_RAW_BYTES`: bytes per hole/ladder entry (3).
+- `HOLES_LADDERS_BYTES`: `H` record length, 2 lists × capacity × raw bytes (24).
+
+Observation space:
+- `PERCEIVED_SPACE`: the policy's observation space, a Dict of gated channels.
 """
 
 import struct
@@ -103,13 +140,13 @@ HAND_COUNT = 2
 PACK_CAPACITY = 8
 FLOOR_OBJECT_CAPACITY = 8
 
-# World-channel wire sizes. The maze is 32×32 raw edge bytes (row-major); the
-# creature record is 32 slots × 4 fields; the object record is hands + pack +
-# floor objects + the lit torch, each a fixed-capacity sub-array. These are the
-# shared contract with state.lua's world-channel constants.
+# World-channel wire sizes (the shared contract with state.lua's constants).
+# The maze is 32×32 raw edge bytes (row-major); the object record is hands +
+# pack + floor objects + the lit torch, each a fixed-capacity sub-array.
 MAZE_BYTES = MAP_SIZE * MAP_SIZE
-CREATURE_FIELDS = 4
+CREATURE_FIELDS = 8
 CREATURE_BYTES = CREATURE_SLOTS * CREATURE_FIELDS
+CREATURE_PERCEIVED_FIELDS = 4
 OBJECT_RAW_BYTES = 3
 FLOOR_OBJECT_RAW_BYTES = 5
 TORCH_RAW_BYTES = 6
@@ -131,7 +168,9 @@ PERCEIVED_SPACE = spaces.Dict({
     "scalars": spaces.Box(low=0, high=65535, shape=(NUM_PERCEIVED_FIELDS,), dtype=np.uint16),
     "hands": spaces.Box(low=0, high=255, shape=(HAND_COUNT,), dtype=np.uint8),
     "pack": spaces.Box(low=0, high=255, shape=(PACK_CAPACITY,), dtype=np.uint8),
-    "creatures": spaces.Box(low=0, high=255, shape=(CREATURE_SLOTS, 4), dtype=np.uint8),
+    "creatures": spaces.Box(
+        low=0, high=255, shape=(CREATURE_SLOTS, CREATURE_PERCEIVED_FIELDS), dtype=np.uint8
+    ),
     "objects": spaces.Box(low=0, high=255, shape=(FLOOR_OBJECT_CAPACITY, 3), dtype=np.uint8),
     "map": spaces.Box(low=0, high=255, shape=(2, MAP_SIZE, MAP_SIZE), dtype=np.uint8),
 })
@@ -183,10 +222,11 @@ def decode_maze(payload: bytes) -> np.ndarray:
 
 
 def decode_creatures(payload: bytes) -> np.ndarray:
-    """Decode a 128-byte creature record into a (32, 4) uint8 array.
+    """Decode the creature record into a (32, 8) uint8 array.
 
-    Each slot is alive, type, X, Y — the wire order matching the perceived
-    channel. Dead and empty slots zero the alive byte.
+    Each slot is alive, type, X, Y, then damage and strength as two
+    little-endian bytes each. The perceived channel keeps only the first four
+    fields; dead and empty slots zero the alive byte.
     """
     return np.frombuffer(payload, dtype=np.uint8).reshape(CREATURE_SLOTS, CREATURE_FIELDS)
 
@@ -405,8 +445,11 @@ class DaggorathState:
         reach_magic = min(self.effective_light_magical, REACH_CAP)
 
         # Creatures — alive slots whose cell is in the walk; magical types
-        # must additionally be within the magic reach.
-        creatures = np.zeros((CREATURE_SLOTS, 4), dtype=np.uint8)
+        # must additionally be within the magic reach. Damage and strength stay
+        # true-state: the player gets no monster health bar.
+        creatures = np.zeros(
+            (CREATURE_SLOTS, CREATURE_PERCEIVED_FIELDS), dtype=np.uint8
+        )
         if self.creatures is not None:
             for slot in range(CREATURE_SLOTS):
                 alive = int(self.creatures[slot, 0])
@@ -421,7 +464,7 @@ class DaggorathState:
                     and visible[cell] >= reach_magic
                 ):
                     continue
-                creatures[slot] = self.creatures[slot]
+                creatures[slot] = self.creatures[slot, :CREATURE_PERCEIVED_FIELDS]
 
         # Floor objects — visible cells ship [specifier, X, Y].
         objects = np.zeros((FLOOR_OBJECT_CAPACITY, 3), dtype=np.uint8)

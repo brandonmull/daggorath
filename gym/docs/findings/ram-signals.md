@@ -39,21 +39,23 @@ The transition from 0x0000 happens when the game exits the demo loop, regardless
 
 ## How do I know a command was matched?
 
-**perfectMatch** at `0x027B`. A 1-byte flag set by the game's command parser when it successfully matches a complete input line against the command word tables.
+**numWords** at `0x0279`. The word-table counter. It resets to 0 between commands, then jumps from 0 to the table size and counts back down to 0 as the parser checks the word table. The 0 → nonzero jump is the matched moment, and it fires on every command.
 
 | Value | Meaning |
 |-------|---------|
-| 0x00 | No match — no input processed, parser still working, or input was invalid |
-| 0xFF | Parser found a complete, valid command match |
+| 0 | No word decode in progress, or the table is exhausted |
+| nonzero | A word decode is running; the value counts the table entries left |
 
-This signal fires once per command — it flips from 0 to 0xFF at the moment the parser finishes consuming a `\r`-terminated line and matching it against the command word tables. It resets to 0 shortly after as the parser returns to idle.
+**perfectMatch** at `0x027B` also flips to 0xFF on a match, but it stays there. It is cleared and re-set inside one word decode, so its zero usually lasts less than a frame and cannot mark the later matches.
 
-`perfectMatch` marks the *matched* moment — the parser finished matching the line — not the *executed* moment. Executed is the command's effect, observed as a state change; the handler running in between has no flag of its own.
+| Value | Meaning |
+|-------|---------|
+| 0x00 | No exact match yet |
+| 0xFF | A complete, valid command matched (stays set) |
 
-Three other signals change at the same moment, forming a reliable command-consumed fingerprint:
+Two other signals change with the match and cross-check it:
 
 - **foundMatch** (0x0278) = 1 — at least one word matched
-- **numWords** (0x0279) = 0 — the word-matching table is exhausted
 - **whereToPrint** (0x02B7) = 255 — the game redirects text output to echo the command
 
-`perfectMatch` only fires for *matched* commands. An unrecognised command that produces `???` does not set this flag.
+The matched moment is the parser finishing the line, not the effect. Executed is the command's effect, observed as a state change; the handler running in between has no flag of its own.

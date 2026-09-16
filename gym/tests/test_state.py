@@ -186,18 +186,26 @@ def test_decode_maze_shape_and_orientation():
 
 
 def test_decode_creatures_shape_and_order():
-    """decode_creatures yields a (32, 4) array in alive/type/X/Y order."""
+    """decode_creatures yields a (32, 8) array in alive/type/X/Y/damage/strength order."""
     payload = bytearray(CREATURE_BYTES)
     payload[0] = 0xFF  # slot 0 alive
     payload[1] = 0x0B  # slot 0 type (Wizard)
     payload[2] = 12    # slot 0 X
     payload[3] = 34    # slot 0 Y
+    payload[4] = 0x34  # slot 0 damage low byte
+    payload[5] = 0x12  # slot 0 damage high byte
+    payload[6] = 0x40  # slot 0 strength low byte
+    payload[7] = 0x1F  # slot 0 strength high byte
     creatures = decode_creatures(bytes(payload))
     assert creatures.shape == (CREATURE_SLOTS, CREATURE_FIELDS)
     assert creatures[0][0] == 0xFF
     assert creatures[0][1] == 0x0B
     assert creatures[0][2] == 12
     assert creatures[0][3] == 34
+    assert creatures[0][4] == 0x34
+    assert creatures[0][5] == 0x12
+    assert creatures[0][6] == 0x40
+    assert creatures[0][7] == 0x1F
 
 
 def test_decode_objects_shapes():

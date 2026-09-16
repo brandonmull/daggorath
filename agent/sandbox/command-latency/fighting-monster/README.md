@@ -8,27 +8,26 @@ Play combat commands and watch the three moments, with the effect appearing only
 
 ## Why it is opportunistic
 
-`ATTACK` always matches — the parser recognizes it whether or not anything is there. Whether it *changes* anything depends on a creature being within reach. So this experiment has two outcomes to distinguish, and both are useful:
+`ATTACK` always matches — the parser recognizes it whether or not anything is there. Whether it *changes* anything depends on a creature sharing the player's cell. So this experiment has two outcomes to distinguish, and both are useful:
 
 - a creature is engaged → the attack changes a combat field (*changed* fires).
 - nothing is engaged → the attack matches and changes nothing (the control).
 
-The maze is deterministic (`gym/docs/findings/deterministic-maze.md`) and level 1 spawns creatures at fixed positions, but they move and pursue, so an encounter within the window is likely, not guaranteed.
+An encounter is set up by hand instead of left to the opening maze. [`../../../../gym/sandbox/machine-save-load/`](../../../../gym/sandbox/machine-save-load/) shows how to freeze a moment on the CoCo 2B; a person plays to a position one or two cells from a monster and saves, and the run resumes that state before the attacks. The encounter is then near-guaranteed rather than likely.
 
 ## Commands and schedule
 
 | When | Command | Expect *matched* | Expect *changed* |
 |---|---|---|---|
-| frames 2800–6000, every ~90 | `ATTACK LEFT`, `ATTACK RIGHT`, `MOVE` in rotation | yes | only when a creature is engaged: `m0221` (a hit taken), `playerStrength` (a kill), `alive` → dead (a death), the engaged creature's `damage` (a hit landed) |
+| frames 600–3000, every ~200 | `ATTACK LEFT`, `ATTACK RIGHT` in rotation | yes | only when a creature is engaged: `player_strength` (a kill), `creature_alive` (a death), `creature_damage` (a hit landed) |
 
-~90 frames ≈ 1.5 s, giving each command room to finish before the next. The `MOVE` in the rotation seeks an encounter.
+The window starts at frame 600, after the load settle the machine-save-load findings measured (a command posted the instant a state resumes lands hundreds of frames late; about ten seconds of quiet fixes it). The monster reaches the player's cell on its own, and the two attacks alternate without a `MOVE`.
 
 ## Watched fields
 
-- `m0221`, `playerStrength` — the player's side of combat (took a hit, gained a kill).
-- the engaged creature's `damage` (and, if needed, `strength`) — a hit landed; the new combat fields from `gym/docs/2_plans/combat-detection.md`.
-- `alive` → dead — a death, already visible in the `C` channel.
-- `atCellX`, `atCellY`, `atHeading` — movement, so a `MOVE` that changes a cell is not mistaken for a combat change.
+- `creature_damage` (a hit landed) and `creature_alive` (a death) — decoded from the `C` channel's per-slot fields, shipped by `gym/docs/2_plans/combat-detection.md`. `creature_strength` rides the same record for grading how hard a hit was, but is not watched: it does not move when a hit lands.
+- `player_strength` — a kill, the reward the game pays in strength.
+- `m0221` is recorded but not watched. It tracks how exerted the player is: a weapon swing raises it by the swing's cost before the hit or miss is decided, a creature's hit raises it, and recovery lowers it. That mix makes it a poor hit signal, but it does mark that a weapon attack ran.
 
 Every other column is recorded but ignored here.
 
@@ -44,14 +43,30 @@ The `ATTACK` with nothing in range is the control the parent asks for: it should
 
 ## Plan
 
-When the shared harness lands, this folder gains only its schedule and this watched-field declaration. If encounters prove unreliable within the window, a refinement is to let the schedule *seek* combat — derive the nearest creature from the `C` channel's positions and attack toward it — rather than firing blindly.
+Built. `run.py` declares the rotation schedule and the watched-field reading; the recording, the session loop, and the analysis live in the parent's `harness.py`. The schedule loads the by-hand state `monster-near` on the CoCo 2B — the only machine that can load a state — and the environment's own `daggorath` plugin samples it exactly as it does a fresh boot.
 
-## Open questions
+## Questions answered
 
-- Do the level-1 creatures reliably reach the player within the window, or must the schedule seek them?
-- Does combat resolve in one frame after the match, or over several (the creature's reply, the next heart update)?
-- Does `ATTACK` with nothing in range still set `perfectMatch`? (This is the matched ≠ changed proof.)
+The two questions this experiment opened are answered in [`../../../docs/findings/command-latency.md`](../../../docs/findings/command-latency.md): combat resolves about 19 frames after the match, and an attack with nothing in range still matches while changing nothing.
 
 ## Running
 
-Not built yet.
+Save the encounter first, by hand:
+
+```bash
+python gym/sandbox/machine-save-load/manual/run.py
+```
+
+Play to a position one or two cells from a monster, then at the console prompt type:
+
+```
+manager.machine:save("monster-near")
+```
+
+Then record the attacks:
+
+```bash
+python agent/sandbox/command-latency/fighting-monster/run.py
+```
+
+Traces land in `agent/sandbox/command-latency/logs/fighting-monster-<session>.log`.

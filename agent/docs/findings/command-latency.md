@@ -1,35 +1,68 @@
 # Command Latency
 
-The torch experiment recorded three fresh boots of the same two commands — PULL LEFT TORCH, then USE LEFT — and read the traces afterward. Processing starts on the parser's match edge; the effect lands one frame later; and the long wait before the match is the command being typed, not the game working.
+The torch experiment recorded three fresh boots of two commands, and the fighting experiment recorded three loads of a saved encounter. Read together, they show the matched signal is `num_words` (not `perfect_match`), the effect lands one frame after the match for the torch and about 19 frames for combat, and the long wait before a match is typing, not processing.
 
-## Processing starts on the match edge, not the match level
+## The matched signal is `num_words`, not `perfect_match`
 
-`perfect_match` latches. It flips to `0xFF` when the parser matches a line and stays there until the parser re-arms for the next one — dropping to 0 for a single frame just before the following match. Reading the level treats a stale flag as a fresh moment; the moment is the 0 → `0xFF` edge. Across the three boots the edge landed on the same frame, one frame before the effect.
+`perfect_match` (0x027B) was documented as the primary matched signal, but it stays set. In the fighting trace it turns to 0xFF on the first match and never returns to 0, so a check for the jump from 0 to 0xFF misses every later match.
+
+The disassembly explains why. In `DecodeInput` (CBEC), `perfect_match` is cleared at CBF6 and set to 0xFF at CC15 when the exact match is found, both inside one word decode. For a word that matches early in its table, the clear and the set happen within a single frame, so the zero never lasts long enough for the sampler to see it. `num_words` (0x0279) is the table counter: it is loaded with the table size at CBFA, then counted down once per table entry at CC23. Large tables make that loop take several frames, so the moment `num_words` jumps from 0 to a nonzero value can be seen on every word decode.
+
+Watching for that `num_words` jump gives clean matched offsets for every command in both traces.
+
+## The wait before the match is typing
+
+PULL is 15 characters and matched 157 frames after the post; USE is 8 and matched 83; ATTACK LEFT is 11 and matched 111; ATTACK RIGHT is 12 and matched 120. All four work out to about ten frames per character, the plugin typing the phrase in. A step's latency is mostly typing: roughly ten frames per character, then the handler's own frames.
 
 ## The handler runs in about one frame
 
-Both commands changed the watched field exactly one frame after the match, in every session. PULL moved the torch from pack to hand; USE lit it. At the resolution the sampler can see, the gap between processing starting and the effect landing is one frame. `where_to_print` pulses to 255 on that same frame, a co-signal for the effect.
+For the torch, both commands changed the field being watched one frame after the match. PULL moved the torch from pack to hand; USE lit it.
 
 | Post (frame) | Command | Echo begins | Matched | Executed |
 |---|---|---|---|---|
 | 1177 | `PULL LEFT TORCH` | +8 | +157 | +158 |
-| 2011 | `USE LEFT` | +8 | +84 | +85 |
+| 2011 | `USE LEFT` | +8 | +83 | +85 |
 
-## The wait before the match is typing, not processing
+## Combat resolves over about 19 frames
 
-PULL is 15 characters and matched 157 frames after the post; USE is 8 characters and matched 84. Both work out to about 9.7 frames per character — the plugin's keyboard typing the phrase in, not the game thinking. The game's own cost is the single frame after the match. A step's latency is therefore dominated by delivery: roughly ten frames per character of the phrase, plus one.
+For the fighting child, the empty left hand hit the spider first: matched +111, changed +130. The sword in the right hand killed it: matched +120, changed +139. Both effects landed 19 frames after their match, where the torch's landed 1. Combat resolves over more frames than inventory commands.
+
+Empty hand and sword show the same 19-frame gap between match and effect against this spider. The only difference between the two hands is phrase length, which shifts the matched arrival by one character's typing time.
+
+## Matched is not changed
+
+After the kill, every later attack matched and changed nothing. That is the proof that a command can match without changing anything, which is what the control was for.
+
+## `m0221` marks a weapon swing, and recovers
+
+`m0221` tracks how exerted the player is, and it does three things. A landed creature hit raises it. It falls as the heart recovers. And every weapon swing raises it by the swing's cost, added in `CmdATTACK` at D2D8 before the game decides whether the swing hit, so a missed sword attack still costs exertion.
+
+The fighting trace shows the swing cost exactly. Every `ATTACK RIGHT` (sword) raises `m0221` by 2, then it falls back to 0 over about 200 frames. The empty-hand `ATTACK LEFT` costs nothing, so its swings leave `m0221` unchanged.
+
+So `m0221` is not a clean hit signal, because recovery and creature hits share it. But for a weapon attack it is a clean execution signal: the swing's cost marks the handler running, hit or miss.
 
 ## The echo never clears
 
-The command echo stays in the command area as scrollback, so "the echo clearing" cannot mark processing complete. The written moment is the echo beginning — the first character the game draws, eight frames after the post, the same gap for both commands.
+The command echo stays in the command area as scrollback, so the echo clearing cannot mark when processing completes. The written moment is the echo beginning, the first character the game draws.
+
+## A saved state replays identically
+
+The fighting child's three sessions replayed identically from the same saved state, so a saved state measures offsets, not variance.
+
+## What the combat numbers cover
+
+The 19-frame combat resolution and the empty-hand-versus-sword equality were measured on one state: starting strength 160, weight 35, wooden sword, empty left hand, no flask effect, against a spider. They are established for that state, not for the game. Enemy type, weight, strength, flasks, and other weapons are all unmeasured variables that could move the number.
 
 ## The trace outlives the reading
 
-The first reading reported USE matching six frames after the post: a latched flag read as a level. The correction came from reading the same traces again — no boot was repeated. Deciding nothing during the run is what made the fix cheap; it is also why the three traces matching byte-for-byte counts as a result.
+The first torch reading reported USE matching six frames after the post, a stale flag read as a fresh moment. The correction came from reading the same traces again. The fighting matched readings came the same way, by switching the code that looks for a match to `num_words` and re-reading the traces already on disk.
 
 ## Reference
 
 | Document | What it contains |
 |---|---|
 | [`../../sandbox/command-latency/README.md`](../../sandbox/command-latency/README.md) | The sandbox these readings come from |
-| [`../1_discussions/command-abbreviation.md`](../1_discussions/command-abbreviation.md) | The delivery follow-up these readings opened — whether to post abbreviated phrases |
+| [`../1_discussions/command-abbreviation.md`](../1_discussions/command-abbreviation.md) | The delivery follow-up these readings opened |
+| [`../../../gym/docs/2_plans/command-consumption.md`](../../../gym/docs/2_plans/command-consumption.md) | The matched-signal plan this corrects |
+| [`../../../gym/docs/2_plans/combat-detection.md`](../../../gym/docs/2_plans/combat-detection.md) | The combat fields the fighting child watches |
+| [`../../../docs/game/combat-model.md`](../../../docs/game/combat-model.md) | The strength-vs-damage model and the attack path |

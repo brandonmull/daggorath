@@ -42,7 +42,7 @@ def _build_command(autosave):
         "-cfg_directory", str(GYM_PATH / ".mame"),
         "-skip_gameinfo",
         "-nonvram_save",
-        "-sound", "none",
+        "-sound", "sdl",
         "-window",
         "-console",
     ]

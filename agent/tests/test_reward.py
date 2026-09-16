@@ -22,6 +22,7 @@ from daggorath_agent.reward import (
 )
 from daggorath_gym.state import (
     CREATURE_BYTES,
+    CREATURE_FIELDS,
     FRAME_LEN,
     FIELDS,
     OBJECTS_BYTES,
@@ -47,7 +48,7 @@ def _build_creatures_bytes(slots):
     """Build a creature record from {slot: (alive, type, X, Y)} entries."""
     creatures = bytearray(CREATURE_BYTES)
     for slot, (alive, creature_type, x, y) in slots.items():
-        base = slot * 4
+        base = slot * CREATURE_FIELDS
         creatures[base] = alive
         creatures[base + 1] = creature_type
         creatures[base + 2] = x

@@ -4,19 +4,19 @@ _See [overview.md](../../../docs/overview.md) for project context and architectu
 
 ## Purpose and scope
 
-The command-latency sandbox triangulates three signals of a command's life — *matched*, *written*, *executed*. This plan adds only *matched*; *written* (`command_text`) and *executed* (the state change) already ship. The parser leaves four transient markers in RAM: `perfectMatch` (0x027B), the one that fires only on a complete, valid match, and three that change at the same instant — `foundMatch` (0x0278), `numWords` (0x0279), and `whereToPrint` (0x02B7) — which together form the "command-consumed fingerprint" catalogued in `gym/docs/findings/ram-signals.md`.
+The command-latency sandbox triangulates three signals of a command's life — *matched*, *written*, *executed*. This plan adds only *matched*; *written* (`command_text`) and *executed* (the state change) already ship. The parser leaves four transient markers in RAM that form the "command-consumed fingerprint" catalogued in `gym/docs/findings/ram-signals.md`: `perfectMatch` (0x027B), `foundMatch` (0x0278), `numWords` (0x0279), and `whereToPrint` (0x02B7).
 
 The scope is those four bytes, filed into the state schema as a new `consumption` category, non-perceived. This resolves the open question left in `../1_discussions/extensibility.md` — whether the recognition flag ships as a state field or as the separate event record `../1_discussions/events.md` proposes. The answer here is a state field: it is a fact about the parser, read every frame like the other scalars, and the sandbox reads it through the environment rather than an event channel.
 
 ## The fields
 
-Four one-byte, true-state fields (the player does not see the parser's internals). `perfect_match` is the primary signal: it flips to 0xFF when the parser finishes a complete, valid match. The three companions change at the same instant and cross-check it — `found_match` is 1 when at least one word matched, `num_words` is 0 when the word table is exhausted, and `where_to_print` is 255 while output is redirected to echo the command. The companions matter because the sandbox's first success criterion is "does `perfect_match` fire on a command that changes nothing?" — a lone flag cannot be trusted until the fingerprint confirms it.
+Four one-byte, true-state fields (the player does not see the parser's internals). The reliable per-command signal is `num_words`: it resets to 0 between commands and goes 0 → N → 0 as the word table is checked, so the moment it jumps from 0 marks each match. `perfect_match` flips to 0xFF on a match but stays set; its clear and set happen inside one word decode, so the zero lasts less than a frame for words that match early in their table. The companions cross-check the moment — `found_match` is 1 when at least one word matched, and `where_to_print` is 255 while output is redirected to echo the command. The companions matter because the sandbox's first success criterion is "does a command that changes nothing still match?" — a lone flag cannot be trusted until the fingerprint confirms it.
 
 | Field | Address | Meaning |
 |-------|---------|---------|
-| `perfect_match` | 0x027B | 0xFF on a complete, valid match |
+| `perfect_match` | 0x027B | 0xFF on a complete, valid match; stays set |
 | `found_match` | 0x0278 | 1 when at least one word matched |
-| `num_words` | 0x0279 | words left in the match table; 0 when resolved |
+| `num_words` | 0x0279 | word-table counter; its 0 → N edge marks each match |
 | `where_to_print` | 0x02B7 | 255 while output echoes the command |
 
 ## Where they land

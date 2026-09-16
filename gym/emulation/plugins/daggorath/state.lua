@@ -17,7 +17,7 @@
 --   "T" + 1-byte comColor + 1024 pixel bytes         text only changed
 --   "B" + 20-byte frame + 1-byte comColor + 1024 px  both changed
 --   "M" + 1024-byte maze                             maze changed
---   "C" + 128-byte creature array                    creatures changed
+--   "C" + 256-byte creature array                    creatures changed
 --   "O" + 76-byte object record                      objects changed
 --   "H" + 24-byte holes/ladders record               holes/ladders changed
 
@@ -57,7 +57,7 @@ local CURRENT_LEVEL_ADDR = 0x0281
 local MAZE_BYTES = 1024
 local CREATURE_SLOTS = 32
 local CREATURE_SLOT_BYTES = 17
-local CREATURE_FIELDS = 4
+local CREATURE_FIELDS = 8
 local CREATURE_BYTES = CREATURE_SLOTS * CREATURE_FIELDS
 local OBJECT_SLOT_BYTES = 14
 local OBJECT_RAW_BYTES = 3
@@ -71,7 +71,11 @@ local PACK_BYTES = PACK_CAPACITY * OBJECT_RAW_BYTES
 local FLOOR_OBJECTS_BYTES = FLOOR_OBJECT_CAPACITY * FLOOR_OBJECT_RAW_BYTES
 local OBJECTS_BYTES = HANDS_BYTES + PACK_BYTES + FLOOR_OBJECTS_BYTES + TORCH_RAW_BYTES
 
--- Creature slot field offsets (17-byte slots).
+-- Creature slot field offsets (17-byte slots). Damage and strength are the
+-- player's no-health-bar facts: true-state, shipped after the four perceived
+-- fields, and never gated into the perceived creatures channel.
+local CREATURE_STRENGTH_OFFSET = 0
+local CREATURE_DAMAGE_OFFSET = 10
 local CREATURE_ALIVE_OFFSET = 12
 local CREATURE_TYPE_OFFSET = 13
 local CREATURE_Y_OFFSET = 15
@@ -248,8 +252,9 @@ local function _sampleMaze()
     return result
 end
 
--- Read the creature array as a flat 128-byte string: per slot, alive, type,
--- X, Y (the wire order matches the perceived channel).
+-- Read the creature array as a flat 256-byte string: per slot, alive, type,
+-- X, Y, damage, strength (the wire order keeps the four perceived fields
+-- first; damage and strength are 2-byte little-endian values).
 local function _sampleCreatures()
     local ok, result = pcall(function()
         local bytes = {}
@@ -259,7 +264,11 @@ local function _sampleCreatures()
                 _memory:read_u8(base + CREATURE_ALIVE_OFFSET),
                 _memory:read_u8(base + CREATURE_TYPE_OFFSET),
                 _memory:read_u8(base + CREATURE_X_OFFSET),
-                _memory:read_u8(base + CREATURE_Y_OFFSET))
+                _memory:read_u8(base + CREATURE_Y_OFFSET),
+                _memory:read_u8(base + CREATURE_DAMAGE_OFFSET + 1),
+                _memory:read_u8(base + CREATURE_DAMAGE_OFFSET),
+                _memory:read_u8(base + CREATURE_STRENGTH_OFFSET + 1),
+                _memory:read_u8(base + CREATURE_STRENGTH_OFFSET))
         end
         return table.concat(bytes)
     end)

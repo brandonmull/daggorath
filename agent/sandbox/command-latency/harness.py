@@ -35,7 +35,7 @@ from daggorath_gym.commands import (
     derive_command_index,
 )
 from daggorath_gym.emulator import MameOperator
-from daggorath_gym.state import FIELDS
+from daggorath_gym.state import CREATURE_FIELDS, CREATURE_SLOTS, FIELDS
 
 from frame_observation import FrameObservation
 
@@ -51,6 +51,20 @@ _SETTLE_FRAMES = 200
 _SCALAR_NAMES = tuple(field_definition.name for field_definition in FIELDS)
 _WORLD_NAMES = ("command_text", "hands", "pack", "lit_torch", "creatures")
 _COLUMN_NAMES = ("event", "frame", "gap") + _SCALAR_NAMES + _WORLD_NAMES
+
+# Creature-channel fields the reading can watch: per-slot values decoded from
+# the C record. The offsets name the wire order alive, type, X, Y, damage,
+# strength; damage and strength are two little-endian bytes.
+_CREATURE_FIELD_OFFSETS = {
+    "creature_alive": 0,
+    "creature_damage": 4,
+    "creature_strength": 6,
+}
+_CREATURE_FIELD_WIDTHS = {
+    "creature_alive": 1,
+    "creature_damage": 2,
+    "creature_strength": 2,
+}
 
 
 @dataclass(frozen=True)
@@ -232,10 +246,33 @@ def _parse_int_list(value: str) -> list:
 
 
 def _field_value(frame, name: str):
-    """Read one watched column from a parsed frame."""
+    """Read one watched column from a parsed frame.
+
+    Scalar fields and world-channel columns carry their recorded value; the
+    creature per-slot fields are decoded from the C channel's bytes.
+    """
+    if name in _CREATURE_FIELD_OFFSETS:
+        return _creature_field_values(frame, name)
     if name in frame["scalars"]:
         return frame["scalars"][name]
     return frame[name]
+
+
+def _creature_field_values(frame, name):
+    """Decode one creature field for every slot from the C channel's bytes."""
+    creatures = frame.get("creatures", b"")
+    if not creatures:
+        return None
+    offset = _CREATURE_FIELD_OFFSETS[name]
+    width = _CREATURE_FIELD_WIDTHS[name]
+    values = []
+    for slot in range(CREATURE_SLOTS):
+        base = slot * CREATURE_FIELDS + offset
+        value = creatures[base]
+        if width == 2:
+            value += creatures[base + 1] << 8
+        values.append(value)
+    return tuple(values)
 
 
 def _baseline_frame(frames, post_frame: int):
@@ -269,21 +306,23 @@ def _changed_fields(baseline, frame, watched_fields) -> dict:
     for name in watched_fields:
         before = _field_value(baseline, name)
         after = _field_value(frame, name)
+        if before is None or after is None:
+            continue
         if before != after:
             changes[name] = (before, after)
     return changes
 
 
-def _first_perfect_match_edge(window, initial_value):
-    """The first 0 -> non-zero rising edge of perfect_match in the window.
+def _first_match_edge(window, initial_value):
+    """The first 0 -> non-zero rising edge of num_words in the window.
 
-    The flag latches at 0xFF once a command matches and clears only when the
-    parser re-arms for the next line, so the matched moment is the edge, not
-    the level.
+    num_words resets to 0 once the word table is exhausted, so every match
+    starts with a fresh 0 -> N edge. perfect_match latches and stays 0xFF
+    across matches, so it cannot mark the later ones.
     """
     previous = initial_value
     for frame in window:
-        value = frame["scalars"]["perfect_match"]
+        value = frame["scalars"]["num_words"]
         if previous == 0 and value != 0:
             return frame
         previous = value
@@ -308,10 +347,10 @@ def analyze_trace(log_path, watched_fields) -> list:
         baseline = _baseline_frame(frames, post_frame)
         if baseline is None:
             baseline_text = ""
-            baseline_match = 0
+            baseline_words = 0
         else:
             baseline_text = baseline["command_text"]
-            baseline_match = baseline["scalars"]["perfect_match"]
+            baseline_words = baseline["scalars"]["num_words"]
 
         written_frame = _first_frame(
             window, lambda frame: frame["command_text"] != baseline_text
@@ -325,7 +364,7 @@ def analyze_trace(log_path, watched_fields) -> list:
                 after_written, lambda frame: frame["command_text"] == baseline_text
             )
 
-        matched_frame = _first_perfect_match_edge(window, baseline_match)
+        matched_frame = _first_match_edge(window, baseline_words)
 
         changed_frame = None
         changes = {}
@@ -371,6 +410,23 @@ def _format_value(value) -> str:
     return str(value)
 
 
+def _format_change(change) -> str:
+    """Render one watched column's before/after for the report.
+
+    Per-slot creature fields print only the slots that changed, not the whole
+    32-slot tuple.
+    """
+    before, after = change
+    if isinstance(before, tuple) and isinstance(after, tuple):
+        changed_slots = [
+            f"slot {index}: {before[index]} -> {after[index]}"
+            for index in range(len(before))
+            if before[index] != after[index]
+        ]
+        return ", ".join(changed_slots)
+    return f"{_format_value(before)} -> {_format_value(after)}"
+
+
 def _describe(values: list) -> str:
     """Render the spread of one offset across a set of results."""
     if not values:
@@ -396,8 +452,7 @@ def print_reports(per_session) -> None:
             ]
             print("  " + "  ".join(columns))
             for name in sorted(latency.changes):
-                before, after = latency.changes[name]
-                print(f"      {name}: {_format_value(before)} -> {_format_value(after)}")
+                print(f"      {name}: {_format_change(latency.changes[name])}")
 
     phrases = []
     for latencies in per_session:
