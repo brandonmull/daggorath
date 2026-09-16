@@ -1,6 +1,6 @@
 # Knowledge Representation
 
-_How the agent holds two kinds of knowledge — experience and cause — and how it uses them together to reason. This is an open discussion, not a plan. It follows [`knowledge-and-reasoning.md`](knowledge-and-reasoning.md), which argues why knowledge should live outside the weights; this doc describes the shape that knowledge takes, and the parts still undecided. It keeps the exchanges that produced it, not just the conclusions._
+_How the agent holds two kinds of knowledge — experience and expectation — and how it uses them together to reason. This is an open discussion, not a plan. It follows [`knowledge-and-reasoning.md`](knowledge-and-reasoning.md), which argues why knowledge should live outside the weights; this doc describes the shape that knowledge takes, and the parts still undecided. It keeps the exchanges that produced it, not just the conclusions._
 
 ## What are the two kinds of knowledge?
 
@@ -13,11 +13,11 @@ The framing that started this discussion came first:
 The agent ends up with two sets of knowledge, and they are different things:
 
 - **Experience** is the record of what happened. Each entry is one moment: where things stood, what the agent did, and what changed as a result.
-- **Causal knowledge** is the summary of what causes what, drawn from many moments. Experience says "in this situation, pulling put the torch in my hand." Causal knowledge says "pulling moves the torch from the pack to the hand."
+- **Expectation** is the summary of what causes what, drawn from many moments. Experience says "in this situation, pulling put the torch in my hand." Expectation says "pulling moves the torch from the pack to the hand."
 
-Experience by itself is just a recording. Causal knowledge by itself is a claim with nothing behind it. The representation holds both side by side so the agent can compare the situation it faces with what it has learned causes what, and let the recorded moments confirm or contradict that. Predicting before acting — that is what this project calls **reasoning**.
+Experience by itself is just a recording. Expectation by itself is a claim with nothing behind it. The representation holds both side by side so the agent can compare the situation it faces with what it has learned causes what, and let the recorded moments confirm or contradict that. Predicting before acting — that is what this project calls **reasoning**.
 
-This is the same split `knowledge-and-reasoning.md` draws between **memory** (true for one run) and **knowledge** (true across runs). Experience is the accumulated moments; causal knowledge is the summary; and consolidation is the step that turns one into the other.
+This is the same split `knowledge-and-reasoning.md` draws between **memory** (true for one run) and **knowledge** (true across runs). Experience is the accumulated moments; expectation is the summary; and consolidation is the step that turns one into the other.
 
 ## What does experience look like?
 
@@ -57,9 +57,25 @@ The basic unit has three parts:
 - the **action** — one command;
 - the **effect** — what changed: which facts are different afterward, and how.
 
-An effect is not something to detect on its own. It is simply the difference between two situations — and that difference has two parts: a **mask** that says *which* facts changed, and a **value** that says *how* they changed (up or down, by how much). Causal knowledge stores the mask; the value keeps the detail.
+An effect is not something to detect on its own. It is the difference between two situations, read as a sparse vector over the facts. The vector's **mask** is the set of facts that changed; its **values** are how each changed (up or down, by how much). An expectation stores both the mask and the values. The mask is the expectation's structure, the facts it touches; the values are its content, what it does to them.
 
-A situation is not the whole picture either. Only some facts define it — the ones that matter for recognizing it again ("a torch in the pack" versus "a torch in the hand"). That smaller set is the situation's own mask.
+A situation is not the whole picture either. It is a sparse vector whose **situation mask** selects the facts that identify it, and whose values are what those facts currently are. Take a fact list of five: torch location (0 pack, 1 hand, 2 floor), torch lit (0 unlit, 1 lit), effective light (0–255), player X, player Y, with 255 the sentinel for "not selected":
+
+```
+situation: torch in pack   [0,   255, 255, 255, 255]   mask {0}, values [0]
+situation: torch in hand   [1,   255, 255, 255, 255]   mask {0}, values [1]
+effect:    PULL           [1,   255, 255, 255, 255]   mask {0}, values [1]
+effect:    USE            [255, 1,   7,   255, 255]   mask {1,2}, values [1, 7]
+```
+
+The two situations share a mask and differ in values; the mask names what identifies the situation, and the values say which one it is. One full record bundles a situation vector, an action, an effect vector, and a judgment:
+
+```
+situation   [0,   255, 255, 255, 255]   torch in pack
+action      PULL TORCH
+effect      [1,   255, 255, 255, 255]   torch now in hand
+judgment    causal, +0.1
+```
 
 An action leaves behind a fact, and it took an exchange to see that there are two kinds:
 
@@ -71,9 +87,9 @@ An action leaves behind a fact, and it took an exchange to see that there are tw
 
 In the figure, the `known` label marks the second kind.
 
-## Which facts should a lesson watch?
+## A lesson's scope
 
-The full picture is noisy. The heart beats, the torch burns down, tiredness climbs, and most of that has nothing to do with the lesson being learned. So a lesson names the facts it cares about, and every other fact is dropped before two situations are compared. The comparison then reports only what the lesson watches.
+The full picture is noisy. The heart beats, the torch burns down, tiredness climbs, and most of that has nothing to do with the lesson being learned. So a lesson's scope names the facts it cares about, and every other fact is dropped before two situations are compared. The comparison then reports only what the scope includes.
 
 The reasoning was stated plainly:
 
@@ -81,7 +97,15 @@ The reasoning was stated plainly:
 >
 > **the consequence** — "One consequence of doing things this way is that we will have to conceive a solution for combining knowledge from lessons, such that the resulting knowledge is in terms of the full field set."
 
-The combination is not simple, because a lesson ignores some facts on purpose, and an ignored fact may have been hiding a real influence. So the pieces must be combined carefully, and the result must stay open to revision. (`knowledge-and-reasoning.md` leaves the same problem open, under "unifying overlapping masks.")
+The combination is not simple, because a lesson ignores some facts on purpose, and an ignored fact may have been hiding a real influence. So the pieces must be combined carefully, and the result must stay open to revision. Two scopes overlap when they share a fact:
+
+```
+torch lesson scope   [1, 1, 1, 0, 0]   facts {0,1,2}
+sight lesson scope   [0, 0, 1, 1, 1]   facts {2,3,4}
+overlap              [0, 0, 1, 0, 0]   fact {2}: effective light
+```
+
+Both lessons learned edges keyed to fact 2, so merging them must reconcile what each claims about effective light. (`knowledge-and-reasoning.md` leaves the same problem open, under "unifying overlapping masks.")
 
 ## When is one step finished?
 
@@ -113,24 +137,26 @@ The sandbox at [`../../sandbox/command-latency/`](../../sandbox/command-latency/
 
 The three moments and the no-action control are the two halves of one need — causal attribution — named in [`causal-attribution.md`](causal-attribution.md).
 
-## How do experience and causal knowledge meet?
+## How do experience and expectation meet?
 
 The two datasets are used together in two passes, at two different times:
 
-- **Consolidation** happens offline. It reads the accumulated experience and distills the clean cause-and-effect claims from it.
-- **Execution** happens live. It matches the situation at hand against those claims, then picks an action.
+- **Consolidation** happens offline. It reads the accumulated experience and distills the clean expectations from it.
+- **Execution** happens live. It matches the situation at hand against those expectations, then picks an action.
 
-The match does not have to be exact. A loose match, weighted by how well the remembered moments turned out, lets the agent choose probabilistically rather than all-or-nothing. The full bridge is not buildable yet — the causal side is still being worked out — but the experience side can be built ready for it. It needs to record the reduced situation, the action, the effect (mask and value), and how the outcome was judged. Those are exactly what consolidation will sort through and what execution will match against.
+The match does not have to be exact. A loose match, weighted by how well the remembered moments turned out, lets the agent choose probabilistically rather than all-or-nothing. The full bridge is not buildable yet — the expectation side is still being worked out — but the experience side can be built ready for it. It needs to record the reduced situation, the action, the effect vector, and how the outcome was judged. Those are exactly what consolidation will sort through and what execution will match against.
 
 ## Vocabulary
 
-- **Situation (precondition)** — what the agent sees before acting. Never the game's hidden truth.
+- **Situation** — a sparse vector: the situation mask selects the facts that identify it, and the values are what those facts are. Never the game's hidden truth.
 - **Action** — one command.
-- **Effect** — the difference between the situation before an action and the situation after it.
+- **Effect** — a sparse vector: the effect mask selects the facts that changed, and the values are how each changed.
+- **Mask** — the set of facts a vector selects.
+- **Scope** — a lesson's subset of the fact list.
 - **Transition** — a situation, an action, and an effect, recorded as one unit.
 - **Session** — one playthrough of the game, from the start to the end (a win or a death).
-- **Lesson** — one unit of the curriculum: a single goal and a single reduced set of facts.
-- **Causal edge** — a transition generalized from many instances: this action, from this kind of situation, produces this kind of effect.
+- **Lesson** — one unit of the curriculum: a single goal and a single scope.
+- **Expectation** — a transition generalized from many instances: this action, from this kind of situation, produces this kind of effect.
 
 ## Open questions
 
@@ -149,3 +175,4 @@ The match does not have to be exact. A loose match, weighted by how well the rem
 | [`curriculum.md`](curriculum.md) | The lesson ordering and the per-lesson rewards the valuation layer feeds |
 | [`../../sandbox/command-latency/`](../../sandbox/command-latency/README.md) | The experiment measuring the three moments |
 | [`../../sandbox/causal-diff/`](../../sandbox/causal-diff/README.md) | The probe computing the effect diff |
+| [`../2_plans/knowledge-store.md`](../2_plans/knowledge-store.md) | The storage spec: the data model and the storage choice |
