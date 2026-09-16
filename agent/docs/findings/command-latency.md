@@ -41,6 +41,10 @@ The fighting trace shows the swing cost exactly. Every `ATTACK RIGHT` (sword) ra
 
 So `m0221` is not a clean hit signal, because recovery and creature hits share it. But for a weapon attack it is a clean execution signal: the swing's cost marks the handler running, hit or miss.
 
+## `input_cursor` marks when a command has finished
+
+The executed signal the sandbox was missing is `input_cursor` (0x0211), the game's cursor into the command being typed. It snaps back to 0x02F1 once a command has run, on every command, even one that does nothing visible; paired with `command_rejected` (the `???` echo) it separates executed from rejected. The full field entry is in [`../../../gym/docs/findings/ram-signals.md`](../../../gym/docs/findings/ram-signals.md). It is not on the wire yet.
+
 ## The echo never clears
 
 The command echo stays in the command area as scrollback, so the echo clearing cannot mark when processing completes. The written moment is the echo beginning, the first character the game draws.

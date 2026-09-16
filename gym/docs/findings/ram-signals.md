@@ -58,4 +58,21 @@ Two other signals change with the match and cross-check it:
 - **foundMatch** (0x0278) = 1 — at least one word matched
 - **whereToPrint** (0x02B7) = 255 — the game redirects text output to echo the command
 
-The matched moment is the parser finishing the line, not the effect. Executed is the command's effect, observed as a state change; the handler running in between has no flag of its own.
+The matched moment is the parser finishing the line, not the effect.
+
+<br>
+
+<br>
+
+## How do I know a command was executed?
+
+**input_cursor** at `0x0211–0x0212`. A cursor into the line the game is parsing: the address of the next character the parser will read. It is two bytes, big-endian, and its resting value is `0x02F1`, the beginning of the line. While you type, it moves forward one letter at a time. When you press Enter, the game reads the command, runs it, and then, at one spot in the game's code, `D2B4`, moves the cursor back to the beginning.
+
+That snap back to `0x02F1` is the executed moment. It happens after every command finishes running, even one that does nothing visible, because the game runs every command to the end and then resets the cursor.
+
+| Value | Meaning |
+|-------|---------|
+| 0x02F1 | Resting — the game is at the beginning of the line |
+| above 0x02F1 | A line is being typed, or a command is running |
+
+One catch: the cursor also resets when the game rejects a command, or when you press Enter on an empty line. So the reset alone does not tell executed from rejected. Pair it with the rejection text — **command_rejected**, the `???` the game prints instead of running the command. The cursor back at `0x02F1` and no `???` appeared means the command ran.

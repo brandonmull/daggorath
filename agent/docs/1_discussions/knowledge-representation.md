@@ -137,6 +137,10 @@ The sandbox at [`../../sandbox/command-latency/`](../../sandbox/command-latency/
 
 The three moments and the no-action control are the two halves of one need — causal attribution — named in [`causal-attribution.md`](causal-attribution.md).
 
+## What marks a command finished?
+
+The sandbox found the signal: `input_cursor` (0x0211) snaps back to 0x02F1 once a command has run, and paired with the `???` the game prints (`command_rejected`) it tells executed from rejected. The finding is recorded in [`../findings/command-latency.md`](../findings/command-latency.md). What remains open is only where the wait lives — the environment's step, a wrapper, or a plugin record.
+
 ## How do experience and expectation meet?
 
 The two datasets are used together in two passes, at two different times:
@@ -160,7 +164,7 @@ The match does not have to be exact. A loose match, weighted by how well the rem
 
 ## Open questions
 
-- **The settle signal.** Is there a reliable signal that a command has finished, or should the window be defined by the lesson's own facts going quiet? The sandbox is measuring this.
+- **The settle signal.** Settled — see "What marks a command finished?" above.
 - **Combining lessons.** How should the knowledge from different lessons be combined into one full picture without dragging in each lesson's blind spots?
 - **The no-action control.** The world changes on its own. How is that background change captured, and what about the facts the agent does control?
 - **False causation.** A link may be labeled causal and later turn out wrong. How is that caught and corrected, across sessions?

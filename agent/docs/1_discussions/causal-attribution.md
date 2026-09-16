@@ -44,6 +44,10 @@ If the two halves are to be observed, the environment has to report the record t
 
 The environment's part is the complete temporal record — every frame, numbered, with what changed on it — and that part is argued on the environment side in [`frame-reporting.md`](../../../gym/docs/3_decisions/frame-reporting.md). The consumer's part is what to do with that record: how to group frames into a step, and whether "no action" is a command or just the absence of one — observe-only in the knowledge base, an action in the Gym step. Both are the consumer's choices, not the producer's. The two halves also leave two open questions behind: the settle signal — how to know a command finished — and false causation — how to catch a link labeled causal that later turns out wrong. And the command edges and world edges must be explicit — readable and chainable — so they cannot live in the weights: SB3 is model-free and holds no explicit model, so the edges live in the knowledge base, and SB3 learns only the value that ranks them.
 
+## Has the settle signal been found?
+
+Yes: `input_cursor` (0x0211) snaps back to 0x02F1 once a command has run, and paired with the `???` the game prints (`command_rejected`) it tells executed from rejected. The finding is recorded in [`../findings/command-latency.md`](../findings/command-latency.md). The other open question, false causation, is still open.
+
 ## Reference
 
 | Document | What It Contains |

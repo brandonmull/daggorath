@@ -12,7 +12,7 @@ Measure the three signals of a command and how far apart they are:
 
 - **Matched** — the parser finishes matching the line. `num_words` (0x0279) jumps from 0 when this happens.
 - **Written** — the game writes its response to the command area: the echoed command, or `???` on rejection. `command_text` (screen-derived) carries this.
-- **Executed** — the game actually executes the command and the state changes as a result.
+- **Executed** — the game runs the command handler to completion.
 
 The measurement is the gap between *matched* and *executed*: when the command is recognized, how long until its effect lands — and is that gap always about the same, or unrelated? *Matched* is a RAM flag; *executed* has no flag — it is the effect, read off the state change — and the handler running in between is inferred, not observed. *Written* is a third signal, already on the wire, checked against the other two. Why that gap matters to the agent's knowledge is in the design doc linked above.
 
@@ -24,6 +24,10 @@ The measurement is the gap between *matched* and *executed*: when the command is
 - `agent/sandbox/causal-diff/server.py` — its probe settles with `_step_until_settled(env, obs, predicate)`, capped at `_SETTLE_STEPS = 100` no-op frames, waiting for a *command-specific* observable (hand holds torch / dungeon brightens). That is right for a probe checking a known answer, but a per-command predicate does not scale to 154 commands.
 
 Neither `num_words` nor `command_text` is certainly *executed*: the echo filling marks the command going in and the echo clearing marks the parser finishing with it — plausibly closer to "processing complete," but still not "state changed."
+
+## The executed signal
+
+Since the sandbox first ran, the executed moment has been found: `input_cursor` (0x0211) snaps back to 0x02F1 once a command has run, even one that does nothing visible. Paired with the `???` the game prints (`command_rejected`) it separates executed from rejected. It is not on the wire yet; the full field entry is in [`../../../gym/docs/findings/ram-signals.md`](../../../gym/docs/findings/ram-signals.md).
 
 ## How the problem divides
 
@@ -63,7 +67,7 @@ If the anchor shows *changed* tracking *matched* by a small, consistent gap, and
 
 | Group | Columns | Witnesses |
 |---|---|---|
-| Consumption | `gameMode`, `perfectMatch`, `foundMatch`, `numWords`, `whereToPrint`, `nextToParse`, `comTextCursor` | matched (`numWords`), and the parser's progress |
+| Consumption | `gameMode`, `perfectMatch`, `foundMatch`, `numWords`, `whereToPrint`, `inputCursor`, `comTextCursor` | matched (`numWords`), executed (`inputCursor`), and the parser's progress |
 | Display | `displayFunction` | the EXAMINE / LOOK view switch |
 | Player | `atCellX`, `atCellY`, `atHeading`, `effectiveLightPhysical`, `playerStrength`, `m0221`, `heartBeatInterval` | movement, light, body |
 | Holdings | `hands`, `pack` — the `O` channel's decoded identities | an object moved between pack and hand |
