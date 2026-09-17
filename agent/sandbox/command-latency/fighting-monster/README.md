@@ -25,7 +25,7 @@ The window starts at frame 600, after the load settle the machine-save-load find
 
 ## Watched fields
 
-- `creature_damage` (a hit landed) and `creature_alive` (a death) — decoded from the `C` channel's per-slot fields, shipped by `gym/docs/2_plans/combat-detection.md`. `creature_strength` rides the same record for grading how hard a hit was, but is not watched: it does not move when a hit lands.
+- `creature_damage` (a hit landed) and `creature_alive` (a death) — decoded from the `C` channel's per-slot fields, shipped by `gym/docs/3_decisions/combat-detection.md`. `creature_strength` rides the same record for grading how hard a hit was, but is not watched: it does not move when a hit lands.
 - `player_strength` — a kill, the reward the game pays in strength.
 - `m0221` is recorded but not watched. It tracks how exerted the player is: a weapon swing raises it by the swing's cost before the hit or miss is decided, a creature's hit raises it, and recovery lowers it. That mix makes it a poor hit signal, but it does mark that a weapon attack ran.
 

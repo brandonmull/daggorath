@@ -66,9 +66,9 @@ Traced in the disassembly (`gym/docs/references/game/code.md`):
 
 ## Scan
 
-The environment samples the creature array single-pass each frame, reading four bytes per slot — `alive` (slot + 12), `type` (slot + 13), `Y` (slot + 15), `X` (slot + 16) — across all 32 slots. Strength (slot + 0) and the combat multipliers (slots + 2–5) are not sampled: the player gets no health bar, and the type already encodes the power tier. The scan ships alive + type + position; kill detection and proximity are derived on the Python side from slot transitions and the player's cell.
+The environment samples the creature array single-pass each frame, reading four perceived bytes per slot — `alive` (slot + 12), `type` (slot + 13), `Y` (slot + 15), `X` (slot + 16) — plus two true-state bytes: `damage` (slot + 10) and `strength` (slot + 0), each two bytes. The combat multipliers (slots + 2–5) are not sampled. The perceived channel ships alive + type + position; `damage` and `strength` ride the same `C` record for the reward and the latency experiments, which read them through the environment's true state (see `../3_decisions/combat-detection.md`).
 
-The four bytes ship in one fixed-size `C` record — 128 bytes, 32 slots in array order — in the order `alive`, `type`, `X`, `Y`, matching the perceived channel. Dead and empty slots zero out the `alive` byte, and Python keys on that byte.
+The `C` record is 256 bytes, 32 slots in array order, eight bytes per slot: `alive`, `type`, `X`, `Y`, then `damage` and `strength` as two little-endian bytes each. Dead and empty slots zero out the `alive` byte, and Python keys on that byte.
 
 
 ## Decisions
@@ -78,7 +78,7 @@ The four bytes ship in one fixed-size `C` record — 128 bytes, 32 slots in arra
 - **Positions, light-gated.** Positions are the "sight" channel; the sound channel (deferred) covers what sight can't.
 - **Kill detection is typed and frame-rate.** A kill is a slot going alive→dead, and the slot's type is what died. Lua samples every frame, so there's no race; strength-delta is only the aggregate.
 - **No level-switch window.** The level-setup routine zeroes the whole array (`SWI_11` over 0x03D4–0x05F4) and re-spawns — the array is never garbage.
-- **Type and starting strength; withhold current hitpoints.** The player gets no health bar; starting strength (slot + 0) is the power tier, which type already roughly encodes.
+- **Strength and damage are true-state, not perceived.** The player gets no health bar, so the perceived `creatures` channel keeps `alive`, `type`, `X`, `Y`. The creature's `strength` (slot + 0) and `damage` (slot + 10) ship in the `C` record for the reward and the latency experiments, which read them through true state.
 - **Light-gated positions via line-of-sight.** A creature is visible when its cell is within the navigation module's corridor walk, at the reach for its own light channel; everything else is absent from perception — there is no memory of the unseen.
 - **Visibility channel is derived from type.** The `C` record ships `alive`/`type`/`X`/`Y`, not the `See` byte (offset 02). But the renderer picks a creature's light channel from `See` — physical when `See == 0`, magic when `See != 0`. Since `See` is a fixed property of the type token, Python derives the channel from type: the magical set is scorpion (0x06), wraith (0x08), galdrog (0x09), demon (0x0A), wizard (0x0B); the other seven are physical.
 - **No memory of the unseen.** Stale coordinates lie — a creature that leaves sight leaves the perception. The sound channel (deferred) is the game's own "behind me" cue.

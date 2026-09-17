@@ -28,4 +28,4 @@ Three levels of evidence, in increasing strength:
 - `../findings/ram-signals.md` — the addresses and their claimed meanings
 - `../../sandbox/state-field-verification/README.md` — the poke-and-assert approach this contrasts with
 - `../../sandbox/command-detection/README.md` — the observe-natural-transitions approach
-- `../2_plans/extensibility.md` — the new fields this method would verify
+- `../3_decisions/state.md` — the schema the new fields file into

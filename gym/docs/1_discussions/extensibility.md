@@ -94,7 +94,8 @@ So a consumer that wants the command and the observation apart reaches for MameO
 
 | Document | What it contains |
 |---|---|
-| `../2_plans/extensibility.md` | The plan this discussion leads to |
+| `../3_decisions/command-consumption.md` | The state-field answer to the recognition-flag question |
+| `../3_decisions/frame-reporting.md` | The every-frame answer to the reporting question |
 | `events.md` | The deferred event channel and the transient-signal proposal |
 | `../3_decisions/state.md` | The state module as it stands |
 | `../../../agent/sandbox/command-latency/README.md` | The experiment that raised the need |

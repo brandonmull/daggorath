@@ -17,5 +17,3 @@ Implemented plans are promoted out of this directory: their design, decision, an
 | objects | Knowledge doc — sampling implemented inside the state module |
 | sound | Deferred — open questions in `../1_discussions/sound.md` |
 | cpp-port | Not started — open questions in `../1_discussions/cpp-port.md` |
-| command-consumption | Not started — parser schema for the command-latency sandbox |
-| combat-detection | Not started — open questions in `../1_discussions/combat-detection.md` |

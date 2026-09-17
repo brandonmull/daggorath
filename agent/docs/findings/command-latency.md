@@ -67,6 +67,6 @@ The first torch reading reported USE matching six frames after the post, a stale
 |---|---|
 | [`../../sandbox/command-latency/README.md`](../../sandbox/command-latency/README.md) | The sandbox these readings come from |
 | [`../1_discussions/command-abbreviation.md`](../1_discussions/command-abbreviation.md) | The delivery follow-up these readings opened |
-| [`../../../gym/docs/2_plans/command-consumption.md`](../../../gym/docs/2_plans/command-consumption.md) | The matched-signal plan this corrects |
-| [`../../../gym/docs/2_plans/combat-detection.md`](../../../gym/docs/2_plans/combat-detection.md) | The combat fields the fighting child watches |
+| [`../../../gym/docs/3_decisions/command-consumption.md`](../../../gym/docs/3_decisions/command-consumption.md) | The matched-signal fields this corrects |
+| [`../../../gym/docs/3_decisions/combat-detection.md`](../../../gym/docs/3_decisions/combat-detection.md) | The combat fields the fighting child watches |
 | [`../../../docs/game/combat-model.md`](../../../docs/game/combat-model.md) | The strength-vs-damage model and the attack path |

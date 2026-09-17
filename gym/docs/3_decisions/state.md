@@ -1,14 +1,14 @@
 # State Module
 
-_1 Sep 2026_
+_17 Sep 2026_
 
 ## Decision
 
-The environment tracks sixteen scalar game-state fields plus five world channels — the 32×32 maze, the 32-slot creature array, floor objects, the lit torch, and holes/ladders — ships them over the FIFO as fixed-size tagged records, and deserializes them into an immutable `DaggorathState` value object in Python.
+The environment tracks twenty-one scalar game-state fields plus five world channels: the 32×32 maze, the 32-slot creature array, floor objects, the lit torch, and holes/ladders. It ships them over the FIFO as fixed-size tagged records and deserializes them into an immutable `DaggorathState` value object in Python.
 
-The frame is 20 bytes (12 u8 + 4 u16) holding the sixteen fields in fixed order — the shared contract with Lua's `SCHEMA`. Seven tags exist: `S` (frame changed), `T` (command-area text changed), `B` (both), and the world records `M`, `C`, `O`, `H`. Change detection drops identical frames, writing a record only when its snapshot differs. Of the sixteen fields, fourteen reach the observation's `scalars` channel (`PERCEIVED_FIELDS`); the two ambient-light components are true-state only.
+The frame is 26 bytes (16 u8 + 5 u16) holding the twenty-one fields in fixed order, the shared contract with Lua's `SCHEMA`. Every frame the sampler writes the frame marker and the frame's full content: `F`, then `B` (the state frame plus command-area pixels), `M`, `C`, `O`, and `H`. The environment drops unchanged frames (see `frame-reporting.md`). Of the twenty-one fields, fourteen reach the observation's `scalars` channel (`PERCEIVED_FIELDS`); the two ambient-light components and the five consumption fields are true-state only.
 
-The sixteen fields: `game_mode`, `display_function`, `at_floor`, `at_cell_x`, `at_cell_y`, `at_heading`, `ambient_light_physical`, `ambient_light_magical`, `effective_light_physical`, `effective_light_magical`, `player_weight`, `player_strength`, `m0221`, `player_fainting`, `heart_beat_interval`, `evil_wizard_dead`. `heart_rate` is derived (60 / interval) and never shipped. The lit torch's `minutes`, `physical_light`, and `magic_light` are object data, shipped in the `O` record as a six-byte lit-torch entry rather than as scalars.
+The twenty-one fields: `game_mode`, `display_function`, `command_parser_matched_exactly`, `command_parser_matched`, `command_parser_word_count`, `where_to_print`, `command_parser_position`, `at_floor`, `at_cell_x`, `at_cell_y`, `at_heading`, `ambient_light_physical`, `ambient_light_magical`, `effective_light_physical`, `effective_light_magical`, `player_weight`, `player_strength`, `m0221`, `player_fainting`, `heart_beat_interval`, `evil_wizard_dead`. `heart_rate` is derived (60 / interval) and never shipped. The lit torch's `minutes`, `physical_light`, and `magic_light` are object data, shipped in the `O` record as a six-byte lit-torch entry rather than as scalars.
 
 ## Why
 
@@ -20,10 +20,10 @@ The sixteen fields: `game_mode`, `display_function`, `at_floor`, `at_cell_x`, `a
 
 ## What Changed
 
-- `emulation/plugins/daggorath/state.lua` — `SCHEMA`, per-frame sampling, the `S`/`T`/`B`/`M`/`C`/`O`/`H` records (the `O` record now carries the lit torch), readiness-gated on `displayFunction`.
+- `emulation/plugins/daggorath/state.lua` — `SCHEMA`, per-frame sampling, the `F`/`B`/`M`/`C`/`O`/`H` records (the `O` record now carries the lit torch), readiness-gated on `displayFunction`.
 - `daggorath_gym/state.py` — `FIELDS`, `PERCEIVED_FIELDS`, `DaggorathState`, and `as_perceived()` (the perception gates).
 - Creature and object sampling (`C`/`O` records) and the command-area decode (`screen.py`) are part of this module's pipeline.
 
 ## Reference
 
-- Decisions: `docs/3_decisions/readiness-gating.md`, `docs/3_decisions/ipc-hybrid.md`
+- Decisions: `docs/3_decisions/readiness-gating.md`, `docs/3_decisions/ipc-hybrid.md`, `docs/3_decisions/command-consumption.md`, `docs/3_decisions/combat-detection.md`, `docs/3_decisions/frame-reporting.md`

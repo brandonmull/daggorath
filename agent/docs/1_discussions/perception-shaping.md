@@ -46,4 +46,4 @@ A declarative partial schema can only subset — it keeps some fields and child 
 - `../3_decisions/feature-extractor.md`, `../3_decisions/observation-wrapper.md` — the existing imperative pieces
 - `../concepts.md` — Dict observations and feature extractors
 - `../../../gym/docs/3_decisions/perception.md` — the environment's perception, the objective whole
-- `../../../gym/docs/2_plans/extensibility.md` — the "perceived state stays whole" plan note
+- `../../../gym/docs/1_discussions/extensibility.md` — the "consumer never extends; perceived stays whole" boundary

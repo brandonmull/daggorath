@@ -20,7 +20,7 @@ So the question narrows to strength and damage: are they worth shipping as true-
 
 ## Reference
 
-- Plan: `../2_plans/combat-detection.md`
+- Decision: `../3_decisions/combat-detection.md`
 - `gym/docs/references/game/ram.md` — the creature array layout and `creatureCounts`
 - `gym/docs/references/game/code.md` — `GetCreatureAt`, the attack path, and the kill path
 - `docs/game/combat-model.md` — the strength-vs-damage combat model

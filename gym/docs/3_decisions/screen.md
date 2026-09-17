@@ -14,7 +14,7 @@ The command area's 1024 pixel bytes (4 text rows × 32 characters × 8 scanlines
 ## What Changed
 
 - `daggorath_gym/screen.py` — `FONT_PATTERNS`, `decode_character`, `decode_text_row`, `decode_command_area`.
-- `emulation/plugins/daggorath/state.lua` — the `T`/`B` pixel records feed the decoder.
+- `emulation/plugins/daggorath/state.lua` — the `B` record carries the comColor and 1024 pixel bytes each frame.
 
 ## Reference
 
