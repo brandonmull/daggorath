@@ -24,6 +24,10 @@ _IDLE_PARSE_POSITION = 0x02F1
 # 600 frames leaves ample margin without risking a hung step.
 _SETTLE_FRAME_LIMIT = 600
 
+# Frames a no-op step waits: one second of game time at 60 Hz. The window is
+# the inaction baseline the attribution work reads.
+_WAIT_FRAMES = 60
+
 
 def _perceived_equal(a: dict, b: dict) -> bool:
     """True when two perceived observations carry the same channel values."""
@@ -64,7 +68,8 @@ class DaggorathEnv(gym.Env):
     Lifecycle: owns a MameOperator; creates it on reset(), stops on close().
     step() waits for a posted command to finish, so one step spans one command,
     and returns the distinct perceived changes under info["changes"] plus their
-    frame numbers under info["frames"].
+    frame numbers under info["frames"]. A no-op step waits one second and
+    returns the world's own changes over that window.
     Status: reward is a placeholder 0.0 (the reward wrapper computes the real
     value); termination is detected (death and the win); truncation is delegated
     to TimeLimit.
@@ -124,7 +129,7 @@ class DaggorathEnv(gym.Env):
     def step(self, action: np.ndarray) -> tuple[np.ndarray, float, bool, bool, dict]:
         # Map the factored action to a wire command index. A syntactically
         # invalid pair (INCANT + non-ring) yields None and is a no-op — no
-        # command is sent, and the frame still advances.
+        # command is sent, and the step waits the fixed no-action window.
         command_index = derive_command_index(int(action[0]), int(action[1]))
         baseline = (
             self._current_state.as_perceived() if self._current_state is not None else None
@@ -136,9 +141,10 @@ class DaggorathEnv(gym.Env):
             changes = self._receive_until_settled()
             state = changes[-1][1]
         else:
-            # A no-op action sends nothing; advance one change as before.
-            state = self._receive_latest_state()
-            changes = []
+            # A no-op action sends nothing; wait the fixed window and report
+            # the world's own motion.
+            changes = self._receive_for_window(_WAIT_FRAMES)
+            state = changes[-1][1]
         self._current_state = state
 
         perceived_changes, frames = _dedupe_perceived(changes, baseline)
@@ -167,41 +173,74 @@ class DaggorathEnv(gym.Env):
         return self._current_state
 
     def _receive_latest_state(self) -> DaggorathState:
-        """Block until a change arrives and return the latest state."""
+        """Block until a frame arrives and return the latest state."""
         while True:
             changes = self._emulator.recv()
             if changes:
                 return changes[-1][1]
 
     def _receive_until_settled(self) -> list[tuple[int, DaggorathState]]:
-        """Receive changes until the posted command has finished.
+        """Receive frames until the posted command has finished.
 
-        command_parser_position leaves its idle value while the game types and
-        runs a command, and returns once the handler has finished. Collects
-        every changed frame along the way and returns the full list, in order,
-        ending at the settled state. Stops early when the game ends, and falls
-        back to the changes seen so far after _SETTLE_FRAME_LIMIT frames so a
-        lost command cannot hang the step.
+        command_parser_position leaves idle when the game starts typing and
+        returns when the handler has finished. Frames before that departure
+        are dropped, so the returned list starts at the command and ends at
+        the settled frame. Stops early when the game ends, and gives up after
+        _SETTLE_FRAME_LIMIT frames.
         """
         changes: list[tuple[int, DaggorathState]] = []
-        saw_busy = False
-        first_frame = None
+        command_started = False
+        command_start_frame = None
+        discarded = 0
         while True:
             for frame_number, state in self._emulator.recv():
-                changes.append((frame_number, state))
-                if first_frame is None:
-                    first_frame = frame_number
+                if state.command_parser_position != _IDLE_PARSE_POSITION:
+                    if not command_started:
+                        command_started = True
+                        command_start_frame = frame_number
+                if command_started:
+                    changes.append((frame_number, state))
+                else:
+                    discarded += 1
                 if self._check_terminated(state):
                     return changes
-                if state.command_parser_position != _IDLE_PARSE_POSITION:
-                    saw_busy = True
-                elif saw_busy:
+                if (
+                    command_started
+                    and state.command_parser_position == _IDLE_PARSE_POSITION
+                ):
                     return changes
             if (
-                first_frame is not None
-                and changes[-1][0] - first_frame >= _SETTLE_FRAME_LIMIT
+                command_start_frame is not None
+                and changes
+                and changes[-1][0] - command_start_frame >= _SETTLE_FRAME_LIMIT
             ):
                 return changes
+            if not command_started and discarded >= _SETTLE_FRAME_LIMIT:
+                return changes
+
+    def _receive_for_window(
+        self, frame_limit: int
+    ) -> list[tuple[int, DaggorathState]]:
+        """Collect frame_limit frames of the world's own motion.
+
+        Drains the backlog to learn the current frame, then collects fresh
+        frames until frame_limit have passed. Stops early when the game ends.
+        """
+        changes: list[tuple[int, DaggorathState]] = []
+        anchor = None
+        while True:
+            batch = self._emulator.recv()
+            if not batch:
+                continue
+            if anchor is None:
+                anchor = batch[-1][0]
+                continue
+            for frame_number, state in batch:
+                changes.append((frame_number, state))
+                if self._check_terminated(state):
+                    return changes
+                if frame_number - anchor >= frame_limit:
+                    return changes
 
     def _compute_reward(self, state) -> float:
         # The environment returns a placeholder reward; the agent-side reward

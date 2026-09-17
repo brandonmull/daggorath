@@ -7,19 +7,16 @@
 --   config: { reporting_cadence = N }
 --     reporting_cadence: flush the buffered reports every Nth frame (default 1 = every frame)
 --
--- Wire format (fixed-size, no delimiter — the pixel payload is binary). A frame
--- with at least one changed channel emits an "F" marker followed by the records
--- that changed; a frame with no change emits nothing, and the gap between
--- consecutive frame numbers marks the still frames. Reports are buffered and
--- flushed at the reporting cadence.
---   "F" + 4-byte little-endian frame number         frame marker, on changed frames
---   "S" + 26-byte frame                              state only changed
---   "T" + 1-byte comColor + 1024 pixel bytes         text only changed
---   "B" + 26-byte frame + 1-byte comColor + 1024 px  both changed
---   "M" + 1024-byte maze                             maze changed
---   "C" + 256-byte creature array                    creatures changed
---   "O" + 76-byte object record                      objects changed
---   "H" + 24-byte holes/ladders record               holes/ladders changed
+-- Wire format (fixed-size, no delimiter — the pixel payload is binary). Every
+-- frame emits an "F" marker followed by the frame's full content; the Python
+-- reader dedups unchanged frames. Reports are buffered and flushed at the
+-- reporting cadence.
+--   "F" + 4-byte little-endian frame number         frame marker, every frame
+--   "B" + 26-byte frame + 1-byte comColor + 1024 px  state and text content
+--   "M" + 1024-byte maze                             maze content
+--   "C" + 256-byte creature array                    creature content
+--   "O" + 76-byte object record                      object content
+--   "H" + 24-byte holes/ladders record               holes/ladders content
 
 local state = {}
 
@@ -159,13 +156,6 @@ local _memory = nil
 local _framesElapsed = 0
 local _reportingCadence = 1
 local _reportBuffer = {}
-local _stateSnapshot = nil
-local _pixelSnapshot = nil
-local _comColorSnapshot = nil
-local _mazeSnapshot = nil
-local _creatureSnapshot = nil
-local _objectSnapshot = nil
-local _holesLaddersSnapshot = nil
 local _frameSubscription = nil
 
 local function _getMemorySpace()
@@ -456,67 +446,26 @@ local function _onFrame()
     local objects = _sampleObjects()
     local holesLadders = _sampleHolesLadders()
 
-    -- Compute which channels changed against the snapshots.
-    local stateChanged = (_stateSnapshot == nil) or (frame ~= _stateSnapshot)
-    local pixelChanged = (_pixelSnapshot == nil)
-        or (pixels ~= _pixelSnapshot)
-        or (comColor ~= _comColorSnapshot)
-    local mazeChanged = (maze ~= nil) and (maze ~= _mazeSnapshot)
-    local creaturesChanged = (creatures ~= nil) and (creatures ~= _creatureSnapshot)
-    local objectsChanged = (objects ~= nil) and (objects ~= _objectSnapshot)
-    local holesLaddersChanged = (holesLadders ~= nil) and (holesLadders ~= _holesLaddersSnapshot)
+    -- Report every frame in full; the Python side dedups unchanged frames.
+    local pieces = { _buildFrameMarker(_framesElapsed) }
+    pieces[#pieces + 1] = _buildRecord("B", frame, comColor, pixels)
+    if maze then
+        pieces[#pieces + 1] = "M" .. maze
+    end
+    if creatures then
+        pieces[#pieces + 1] = "C" .. creatures
+    end
+    if objects then
+        pieces[#pieces + 1] = "O" .. objects
+    end
+    if holesLadders then
+        pieces[#pieces + 1] = "H" .. holesLadders
+    end
 
-    -- A frame with no changed channel emits nothing: the gap between
-    -- consecutive frame markers is the record of the still frames.
-    if stateChanged or pixelChanged or mazeChanged or creaturesChanged
-        or objectsChanged or holesLaddersChanged then
-        -- Build the report: the frame marker first, then each changed record.
-        local pieces = { _buildFrameMarker(_framesElapsed) }
-        if stateChanged and pixelChanged then
-            pieces[#pieces + 1] = _buildRecord("B", frame, comColor, pixels)
-        elseif stateChanged then
-            pieces[#pieces + 1] = _buildRecord("S", frame, nil, nil)
-        elseif pixelChanged then
-            pieces[#pieces + 1] = _buildRecord("T", nil, comColor, pixels)
-        end
-        if mazeChanged then
-            pieces[#pieces + 1] = "M" .. maze
-        end
-        if creaturesChanged then
-            pieces[#pieces + 1] = "C" .. creatures
-        end
-        if objectsChanged then
-            pieces[#pieces + 1] = "O" .. objects
-        end
-        if holesLaddersChanged then
-            pieces[#pieces + 1] = "H" .. holesLadders
-        end
-
-        -- Buffer the report, and flush once the reporting cadence is reached.
-        _reportBuffer[#_reportBuffer + 1] = table.concat(pieces)
-        if #_reportBuffer >= _reportingCadence then
-            _writeReport(table.concat(_reportBuffer))
-            _reportBuffer = {}
-        end
-    end
-    if stateChanged then
-        _stateSnapshot = frame
-    end
-    if pixelChanged then
-        _pixelSnapshot = pixels
-        _comColorSnapshot = comColor
-    end
-    if mazeChanged then
-        _mazeSnapshot = maze
-    end
-    if creaturesChanged then
-        _creatureSnapshot = creatures
-    end
-    if objectsChanged then
-        _objectSnapshot = objects
-    end
-    if holesLaddersChanged then
-        _holesLaddersSnapshot = holesLadders
+    _reportBuffer[#_reportBuffer + 1] = table.concat(pieces)
+    if #_reportBuffer >= _reportingCadence then
+        _writeReport(table.concat(_reportBuffer))
+        _reportBuffer = {}
     end
 end
 
@@ -525,13 +474,6 @@ function state.beginWatching(stateFile, config)
     _stateFile = stateFile
     _framesElapsed = 0
     _memory = nil
-    _stateSnapshot = nil
-    _pixelSnapshot = nil
-    _comColorSnapshot = nil
-    _mazeSnapshot = nil
-    _creatureSnapshot = nil
-    _objectSnapshot = nil
-    _holesLaddersSnapshot = nil
 
     if config and config.reporting_cadence then
         _reportingCadence = config.reporting_cadence
@@ -547,13 +489,6 @@ end
 function state.onReset()
     _memory = nil
     _reportBuffer = {}
-    _stateSnapshot = nil
-    _pixelSnapshot = nil
-    _comColorSnapshot = nil
-    _mazeSnapshot = nil
-    _creatureSnapshot = nil
-    _objectSnapshot = nil
-    _holesLaddersSnapshot = nil
 end
 
 return state

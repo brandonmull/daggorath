@@ -6,19 +6,16 @@ a simple start/stop/recv/send API.
     State channel:   named pipe (FIFO) — MAME writes, Python reads
     Command channel: TCP socket         — Python writes, MAME reads
 
-The state channel carries fixed-size tagged records (no delimiter). A frame
-with at least one changed channel emits an F marker followed by the records
-that changed, written and flushed together; a frame with no change emits
-nothing, and the gap between consecutive frame numbers marks the still frames:
+The state channel carries fixed-size tagged records (no delimiter). Every
+frame emits an F marker followed by the frame's full content, written and
+flushed together; the Python reader dedups unchanged frames:
 
-    F  + 4-byte little-endian frame number             frame marker, on changed frames
-    S  + 26-byte frame                                 state only changed
-    T  + 1-byte comColor + 1024 pixel bytes            text only changed
-    B  + 26-byte frame + 1-byte comColor + 1024 px     both changed
-    M  + 1024-byte maze                                maze changed
-    C  + 256-byte creature array                       creatures changed
-    O  + 76-byte object record                         objects changed
-    H  + 24-byte holes/ladders record                  holes/ladders changed
+    F  + 4-byte little-endian frame number             frame marker, every frame
+    B  + 26-byte frame + 1-byte comColor + 1024 px     state and text content
+    M  + 1024-byte maze                                maze content
+    C  + 256-byte creature array                       creature content
+    O  + 76-byte object record                         object content
+    H  + 24-byte holes/ladders record                  holes/ladders content
 """
 
 import os
@@ -109,8 +106,8 @@ class MameOperator:
         self._receive_buffer = b""
 
         # ---------- frame-number marker + the frame being assembled ----------
-        self._frame_number: Optional[int] = None
-        self._frame_state: Optional[DaggorathState] = None
+        self._current_frame_number: Optional[int] = None
+        self._current_frame_state: Optional[DaggorathState] = None
 
         self._last_frame: Optional[bytes] = None
         self._last_command_area_text = ""
@@ -186,8 +183,8 @@ class MameOperator:
         self._state_fd = None
         self._mame_process = None
         self._receive_buffer = b""
-        self._frame_number = None
-        self._frame_state = None
+        self._current_frame_number = None
+        self._current_frame_state = None
         self._last_frame = None
         self._last_command_area_text = ""
         self._last_maze = None
@@ -198,24 +195,24 @@ class MameOperator:
     # ---------- communication ----------
 
     def recv(self) -> list[tuple[int, DaggorathState]]:
-        """Block until a change arrives, then return every buffered change.
+        """Block until a frame arrives, then return every buffered frame.
 
-        Returns a list of (frame_number, state) pairs, one per changed frame,
-        in arrival order. Empty frames are dropped; their presence shows as a
-        gap between consecutive frame numbers.
+        Returns a list of (frame_number, state) pairs, one per frame, in
+        arrival order. The caller dedups unchanged frames.
         """
-        changes: list[tuple[int, DaggorathState]] = []
+        frames: list[tuple[int, DaggorathState]] = []
 
         record = self._read_record()
         while record is not None:
             if record[0:1] == b"F":
-                frame_number = struct.unpack("<I", record[1:5])[0]
-                if self._frame_state is not None:
-                    changes.append((self._frame_number, self._frame_state))
-                self._frame_number = frame_number
-                self._frame_state = None
+                if self._current_frame_number is not None:
+                    frames.append(
+                        (self._current_frame_number, self._current_frame_state)
+                    )
+                self._current_frame_number = struct.unpack("<I", record[1:5])[0]
+                self._current_frame_state = None
             else:
-                self._frame_state = self._parse_record(record)
+                self._current_frame_state = self._parse_record(record)
 
             record = self._extract_record()
             if record is None:
@@ -227,11 +224,7 @@ class MameOperator:
                     self._receive_buffer += chunk
                     record = self._extract_record()
 
-        if self._frame_state is not None:
-            changes.append((self._frame_number, self._frame_state))
-        self._frame_number = None
-        self._frame_state = None
-        return changes
+        return frames
 
     def send(self, command: commands.DaggorathCommand) -> None:
         """Send a command index (one byte) to MAME on the command socket."""

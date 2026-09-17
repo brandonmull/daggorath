@@ -107,8 +107,8 @@ def _receive_latest_state(operator):
             return changes[-1][1]
 
 
-def test_producer_reports_changed_frames():
-    """The producer writes an F marker only on changed frames, at ~60 Hz."""
+def test_producer_reports_every_frame():
+    """The producer writes an F marker every frame, at ~60 Hz."""
     operator = MameOperator(
         mame_config=MameConfig(window=False, sound="none"),
         ipc_config=_IPC,
@@ -140,11 +140,10 @@ def test_producer_reports_changed_frames():
         assert all(a < b for a, b in zip(frame_numbers, frame_numbers[1:]))
         assert all(0 < n < 10_000_000 for n in frame_numbers)
 
-        # Empty frames are not written: consecutive markers are separated by a
-        # gap in the frame number, never by a bare marker.
-        assert any(
-            b > a + 1 for a, b in zip(frame_numbers, frame_numbers[1:])
-        ), "no gap between consecutive frame markers appeared"
+        # Every frame is written: consecutive markers differ by exactly one.
+        assert all(
+            b == a + 1 for a, b in zip(frame_numbers, frame_numbers[1:])
+        ), "a frame was not reported"
 
         # The frame number advances at ~60 Hz over the 10-second run.
         hz = (frame_numbers[-1] - first_frame) / (end_time - start_time)
@@ -153,35 +152,33 @@ def test_producer_reports_changed_frames():
         operator.stop()
 
 
-def test_recv_returns_a_list_of_changes():
-    """recv() returns a list of (frame_number, state), one per changed frame."""
+def test_recv_returns_a_list_of_frames():
+    """recv() returns a list of (frame_number, state), one per frame."""
     operator = MameOperator(
         mame_config=MameConfig(window=False, sound="none"),
         ipc_config=_IPC,
     )
     try:
         operator.start()
-        changes = operator.recv()
-        assert isinstance(changes, list)
-        assert len(changes) >= 1
-        for frame_number, state in changes:
+        frames = operator.recv()
+        assert isinstance(frames, list)
+        assert len(frames) >= 1
+        for frame_number, state in frames:
             assert isinstance(frame_number, int)
             assert isinstance(state, DaggorathState)
 
-        # Frame numbers advance across calls, and empty frames are dropped, so
-        # gaps appear between consecutive changed frames.
-        previous = changes[-1][0]
-        saw_gap = False
-        for _ in range(50):
+        # Every frame is reported: consecutive frame numbers advance by one.
+        previous = frames[-1][0]
+        advanced = 0
+        for _ in range(120):
             for frame_number, state in operator.recv():
                 assert isinstance(state, DaggorathState)
-                assert frame_number > previous
-                if frame_number > previous + 1:
-                    saw_gap = True
+                assert frame_number == previous + 1
                 previous = frame_number
-            if saw_gap:
+                advanced += 1
+            if advanced >= 10:
                 break
-        assert saw_gap
+        assert advanced >= 10
     finally:
         operator.stop()
 
