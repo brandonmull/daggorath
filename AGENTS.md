@@ -29,6 +29,8 @@ Training an RL bot to play Dungeons of Daggorath (1982) in MAME + Gymnasium.
 ## Package Boundary
 - **The import boundary is the split.** `daggorath_gym` imports only `gymnasium` and `numpy`; only `daggorath_agent` imports the training stack (`stable-baselines3`, `torch`, `sb3-contrib`). Never add a training import to the environment.
 - **Fact vs. valuation.** The environment reports facts and returns reward 0.0; reward is an agent-side valuation. The agent reads true state through the environment's `current_state` property — never through RAM addresses or disassembly. It consumes the interface, not the internals.
+
+- **Fact vs. attribution.** The environment reports the perceived changes in order, with the frame where each began, and makes no claim about what caused each one. Attribution — telling a command's effect from the world's own motion — is agent-side, like valuation. Heart, exertion, and the torch's burn stay perceived; the environment never filters cause from noise.
 - **Checkpoint policy.** Trained weights land in `agent/checkpoints/` (gitignored); never commit them.
 
 ## Documentation
@@ -39,13 +41,16 @@ Training an RL bot to play Dungeons of Daggorath (1982) in MAME + Gymnasium.
 
 - **Flat by default.** Docs are `<topic>.md` files, not `<topic>/plan.md` — a folder wrapping a single file is redundant. Use a folder only when a topic genuinely needs multiple related files (e.g. `2_plans/curriculum/` and its courses).
 
+- **Consolidate, don't proliferate.** Prefer extending an existing doc over adding a new one. If a discovery extends a subject a file already covers, add a section there; a new file is for a subject that has no home yet.
+
 - **A concept may span stages** — e.g. `1_discussions/creatures.md` (open questions) plus `2_plans/creatures.md` (the spec), or `3_decisions/deployment.md` (what shipped) plus `2_plans/deployment.md` (what remains).
 
 - **Promote on completion.** When a plan's work ships, fold its design and reasoning into a decision and remove the plan (or trim it to what remains). Beside the pipeline sit `findings/` (hard-won discoveries) and `references/` (external source material).
 
 ## Coding Conventions
-- **README naming conventions are binding.** Lua uses camelCase; Python uses snake_case. Always use `socket` (not `sock`). Multi-word names follow adjective-then-noun order (`state_socket`, not `socket_state`). `gym/README.md` is the authority — check it before choosing any name.
-- **No abbreviated names in Python.** `_state_connection`, not `_state_conn`. `_receive_buffer`, not `_recv_buf`.
+- **Naming conventions are binding.** The global rule governs meaning; these are the project's conventions on top of it. Lua uses camelCase; Python uses snake_case. Spell full words, never abbreviations (`_state_connection`, not `_state_conn`; `socket`, not `sock`). Multi-word names follow adjective-then-noun order (`state_socket`, not `socket_state`). `gym/README.md` is the authority — check it before choosing any name.
+
+- **Schema names supply meaning; reference docs keep the game's names.** A wire field name says what the value means (`command_parser_position`), not where it lives or what the game calls its RAM byte (`m0211`). The reference docs stay faithful to the game's names, and `ram-signals.md` carries the names table that bridges them.
 - **Verb+object method names.** Methods that do work should name what they act on: `_create_listening_socket(port)`, not `_bind()` or `_create_server()`.
 - **`local` all Lua variables.** Including module requires: `local state = require("state")`.
 - **No speculative API surface.** Don't add methods, properties, or context-manager protocols unless a real caller exists. Delete unused surface rather than leaving it for "later."
