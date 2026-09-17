@@ -57,3 +57,4 @@ SQLite now, `sqlite-vec` later if the representation moves to continuous embeddi
 - The sentinel for a fact that is selected but has no value yet.
 - The mechanics of the mask index: computed at write time and indexed, since the database cannot generate it from the stored vector.
 - What consolidation reads: the batch queries that turn experiences into expectations.
+- The effect is a series, not one diff. The environment's step now returns an ordered list of changes, and one command can change facts in sequence: USE LEFT moves the torch from hand to pack first, then the dungeon brightens a few frames later. To hold that, an effect vector may need to become an effect matrix, one row per fact and one column per change step.

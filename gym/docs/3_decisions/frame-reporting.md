@@ -13,13 +13,13 @@ The state channel writes an `F` marker — a 4-byte little-endian frame number �
 - **Change detection was about bytes, not frames.** The original objection was to rewriting the full ~154-byte state every idle frame. Content stays change-gated, and the frame number, written only on the frames that changed, costs next to nothing.
 - **The reader is a pipe, not a judge.** It reports every change as `(frame_number, state)` and never decides a change is uninteresting — the consumer does. The environment keeps the latest state; the sandbox counts the gaps to measure stillness.
 - **No heartbeat; the timeout is the liveness signal.** The empty marker's one remaining value was certainty against missed frames, which the notifier already provides. A stuck MAME surfaces as a `TimeoutError` from the reader's `_STATE_READ_TIMEOUT`.
-- **The step unit is the consumer's choice.** Frame versus change versus settled command is decided downstream — a predicate in the environment's step loop, measured by the command-latency sandbox — not by a knob on the sampler.
+- **The step unit is now settled.** The sampler still reports every changed frame and leaves the grouping to the step loop. The environment's `step()` waits for `command_parser_position` to leave and return to its idle value, then returns the perceived changes under `info["changes"]` and their frame numbers under `info["frames"]`. One step spans one command.
 
 ## What Changed
 
 - `emulation/plugins/daggorath/state.lua` — writes the `F` marker only when a channel changed; flushes reports at `reporting_cadence`.
 - `emulation/plugins/daggorath/init.lua` — reads `REPORTING_CADENCE` and passes `reporting_cadence` to `beginWatching`.
 - `daggorath_gym/emulator.py` — `recv()` returns a list of changes; `IpcConfig.reporting_cadence`.
-- `daggorath_gym/environment.py` — `_receive_latest_state()` keeps the latest state from the list.
+- `daggorath_gym/environment.py` — `step()` waits for `command_parser_position` to leave and return to idle, then returns the perceived changes (repeats dropped) under `info["changes"]` and frame numbers under `info["frames"]`.
 - `tests/test_emulator.py` — producer test (frame-number gaps) and reader test (list of changes).
 - `sandbox/torch-light/server.py` — consumes the list through a `_receive_latest_state` helper.

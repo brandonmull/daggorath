@@ -14,12 +14,57 @@ from .commands import (
 from .state import PERCEIVED_SPACE, DaggorathState
 
 
+# The parser's position at rest — the start of the input line. It leaves this
+# value while a command is typed and run, and returns once the handler has
+# finished.
+_IDLE_PARSE_POSITION = 0x02F1
+
+# Frames to wait for a command to finish before giving up. Typing is about ten
+# frames per character and the longest command is about fifteen characters, so
+# 600 frames leaves ample margin without risking a hung step.
+_SETTLE_FRAME_LIMIT = 600
+
+
+def _perceived_equal(a: dict, b: dict) -> bool:
+    """True when two perceived observations carry the same channel values."""
+    for key in a:
+        if not np.array_equal(a[key], b[key]):
+            return False
+    return True
+
+
+def _dedupe_perceived(
+    changes: list[tuple[int, DaggorathState]],
+    baseline: dict | None = None,
+) -> tuple[list[dict], list[int]]:
+    """Collapse a change set to its distinct perceived states.
+
+    Consecutive changes whose perceived state is identical (the echo frames,
+    which alter nothing the player sees) collapse to one entry, keeping the
+    first frame at which each perceived state appeared. Changes identical to
+    the baseline are dropped too, so the list starts at the first real change.
+    """
+    perceived_changes = []
+    frames = []
+    previous = baseline
+    for frame_number, state in changes:
+        perceived = state.as_perceived()
+        if previous is None or not _perceived_equal(previous, perceived):
+            perceived_changes.append(perceived)
+            frames.append(frame_number)
+            previous = perceived
+    return perceived_changes, frames
+
+
 class DaggorathEnv(gym.Env):
     """A Gymnasium environment that wraps Dungeons of Daggorath via MAME.
 
     Action space: MultiDiscrete([26, 31]) — a (verb form, object specifier) pair.
     Observation space: Dict — the perceived state (scalars + world channels).
     Lifecycle: owns a MameOperator; creates it on reset(), stops on close().
+    step() waits for a posted command to finish, so one step spans one command,
+    and returns the distinct perceived changes under info["changes"] plus their
+    frame numbers under info["frames"].
     Status: reward is a placeholder 0.0 (the reward wrapper computes the real
     value); termination is detected (death and the win); truncation is delegated
     to TimeLimit.
@@ -81,22 +126,33 @@ class DaggorathEnv(gym.Env):
         # invalid pair (INCANT + non-ring) yields None and is a no-op — no
         # command is sent, and the frame still advances.
         command_index = derive_command_index(int(action[0]), int(action[1]))
+        baseline = (
+            self._current_state.as_perceived() if self._current_state is not None else None
+        )
         if command_index is not None:
             self._emulator.send(DaggorathCommand(index=command_index))
-
-        # Receive the next game state. recv() returns a list of changes; the
-        # empty frames are already dropped by the reader. The command's
-        # effect may land a step later — harmless, because the reward wrapper
-        # computes from state transitions. "Wait-for-settle" (command_parser_position on
-        # the wire) is the follow-up.
-        state = self._receive_latest_state()
+            # Wait for the command to finish, so one step spans one command.
+            # The distinct perceived changes ride in info for causal attribution.
+            changes = self._receive_until_settled()
+            state = changes[-1][1]
+        else:
+            # A no-op action sends nothing; advance one change as before.
+            state = self._receive_latest_state()
+            changes = []
         self._current_state = state
+
+        perceived_changes, frames = _dedupe_perceived(changes, baseline)
 
         reward = self._compute_reward(state)
         terminated = self._check_terminated(state)
         truncated = self._check_truncated(state)
 
-        return state.as_perceived(), reward, terminated, truncated, {}
+        observation = (
+            perceived_changes[-1] if perceived_changes else state.as_perceived()
+        )
+        info = {"changes": perceived_changes, "frames": frames}
+
+        return observation, reward, terminated, truncated, info
 
     def close(self):
         if self._emulator is not None:
@@ -116,6 +172,36 @@ class DaggorathEnv(gym.Env):
             changes = self._emulator.recv()
             if changes:
                 return changes[-1][1]
+
+    def _receive_until_settled(self) -> list[tuple[int, DaggorathState]]:
+        """Receive changes until the posted command has finished.
+
+        command_parser_position leaves its idle value while the game types and
+        runs a command, and returns once the handler has finished. Collects
+        every changed frame along the way and returns the full list, in order,
+        ending at the settled state. Stops early when the game ends, and falls
+        back to the changes seen so far after _SETTLE_FRAME_LIMIT frames so a
+        lost command cannot hang the step.
+        """
+        changes: list[tuple[int, DaggorathState]] = []
+        saw_busy = False
+        first_frame = None
+        while True:
+            for frame_number, state in self._emulator.recv():
+                changes.append((frame_number, state))
+                if first_frame is None:
+                    first_frame = frame_number
+                if self._check_terminated(state):
+                    return changes
+                if state.command_parser_position != _IDLE_PARSE_POSITION:
+                    saw_busy = True
+                elif saw_busy:
+                    return changes
+            if (
+                first_frame is not None
+                and changes[-1][0] - first_frame >= _SETTLE_FRAME_LIMIT
+            ):
+                return changes
 
     def _compute_reward(self, state) -> float:
         # The environment returns a placeholder reward; the agent-side reward

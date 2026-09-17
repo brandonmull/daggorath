@@ -32,9 +32,9 @@ The probe is one Python script on nothing but the environment's public surface �
 
 It reads two perceived channels. `scalars` is a uint16 array holding the fourteen `PERCEIVED_FIELDS` in schema order, read by field name through `_FIELD_INDEX`, a name → position map built from `PERCEIVED_FIELDS`. `hands` is a uint8 array of two slots: `0xFF` for an empty hand, otherwise the held object's specifier index. Both channels are diffed before and after each command, so the PULL step's change — a hand now holding the torch — shows in the report, not just the USE step's scalar change.
 
-The factored action space is verb form (0–25) × object specifier (0–30). `_find_action` scans it with `derive_command_index` and `DaggorathCommand.phrase` to recover the factored action for a phrase; `_find_noop_action` returns the first syntactically invalid pair — INCANT with a non-ring — which maps to no command, so the step advances a frame without acting. The scripted actions resolve to verb form 23 with object specifier 5 (PULL LEFT TORCH), verb form 11 with object specifier 0 (USE LEFT), and verb form 25 with object specifier 0 (the no-op).
+The factored action space is verb form (0–25) × object specifier (0–30). `_find_action` scans it with `derive_command_index` and `DaggorathCommand.phrase` to recover the factored action for a phrase. The scripted actions resolve to verb form 23 with object specifier 5 (PULL LEFT TORCH) and verb form 11 with object specifier 0 (USE LEFT).
 
-`_PERCEIVED_EFFECT_FIELDS` is a one-field tuple holding effective_light_physical, the perceived effect; the primitive cause — the torch's own light — is read from the true state's `lit_torch` record, not a scalar. `_SETTLE_STEPS` caps each settle wait at 100 no-op frames.
+`_PERCEIVED_EFFECT_FIELDS` is a one-field tuple holding effective_light_physical, the perceived effect; the primitive cause — the torch's own light — is read from the true state's `lit_torch` record, not a scalar. The environment's step waits for the command to finish and returns the perceived changes it saw, with repeats dropped, under `info['changes']`. The probe reads that list instead of advancing frames on its own.
 
 The flow of `main()`:
 
@@ -44,11 +44,11 @@ main()
     → resets and reads the baseline; the dungeon must be dark
     → plays PULL LEFT TORCH
         → sends the command through the environment's step
-        → advances frames until a hand holds the torch
+        → reads the perceived changes from info
         → checks that a hand holds the torch
     → plays USE LEFT
         → sends the command through the environment's step
-        → advances frames until the dungeon brightens
+        → reads the perceived changes from info
         → checks the perceived effect and the true-state torch light
     → prints the report and returns pass or fail
 ```
@@ -59,9 +59,6 @@ The helpers, and what each does:
 _find_action()
     → walks the factored action space
     → returns the first pair whose command phrase matches the given phrase
-
-_find_noop_action()
-    → returns an invalid pair that sends no command
 
 _scalar()
     → reads one field by name from the scalars channel
@@ -92,10 +89,9 @@ _torch_lit()
 _action_phrase()
     → returns the command phrase for a factored action, for the report
 
-_step_until_settled()
-    → steps the environment with the no-op action
-    → returns the first observation that satisfies the predicate
-    → or stops at the step cap or the read timeout
+_read_change_set()
+    → steps the environment with the given action
+    → returns the perceived changes from info, with their frame numbers
 
 _report_command()
     → prints the factored action and its phrase

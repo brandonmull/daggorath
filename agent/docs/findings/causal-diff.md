@@ -7,3 +7,7 @@ Lighting a torch has a single primitive cause — the torch's own `torch_physica
 ## Channels, not just scalars
 
 A diff over the perceived scalars misses the event's first step. PULL moves the torch from pack to hand, and that change lives only in the `hands` channel — `[0xFF, 0xFF] -> [29, 0xFF]`, PINE TORCH revealed as specifier 29 — not in any scalar. The probe reported "no scalar fields changed" and lost the step. The causal diff must span the perceived channels — hands, pack, objects — not just the scalars.
+
+## The perceived change set is sparse
+
+A command produces far more changed frames than real changes. EXAMINE reported 17, PULL LEFT TORCH 33, and USE LEFT 34. Almost all of those were the game echoing the typed phrase, which changes nothing the player can see. Keep only the changes the player perceives and drop repeats, and the counts collapse to 1, 1, and 2. The cause sits in one or two perceived states, each with the frame where it began; the rest is invisible.
