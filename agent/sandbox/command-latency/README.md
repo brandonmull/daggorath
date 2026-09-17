@@ -116,12 +116,14 @@ The sandbox succeeds when the traces answer these:
 
 This is a measurement, not a pass or fail. What comes out is the timing, and whatever it says about the step unit.
 
-## Open questions
+## Settled questions
 
-- **Waiting for quiet.** Is "stop once the watched fields sit unchanged for a few frames" a workable rule? How many frames? A trace can be re-read with a smaller field set to see whether it goes quiet while the clocks keep ticking.
-- **Where the wait belongs.** In the environment, in a wrapper, or in the Lua plugin (which could send a record when a command is consumed)?
-- **The no-action window.** A no-action step has no `command_parser_word_count` jump, so its window has to be a fixed length. How long should it be, next to a command's?
-- **Window length and confidence.** Should the window shrink as the agent grows more sure of a cause? A window that changes length makes the reward's time discount harder to reason about — does that matter in practice?
+The two decisions that record these are [`frame-reporting.md`](../../../gym/docs/3_decisions/frame-reporting.md) and [`no-action-window.md`](../../../gym/docs/3_decisions/no-action-window.md).
+
+- **Waiting for quiet.** The wait does not watch the fields go quiet. A command step waits for `command_parser_position` to leave idle and return; that round trip is the settle signal. A no-op step waits a fixed window instead.
+- **Where the wait belongs.** In the environment's `step()`. The Lua sampler reports every frame, and the environment groups them and drops unchanged frames.
+- **The no-action window.** One second, 60 frames, a fixed constant. A no-op drains the pre-step backlog and then collects 60 fresh frames.
+- **Window length and confidence.** The window is fixed. An agent-chosen length was considered and deferred; a fixed window keeps the reward's time discount simple.
 
 ## Running
 
