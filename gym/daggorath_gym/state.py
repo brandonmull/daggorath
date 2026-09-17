@@ -80,8 +80,8 @@ FIELDS: list[StateField] = [
     StateField("game_mode", 0, 1, perceived=True),
     StateField("display_function", 1, 2, perceived=True),
     # consumption — the parser's command-consumed fingerprint, true-state only
-    StateField("command_parser_matched", 3, 1),
-    StateField("command_parser_matched_exactly", 4, 1),
+    StateField("command_parser_matched_exactly", 3, 1),
+    StateField("command_parser_matched", 4, 1),
     StateField("command_parser_word_count", 5, 1),
     StateField("where_to_print", 6, 1),
     StateField("command_parser_position", 7, 2),

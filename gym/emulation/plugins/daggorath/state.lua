@@ -124,8 +124,8 @@ local SCHEMA = {
     { name = "gameMode",        addr = 0x0277, width = 1 },
     { name = "displayFunction", addr = 0x02B2, width = 2 },
     -- consumption
-    { name = "commandParserMatched",        addr = 0x027B, width = 1 },
-    { name = "commandParserMatchedExactly", addr = 0x0278, width = 1 },
+    { name = "commandParserMatchedExactly", addr = 0x027B, width = 1 },
+    { name = "commandParserMatched",        addr = 0x0278, width = 1 },
     { name = "commandParserWordCount",      addr = 0x0279, width = 1 },
     { name = "whereToPrint",                addr = 0x02B7, width = 1 },
     { name = "commandParserPosition",       addr = 0x0211, width = 2 },
