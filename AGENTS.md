@@ -212,6 +212,31 @@ When writing or revising files in `gym/docs/1_discussions/` or `agent/docs/1_dis
 18. **Hold one question form across the headings.**
     Sections read as a chain when they share a shape. Mixing "Does…?", "Why…?", "What…?", and "Should…?" reads as a list even when the argument isn't one. Fix the form and let the answers carry the variation.
 
+## Rabbit Hole Explorer
+
+A documentation mode for a discussion that has a lot of ground to cover and will dive deep into each point. It maps the territory first, then explores it point by point, keeping nearly all dialog and breaking it up with briefings so the reader never loses the thread and the product of the discussion stays apparent. The outline is the map, the verbatim dialog is the path walked, and the briefings guide the reader through it. Use it when the user asks to document a discussion this way.
+
+1. **Outline first.**
+    Map the points at a high level before any deep dive. Each point's transcript hangs off that outline, and the outline anchors every return from a rabbit hole.
+
+2. **Keep nearly all dialog verbatim.**
+    Include the exchanges nearly whole, in the document's turn format. Do not replace them with summaries.
+
+3. **Split the dialog into segments, each led by a briefing.**
+    A briefing is a short paragraph before its segment that primes the reader.
+
+4. **A briefing runs problem, conclusion, arguments.**
+    The problem opens with its stakes, never pre-concluding. The conclusion follows with its reason. The arguments are the reasons, last. Named details trail after the argumentation.
+
+5. **Briefings carry reasons, not structure.**
+    A walkthrough of the designed shape is detail for the dialog. The briefing states only why each choice was made.
+
+6. **Every claim traces to the dialog.**
+    No invented rationale, no conclusion the exchange did not reach. Where the exchange hedged or left something open, say so.
+
+7. **Plain language, no reflection on the dialog itself.**
+    No "this exchange opened" or "the answer was." State the substance directly, and lean on a concrete example when one exists.
+
 ## Seed Prompt Writing Principles
 
 When writing a seed prompt to hand the work to a fresh session:
