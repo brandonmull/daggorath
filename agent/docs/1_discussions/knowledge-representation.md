@@ -8,7 +8,8 @@ That is the entire move, repeated: name a fact you want, find the action that wr
 
 ## Vocabulary
 
-- **Fact** — one named thing in the game the agent can state, like the torch being in hand. Facts are the shared vocabulary: beliefs read and write them, and two beliefs join on the same fact.
+- **Fact** — a name bound to a value, like torch location being hand. Facts are the shared vocabulary: beliefs read and write them, and two beliefs join on the same fact.
+- **Mask** — the selection over the full fact list, which facts a belief reads and which it writes. It is what the belief is indexed by, not the facts themselves.
 - **Experience** — the raw record of one step: what the situation was, what the agent did, and the changes that followed, in order.
 - **Question** — an investigation still in progress: the anomaly that sparked it, the hypotheses being tested, and the evidence gathered so far. It persists, going dormant once it settles into beliefs.
 - **Belief** — a settled causal claim: in this situation, this action produces this effect. Each effect carries a value written and a confidence.

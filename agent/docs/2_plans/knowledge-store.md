@@ -1,60 +1,64 @@
 # Knowledge Store — Plan
 
-_A pre-build spec for how experiences are stored. Expectations are named but their storage is not yet designed. The concepts and open questions live in [`../1_discussions/knowledge-representation.md`](../1_discussions/knowledge-representation.md)._
+_A pre-build spec for the store: how experiences, questions, and beliefs are stored. The shapes come from [`../1_discussions/knowledge-representation.md`](../1_discussions/knowledge-representation.md)._
 
 ## What gets stored
 
-The store holds two kinds of data, and this plan specifies only the first. An experience is one transition: where things stood, what the agent did, what changed, and how the outcome was judged. An expectation is one distilled claim about what causes what, drawn from many experiences; its storage shape is not yet designed and belongs to a later plan.
+The store holds three tiers, each with its own shape.
+
+- An **experience** is the raw record of one step: the situation, the action, and the changes that followed, in order.
+- A **question** is an investigation still in progress: the anomaly that sparked it, the hypotheses being tested, and the evidence gathered so far.
+- A **belief** is a settled causal claim: a cause node, the situation and action, with edges to its effects carrying value and confidence.
 
 ## The representation
 
-The full state is a list of facts, each with a permanent id and an encoding. A vector selects some of those facts and records their values.
+The full state is a list of facts, each a name bound to a value.
 
-- The **mask** is the set of selected facts, read off the vector as the facts that appear in it. It is computed at write time and stored as an indexed column, because the application is the only writer and computes the mask from the vector in the same write.
-- The **values** are the content at the selected facts.
+- The **mask** is the selection over the fact list: which facts a belief reads and which it writes. It is what the belief is indexed by.
+- The **value** is the content a fact holds: what an effect writes and what a precondition matches. Confidence joins the value on an effect edge.
 
-The discriminator names what the selection is for:
+The selection has three uses:
 
-- an **effect vector** selects the facts that changed;
-- a **situation vector** selects the facts that identify the situation;
+- an **effect** selects the facts a belief writes;
+- a **precondition** selects the facts a belief reads;
 - a **lesson scope** selects the facts a lesson trains on.
 
-The mask is the reliable classifier and the values are the payload. Each experience is indexed by its mask and stored with its values.
+The mask is the index and the value is the payload.
+
+The data is stored sparse, fact ids as keys, with names never entering the records. The judgment network should stay small, cheap to train and fast at decision time. A network that interprets ids and values directly would have to learn an embedding for every fact, which enlarges it and duplicates what the fact list already knows. So the interpretation should live in code rather than the network. As the fact list grows, the network's input grows with it, and the open question is how to expand it without disturbing the judgment it already has. One candidate is to grow the weight set with each new fact, the new weights defaulting to keep the output stable until they are learned.
 
 ## Fact list and scope
 
-The fact list is the global schema: one id per fact, permanent and never reused or reordered. Adding a new fact appends a new id and leaves every stored vector untouched.
+The fact list is the global schema: one id per fact, permanent and never reused or reordered. Every record references facts by id, a belief's mask, a question's key, an experience's situation and effect, a lesson's scope, so renaming a fact or reordering the list leaves every reference intact. Adding a new fact appends a new id and leaves existing records untouched.
 
-A lesson's scope is an ordered subset of the fact list, stored as an array of fact ids on the lesson row. It fixes the vector shape within that lesson and doubles as the index map: position i in a lesson's vector is whatever fact sits at i in that lesson's scope. Two lessons can hold the same fact at different positions, and that shared fact is the overlap the combination step must reconcile.
+The id is assigned from a counter that only increases, so no id is ever reused. The list is append-only, new facts go to the end, nothing is reordered or deleted, and the name is a field on the entry, so a rename updates the name while the id stays put. The data stores ids, not names, and interpretability comes from resolving each id against the fact list. The fact list ships alongside the data, so any record stays readable by looking its ids up.
+
+A lesson's scope is an ordered subset of the fact list, stored as an array of fact ids on the lesson row. It says which facts the lesson cares about, and every other fact is dropped when the lesson compares situations. Two lessons can share a fact, and that shared fact is the overlap the combination step must reconcile.
 
 Two things are immutable. Fact ids are permanent. Scopes are immutable: a lesson's scope never changes, and a changed scope is a new lesson row. The name stays the same across those rows, so the name is the stable handle for the concept and the lesson id is the version. The goal is not part of that identity. It is tuned between runs, so it is recorded per session instead of versioned into the lesson.
 
 ## Data model
 
-The store is normalized around five relations.
+The store is split by where each tier lives.
 
-| Relation | Key | Meaning |
-|---|---|---|
-| facts | fact id | one fact of the game state, permanent id and encoding |
-| lessons | lesson id | one curriculum unit: its name and its immutable scope |
-| sessions | session id | one playthrough, referencing its lesson and carrying the goal in effect |
-| experiences | record id | one transition: situation vector, action, effect vector, judgment, referencing its session |
-| expectations | not yet designed | the distilled expectations, one per row, specified in a later plan |
+**Experiences** are rows in SQL: the situation, the action, and the effect, each referencing its session.
 
-Relationships, reading "owns" as "references":
+**Beliefs** are the JSON graph: a cause node per belief, each effect edge carrying a value and a confidence.
 
-- a lesson carries its scope and owns its sessions;
-- a session carries its goal and owns its experiences;
-- an experience carries its situation and effect vectors as sparse maps from fact id to value;
-- an experience's facts stay interpretable through experience → session → lesson → scope.
+**Questions** persist alongside, carrying the anomaly, the hypotheses, and the evidence, and the beliefs each settled into.
+
+**Facts** are the global schema, one id per fact. **Lessons** carry the scope over the fact list, and **sessions** carry the goal and own their experiences.
 
 ## Storage
 
-SQLite now, `sqlite-vec` later if the representation moves to continuous embeddings. The store is embedded, append-heavy, and single-agent, so a file-backed store fits and a server does not.
+The store is split by shape. The fact list is a flat JSON list, one entry per fact: its id, its name, and its value type. The beliefs are a NetworkX graph, serialized as JSON. The questions are their own JSON records, each carrying the anomaly, the hypotheses, and the evidence. Experiences stay in SQL, flat append-only rows, alongside two small tables, a lesson carrying its name and scope, and a session carrying its goal and referencing its lesson. The store is embedded and single-agent, so files fit and a server does not.
 
 ## Open items
 
-- The sentinel for a fact that is selected but has no value yet.
-- The mechanics of the mask index: computed at write time and indexed, since the database cannot generate it from the stored vector.
-- What consolidation reads: the batch queries that turn experiences into expectations.
-- The effect is a series, not one diff. The environment's step now returns an ordered list of changes, and one command can change facts in sequence: USE LEFT moves the torch from hand to pack first, then the dungeon brightens a few frames later. To hold that, an effect vector may need to become an effect matrix, one row per fact and one column per change step.
+- What counts as one fact: the granularity, and where the first facts come from.
+- How the judgment network's input grows with the fact list, and how to keep its judgment stable as it does.
+- What earns an experience a question: the threshold below which an experience is just recorded.
+- How evidence divides when a question splits into several beliefs, or several questions merge into one.
+- How confidence is computed from a question's evidence.
+- How the agent acts on a found plan.
+- Whether a ranked backward search stays tractable at Daggorath's scale.
