@@ -1,6 +1,10 @@
 # Knowledge Representation
 
-_How the agent holds two kinds of knowledge — experience and expectation — and how it uses them together to reason. This is an open discussion, not a plan. It follows [`knowledge-and-reasoning.md`](knowledge-and-reasoning.md), which argues why knowledge should live outside the weights; this doc describes the shape that knowledge takes, and the parts still undecided. It keeps the exchanges that produced it, not just the conclusions._
+_How the agent holds knowledge: experiences, beliefs, questions, and plans, and how it reasons over them to act. This is an open discussion, not a plan. It follows [`knowledge-and-reasoning.md`](knowledge-and-reasoning.md), which argues why knowledge should live outside the weights; this doc describes the shape that knowledge takes, and the parts still undecided. It keeps the exchanges that produced it, not just the conclusions._
+
+It needs to be asked how knowledge would be utilized by a running agent to reason about its course of action. A running agent is always answering one question: what do I do next? The torch chain shows how it answers. The agent wants light, which is a fact, `effective_light > 0`. It asks what action makes that fact true. Answer: USE on a held torch. Then it checks the precondition of that action: do I hold a torch? That is another fact, and it's false. So it asks the same question about that fact: what makes "torch in hand" true? Answer: PULL on a torch in the pack, and that one is already true. The search stops, and the plan is PULL then USE.
+
+That is the entire move, repeated: name a fact you want, find the action that writes it, check that action's preconditions, recurse on any precondition that's missing. It's the backward chaining the docs already name. If that's how the agent uses its knowledge, the knowledge has to be shaped for exactly that move.
 
 ## Vocabulary
 
@@ -13,102 +17,65 @@ _How the agent holds two kinds of knowledge — experience and expectation — a
 - **Value** — the content a fact carries: what an effect writes, and what a precondition matches.
 - **Confidence** — how reliable a belief is, derived from the evidence its question holds.
 
-## What are the two kinds of knowledge?
+## Experiences
 
-The framing that started this discussion came first:
+**An experience is the lossless record of one step: the situation, the action, and the changes that followed.**
 
-> **the premise** — "Each step executes an action against a given game state and returns a resulting state. If we capture those transitions over a session, we could consider memory of them experiential knowledge. My intention is to later pair this with a secondary set of data representing the agent's causal knowledge — to iterate over both in conjunction, and generate predictions as a means of reasoning."
->
-> **the answer** — "The point of holding both is to read them together: place the situation the agent faces against the distilled causes, let the remembered moments confirm or contradict them, and predict what an action will do before committing to it. That pairing is what this project means by reasoning."
+Learning requires a faithful record of each step, and any filtering at record time risks losing the fact that later turns out to matter. So an experience should be lossless: the situation, the action, and the changes that followed, kept as an ordered sequence of frames. The world's own motion belongs in the record, since telling it from the agent's effects is the learner's job, not the recorder's. Experiences accumulate append-only; archiving old ones is a later concern.
 
-The agent ends up with two sets of knowledge, and they are different things:
-
-- **Experience** is the record of what happened. Each entry is one moment: where things stood, what the agent did, and what changed as a result.
-- **Expectation** is the summary of what causes what, drawn from many moments. Experience says "in this situation, pulling put the torch in my hand." Expectation says "pulling moves the torch from the pack to the hand."
-
-Experience by itself is just a recording. Expectation by itself is a claim with nothing behind it. The representation holds both side by side so the agent can compare the situation it faces with what it has learned causes what, and let the recorded moments confirm or contradict that. Predicting before acting — that is what this project calls **reasoning**.
-
-This is the same split `knowledge-and-reasoning.md` draws between **memory** (true for one run) and **knowledge** (true across runs). Experience is the accumulated moments; expectation is the summary; and consolidation is the step that turns one into the other.
-
-## What does experience look like?
+An early figure tried to draw how experiential knowledge is represented, and it packed three layers, the data, the process, and the judgment, into one picture.
 
 ![Experiential knowledge representation](knowledge-representation-experiential.jpg)
-
-The request came in with the figure still taking shape, wanting the idea pushed further than the drawing carried it. It was hard to tell what had landed and what had not. The reply found the cause: three separate layers pressed into one view, which is what makes it confusing.
-
-> **the request** — "Please have a look at this image and tell me what you think. It needs to be completed. There are implied rules and mechanics not made explicit yet. The overall concept needs a better introduction, considerate to a wide variety of readers."
->
-> **the diagnosis** — "The figure puts three different things on one canvas and never says which is which — data, process, and judgment. A reader sees a box, an arrow, and three colored pills, and cannot tell that the pills answer three unrelated questions."
 
 Pulled apart, the three layers are:
 
 | Layer | What it is | In the figure |
 |---|---|---|
-| Representation | the data: situations, actions, effects, masks and values | the boxes and arrows |
-| Capture | how the data gets made: runs, lessons, waiting for the game to settle, how the next action is chosen | the ellipses and the "divide the lesson here" rule |
-| Valuation | the agent's judgment: causal or not, progress or setback, reward or penalty | the pills |
+| Representation | the data: situations, actions, effects | the boxes and arrows |
+| Capture | how the data gets made: runs, lessons, waiting for the game to settle | the ellipses and the divide-the-lesson rule |
+| Valuation | the agent's judgment: causal or not, progress or setback | the pills |
 
-They describe the same object but answer different questions. The `causal` / `non-causal` label, for example, is a field on an arrow (data), but its value is decided during capture.
+The first layer is the data itself, and it is what an experience is. A run of play is a graph: each node is a situation the agent saw, each arrow an action and what changed. The basic unit has three parts: the situation, what the agent sees before acting; the action, one command; the effect, what changed, which facts differ afterward and how.
 
-That overload had an obvious remedy:
-
-> **the proposal** — "Each layer wants its own figure — three views of the same graph, not one overloaded diagram."
->
-> **the agreement** — "We should probably create a different figure for each layer, yes?"
-
-The first of the three is the data itself. A run of play looks like a graph. Each node is one situation the agent saw. Each arrow is an action taken from that node, along with what changed. Over a run the arrows trace the path the agent walked, and where more than one action was possible, the path branches.
-
-The extent of that graph was settled early:
-
-> **the definition** — "One session, in my mind, is from the start of the game to victory or death. In the graph, that's from the initial node to the terminal node."
-
-The basic unit has three parts:
-
-- the **situation** (also called the precondition) — what the agent sees before acting;
-- the **action** — one command;
-- the **effect** — what changed: which facts are different afterward, and how.
-
-An effect is not something to detect on its own. It is the difference between two situations, read as a sparse vector over the facts. The vector's **mask** is the set of facts that changed; its **values** are how each changed (up or down, by how much). An expectation stores both the mask and the values. The mask is the expectation's structure, the facts it touches; the values are its content, what it does to them.
-
-A situation is not the whole picture either. It is a sparse vector whose **situation mask** selects the facts that identify it, and whose values are what those facts currently are. Take a fact list of five: torch location (0 pack, 1 hand, 2 floor), torch lit (0 unlit, 1 lit), effective light (0–255), player X, player Y, with 255 the sentinel for "not selected":
+An action leaves a fact behind, and there are two kinds. A world fact is something that changed in the game, pulling the torch moves it to the hand, written by actions like PULL and USE. A knowledge fact is something the agent now knows, that the pack holds a torch, written by actions that reveal, like EXAMINE, or by sight. World facts connect directly, one action writes and the next reads; knowledge facts connect through reasoning, because the agent acts on what it has learned.
 
 ```
-situation: torch in pack   [0,   255, 255, 255, 255]   mask {0}, values [0]
-situation: torch in hand   [1,   255, 255, 255, 255]   mask {0}, values [1]
-effect:    PULL           [1,   255, 255, 255, 255]   mask {0}, values [1]
-effect:    USE            [255, 1,   7,   255, 255]   mask {1,2}, values [1, 7]
+When it comes to experiential knowledge, the structure of the effect data should obviously be a mere sequence of frames. However, causal knowledge is supposed to be more structured than that, encapsulating the belief about the nature of the relationship between a cause and its effects.
 ```
 
-The two situations share a mask and differ in values; the mask names what identifies the situation, and the values say which one it is. One full record bundles a situation vector, an action, an effect vector, and a judgment:
-
 ```
-situation   [0,   255, 255, 255, 255]   torch in pack
-action      PULL TORCH
-effect      [1,   255, 255, 255, 255]   torch now in hand
-judgment    causal, +0.1
+Experiences would definitely grow unbounded without cleanup of some kind. Archiving seems like the right answer. I wouldn't worry about compression for now though. In fact, maybe archiving can be held off while we're developing our POC.
 ```
 
-An action leaves behind a fact, and it took an exchange to see that there are two kinds:
+```
+Good call. The POC model is: experiences accumulate append-only, no archiving, no compression. Archiving is a known future task, not a POC concern.
+```
 
-> **the claim** — "There are two kinds of fluent that an edge can write — `known` (EXAMINE writes what the agent has seen) versus game facts (PULL and USE write the torch's location and light). They compose differently: action links compose by a shared variable, while perception links compose only through reasoning."
->
-> **the confusion** — "I'm not sure what you mean."
->
-> **the explanation** — "An action leaves a fact behind, and there are two kinds. A *world fact* is something that changed in the game — pulling the torch moves it from the pack to the hand — written by actions like PULL and USE. Those connect directly: one action writes the fact, and the next reads it. A *knowledge fact* is something the agent now knows — that the pack holds a torch — written by actions that reveal, like EXAMINE, or by sight. Those do not connect directly; they connect through reasoning, because the agent acts on what it has learned."
+```
+Experience records what happened. Its effect is a sequence of frames, because that's all the environment reports and all the agent should trust before it has drawn any conclusions. Order and timing, no belief.
+```
 
-In the figure, the `known` label marks the second kind.
+```
+Experiences are the evidence, flat ordered append-only sequences.
+```
 
-## A lesson's scope
+```
+Experience stays in SQLite: it's flat, append-only rows.
+```
 
-The full picture is noisy. The heart beats, the torch burns down, tiredness climbs, and most of that has nothing to do with the lesson being learned. So a lesson's scope names the facts it cares about, and every other fact is dropped before two situations are compared. The comparison then reports only what the scope includes.
+<p align="center">· · ·</p>
 
-The reasoning was stated plainly:
+The full state is noisy, the heart beats and the torch burns down, and most of it has nothing to do with the lesson at hand. So a lesson should name a scope, the facts it cares about, and drop everything else before comparing situations. The reduction acts like attention, focusing the learner on the facts that matter.
 
-> **the reduction** — "I think the perceived state needs to be reduced, per lesson, to avoid noise and allow quicker development of causal knowledge. Constraining perception this way is effectively the same as giving the model attention. For my immediate purposes I will hand-pick the parameters, but I believe the technique can be automated."
->
-> **the consequence** — "One consequence of doing things this way is that we will have to conceive a solution for combining knowledge from lessons, such that the resulting knowledge is in terms of the full field set."
+```
+I think the perceived state needs to be reduced, per lesson, to avoid noise and allow quicker development of causal knowledge. Constraining perception this way is effectively the same as giving the model attention. For my immediate purposes I will hand-pick the parameters, but I believe the technique can be automated.
+```
 
-The combination is not simple, because a lesson ignores some facts on purpose, and an ignored fact may have been hiding a real influence. So the pieces must be combined carefully, and the result must stay open to revision. Two scopes overlap when they share a fact:
+```
+One consequence of doing things this way is that we will have to conceive a solution for combining knowledge from lessons, such that the resulting knowledge is in terms of the full field set.
+```
+
+The combination is not simple, because a lesson ignores some facts on purpose, and an ignored fact may have been hiding a real influence. Two scopes overlap when they share a fact:
 
 ```
 torch lesson scope   [1, 1, 1, 0, 0]   facts {0,1,2}
@@ -116,60 +83,9 @@ sight lesson scope   [0, 0, 1, 1, 1]   facts {2,3,4}
 overlap              [0, 0, 1, 0, 0]   fact {2}: effective light
 ```
 
-Both lessons learned edges keyed to fact 2, so merging them must reconcile what each claims about effective light. (`knowledge-and-reasoning.md` leaves the same problem open, under "unifying overlapping masks.")
+Both lessons learned beliefs keyed to fact 2, so merging them must reconcile what each claims about effective light.
 
-## When is one step finished?
-
-Each step is a situation, an action, and the effect of that action. For the effect to mean anything, it has to belong to the action that caused it — so before any of this can work, one question has to be answered: **what counts as one step?** A command has three separate moments, and they are easy to confuse:
-
-- **matched** — the game's parser recognizes the command;
-- **executed** — the command's code runs;
-- **changed** — the game state actually differs because of it.
-
-Only the first leaves a mark we can read.
-
-The exchange that produced this is worth keeping:
-
-> **the discovery** — "Whoa — I didn't realize we were stepping until settled. I was wondering why checkpoints capture so many steps. It doesn't seem right to me."
->
-> **the finding** — "Reading the code showed the opposite: the `step()` call sends a command and takes the very next record, and the wait-for-settle is an unimplemented follow-up. The many steps come from change-gating — every frame the state differs produces a record, and the heart, the torch timer, and tiredness differ often."
->
-> **the insight** — "Nothing in memory says the handler ran, and nothing says the change was caused by the command. That last one has no sensor at all — it is the very inference the agent is supposed to make, so a ready-made signal would give the answer away."
->
-> **the doubt** — "We need a signal that tells us the moment a command has been executed and the state has changed because of it. I don't know if `perfectMatch` is such a signal. The `command_text` echo seems more probable, assuming the command doesn't execute before the whole line has gone through the window. I think we have to sandbox this and try a variety of commands, not just the torch — the only reason a human can tell so easily is prior world knowledge and reasonable expectation."
->
-> **the proposal** — "What if we decouple the action from the effect and let the agent pause further actions while it waits for a 'reasonable' effect? I can see where we'd want to record several state changes inside an allotted time slot, and block further actions at least while the agent's confidence about causation is low."
->
-> **the synthesis** — "The world never goes fully quiet, so the window can't wait for the whole state to stop changing. But the lesson's own reduced facts can. Close the window once those facts hold still for a few frames — the reduction then does double duty: it quiets the noise and says when to stop waiting."
-
-`perfectMatch` and `command_text` in that exchange have since been renamed in the schema: `command_parser_matched_exactly` and `command_area_text`.
-
-So the approach is to **separate the action from its effect and wait out a window**: issue one action, block further actions, watch what changes during the window, then close it and record the effect. While the agent is unsure whether a cause is real, the window can stay open longer; as its confidence grows, it can shorten. A window that changes length makes the reward's time discount harder to reason about, so a fixed-length window is simpler.
-
-The sandbox at [`../../sandbox/command-latency/`](../../sandbox/command-latency/README.md) is measuring these three moments. This doc lays out the question; the sandbox is where the answer comes from.
-
-The three moments and the no-action control are the two halves of one need — causal attribution — named in [`causal-attribution.md`](causal-attribution.md).
-
-## What marks a command finished?
-
-The sandbox found the signal: `command_parser_position` (0x0211) snaps back to 0x02F1 once a command has run, and paired with the `???` the game prints (`command_rejected`) it tells executed from rejected. The finding is recorded in [`../findings/command-latency.md`](../findings/command-latency.md). What remains open is only where the wait lives — the environment's step, a wrapper, or a plugin record.
-
-## How do experience and expectation meet?
-
-The two datasets are used together in two passes, at two different times:
-
-- **Consolidation** happens offline. It reads the accumulated experience and distills the clean expectations from it.
-- **Execution** happens live. It matches the situation at hand against those expectations, then picks an action.
-
-The match does not have to be exact. A loose match, weighted by how well the remembered moments turned out, lets the agent choose probabilistically rather than all-or-nothing. The full bridge is not buildable yet — the expectation side is still being worked out — but the experience side can be built ready for it. It needs to record the reduced situation, the action, the effect vector, and how the outcome was judged. Those are exactly what consolidation will sort through and what execution will match against.
-
-## Our north star should be determining the shape of an agent's knowledge.
-
-It needs to be asked how knowledge would be utilized by a running agent to reason about its course of action. A running agent is always answering one question: what do I do next? The torch chain shows how it answers. The agent wants light, which is a fact, `effective_light > 0`. It asks what action makes that fact true. Answer: USE on a held torch. Then it checks the precondition of that action: do I hold a torch? That is another fact, and it's false. So it asks the same question about that fact: what makes "torch in hand" true? Answer: PULL on a torch in the pack, and that one is already true. The search stops, and the plan is PULL then USE.
-
-That is the entire move, repeated: name a fact you want, find the action that writes it, check that action's preconditions, recurse on any precondition that's missing. It's the backward chaining the docs already name. If that's how the agent uses its knowledge, the knowledge has to be shaped for exactly that move.
-
-## The belief
+## Beliefs
 
 **A belief is the claim that a situation and an action produce an effect.**
 
@@ -560,7 +476,7 @@ Decide and drop it. The project's rule is not to carry data with no consumer, an
 Fine with dropping it.
 ```
 
-## The question
+## Questions
 
 **Experiences reach beliefs only through questions.**
 
@@ -584,14 +500,6 @@ Right. Questions might go dormant but they don't disappear.
 
 ```
 That's the right word. A question has a state: active while under investigation, dormant once resolved. Resolution doesn't delete it; it links it to the belief it produced. And contradiction reactivates the dormant question, reopening the investigation with its old evidence still intact. So the question's shape isn't just polymorphic, it's stateful.
-```
-
-```
-Experiences would definitely grow unbounded without cleanup of some kind. Archiving seems like the right answer. I wouldn't worry about compression for now though. In fact, maybe archiving can be held off while we're developing our POC.
-```
-
-```
-Good call. The POC model is: experiences accumulate append-only, no archiving, no compression. Archiving is a known future task, not a POC concern.
 ```
 
 ```
@@ -647,7 +555,7 @@ nope. cardinality is always n->n for these tiers.
 ```
 
 ```
-Settled then: a chain of three tiers, many-to-many at each hop. No direct edge from experience to belief.
+Settled then: a chain of three tiers, many-to-many at each hop. Experience never reaches belief directly.
 ```
 
 ```
@@ -664,7 +572,7 @@ Those feel like new outline items.
 
 
 
-## The plan
+## Plans
 
 **Planning finds a path through beliefs about what actions can be taken to get from a situation to a goal.**
 
@@ -764,7 +672,7 @@ Right, the checkpoints can't be full-state equality, or the world's own motion m
 the flexibility we need, in both precondition matching and expectation matching, seems to point toward neural nets vs hard-coded rules.
 ```
 
-## The judgment
+## Judgment
 
 **Matching is too fuzzy for rules; the judgment is learned.**
 
@@ -799,24 +707,18 @@ The symbolic layer is the baseline. The matcher shouldn't start from random weig
 
 ## Open questions
 
-- **The settle signal.** Settled — see "What marks a command finished?" above.
-- **Combining lessons.** How should the knowledge from different lessons be combined into one full picture without dragging in each lesson's blind spots?
-- **The no-action control.** The world changes on its own. How is that background change captured, and what about the facts the agent does control?
-- **False causation.** A link may be labeled causal and later turn out wrong. How is that caught and corrected, across sessions?
-- **The bridge.** What exactly does execution match on, and how does a loose match weigh a cause by how it turned out before?
-- **Confidence.** How is confidence in a cause measured (how often seen, how consistent?), and should it control the window's length?
-
-- What makes two experiences the same belief? For confidence to accumulate on a belief, consolidation has to group many transitions into one belief, and that grouping rule is the boundary between experience and expectation. That's really point four's ground.
-- How does a belief name its situation, and how does the agent test whether the current situation satisfies it? That's point two.
-- What earns an experience a question: the threshold below which an experience is just recorded, never investigated.
-- How evidence divides when a question splits into several beliefs, or several questions merge into one.
-- The experience's own full shape: the situation, the action, and the effect, beyond the effect's sequence of frames.
-- How the agent acts on a found plan: which belief it takes, how it chooses among several paths, and what it does when a path fails.
-- Whether a ranked backward search stays tractable at Daggorath's scale.
-
-That last point is where your north star reshapes the plan. The store plan fixed the shape of experience and deferred expectations as "not yet designed." But the running agent reasons over expectations, and experience is only the record that produces and weighs them. So the belief's shape is what we should fix first, and the experience's shape follows from what consolidation needs to read in order to produce a belief. The plan had that order reversed.
-
-It all lands on the first and hardest question, which is also the natural next thing to open: what is a fact? The agent has to name goals, preconditions, and effects, and the whole graph hangs on those names.
+- How should knowledge from different lessons be combined into one full picture without dragging in each lesson's blind spots?
+- How is the world's own motion captured, and which facts does the agent control?
+- How is a causal link caught and corrected when it later turns out wrong, across sessions?
+- What does execution match on, and how does a loose match weigh a cause by how it turned out before?
+- How is confidence measured, and should it control how long the agent waits?
+- What makes two experiences the same belief, so consolidation can group many transitions into one belief?
+- How does a belief name its situation, and how does the agent test whether the current situation satisfies it?
+- What earns an experience a question, the threshold below which an experience is just recorded, never investigated?
+- How does evidence divide when a question splits into several beliefs, or several questions merge into one?
+- What is an experience's full shape, beyond the situation, the action, and the effect's sequence of frames?
+- How does the agent act on a found plan: which belief it takes, how it chooses among several paths, and what it does when a path fails?
+- Does a ranked backward search stay tractable at Daggorath's scale?
 
 ## Reference
 
