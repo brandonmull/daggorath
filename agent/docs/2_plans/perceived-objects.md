@@ -24,7 +24,7 @@ The rename-states stay folded into the specifier. Reveal, incantation, flask dri
 
 ## The translation
 
-The wrapper reads the perceived hands and pack for the specifier indices, the floor objects for their class, and the true-state lit-torch record for the lit torch's identity, minutes, and light.
+The wrapper reads the perceived hands and pack for the specifier indices and the pack's lit bit, the floor objects for their class, and the true-state lit-torch record for the lit torch's minutes and light.
 
 ```
 PerceivedObjectsWrapper
@@ -32,34 +32,31 @@ PerceivedObjectsWrapper
         → a bare-class index gives the class and a null specifier
         → a proper-name index gives the class and the proper name
     → sets revealed from whether the specifier is present
-    → resolves the lit torch by matching its identity against the pack
-    → on the lit torch, sets consuming and consumable from its minutes
+    → reads the pack's lit bit for the active torch
+    → on the active torch, sets consuming and consumable from its minutes
     → for every other possessed object, sets consumable by type
         → a flask stays consumable unless its name reads EMPTY
         → a ring stays consumable unless its name reads GOLD
         → a torch stays consumable unless its name reads DEAD
-    → derives each floor object's class from its specifier, dropping the proper name and reveal state
+    → reads each floor object's class
 ```
 
 ## Default choices
 
 The translation is held as explicit constants, the class names, the proper-name tokens, the spent markers, so a developer reads and edits them. Changing the schema means changing the wrapper, not the environment.
 
-Two defaults are approximations and are called out:
+One default is an approximation and is called out:
 
 - A non-lit torch's consumable reads "not DEAD" rather than its exact minutes, because the pack ships class, proper, and reveal only. The lit torch's minutes ride on the true-state record and give the exact answer for that one torch. Exact minutes for every torch need the environment to ship the special data.
-- The lit torch is resolved by matching its identity against the pack. With one torch that is exact; with two identical torches it is ambiguous, and the precise signal is the game's torch pointer, which is not shipped.
 
 ## Where it lands
 
 - `agent/daggorath_agent/wrappers.py` — `PerceivedObjectsWrapper` and the constants.
-- The environment is unchanged.
+- The environment reports the floor class and the pack highlight, two small gym edits, so the wrapper reads both directly.
 
 ## Open questions
 
 - Ship each torch's minutes so consumable is exact for non-lit torches.
-- Ship the torch pointer so two identical torches resolve exactly.
-- Whether the environment should report the floor-object class rather than the specifier, since the 3D view draws class pictures. Until then the wrapper derives the class itself.
 
 ## Reference Documents
 
