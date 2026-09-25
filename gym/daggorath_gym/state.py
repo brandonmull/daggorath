@@ -85,11 +85,13 @@ FIELDS: list[StateField] = [
     StateField("command_parser_word_count", 5, 1),
     StateField("where_to_print", 6, 1),
     StateField("command_parser_position", 7, 2),
-    # position
-    StateField("at_floor", 9, 1, perceived=True),
-    StateField("at_cell_x", 10, 1, perceived=True),
-    StateField("at_cell_y", 11, 1, perceived=True),
-    StateField("at_heading", 12, 1, perceived=True),
+    # position — all true-state: the player has no compass, no coordinates,
+    # and no level readout. The dungeon view shows the shape ahead, and
+    # spatial memory is the agent's job, not the observation's.
+    StateField("at_floor", 9, 1),
+    StateField("at_cell_x", 10, 1),
+    StateField("at_cell_y", 11, 1),
+    StateField("at_heading", 12, 1),
     # light — the components (ambient) are true-state only; the player sees
     # the two sums (effective light).
     StateField("ambient_light_physical", 13, 1),
@@ -123,6 +125,15 @@ NUM_PERCEIVED_FIELDS = len(PERCEIVED_FIELDS)
 # the inventory.
 _DISPLAY_LOOK = 0xCE66
 _DISPLAY_EXAMINE = 0xD495
+
+# Scalar fields the player perceives only in LOOK. The two effective light
+# sums are dungeon facts: the dungeon view shows them, the inventory view does
+# not, so outside LOOK they read as blackout (0).
+_LOOK_ONLY_SCALAR_FIELDS = frozenset({"effective_light_physical", "effective_light_magical"})
+
+# The pack highlight: bit 7 marks the lit torch, matching the EXAMINE view's
+# color flip. The specifier occupies the low five bits.
+_LIT_BIT = 0x80
 
 # Creature type tokens drawn on the magic-light channel — scorpion, wraith,
 # galdrog, demon, wizard. The other seven types are physical (see creatures plan).
@@ -404,14 +415,21 @@ class DaggorathState:
         """Return the state as perceived by the player, as a Dict observation.
 
         The scalars are the perceived subset of FIELDS — the facts the player
-        honestly sees. The world channels are gated: hands are always present;
+        honestly sees. The two light scalars read 0 outside LOOK. The world
+        channels are gated: hands are always present;
         the pack appears only in EXAMINE; creatures, objects, and the map
         appear only in LOOK with physical light, within the line-of-sight
         corridor walk. Empty object slots and unseen map cells use the 0xFF
         sentinel.
         """
         scalars = np.array(
-            [getattr(self, field.name) for field in PERCEIVED_FIELDS],
+            [
+                0
+                if field.name in _LOOK_ONLY_SCALAR_FIELDS
+                and self.display_function != _DISPLAY_LOOK
+                else getattr(self, field.name)
+                for field in PERCEIVED_FIELDS
+            ],
             dtype=np.uint16,
         )
 
@@ -422,8 +440,15 @@ class DaggorathState:
             hands = _derive_specifier_slots(self.hands)
 
         # Pack — EXAMINE only; LOOK (or an unknown mode) hides the inventory.
+        # The lit torch's slot carries the highlight bit, matching the EXAMINE
+        # view's color flip.
         if self.display_function == _DISPLAY_EXAMINE and self.pack is not None:
             pack = _derive_specifier_slots(self.pack)
+            lit_identity = tuple(int(byte) for byte in self.lit_torch[:3])
+            if lit_identity[0] != 0xFF:
+                for slot in range(PACK_CAPACITY):
+                    if tuple(int(byte) for byte in self.pack[slot]) == lit_identity:
+                        pack[slot] |= _LIT_BIT
         else:
             pack = np.full(PACK_CAPACITY, 0xFF, dtype=np.uint8)
 
@@ -467,7 +492,8 @@ class DaggorathState:
                     continue
                 creatures[slot] = self.creatures[slot, :CREATURE_PERCEIVED_FIELDS]
 
-        # Floor objects — visible cells ship [specifier, X, Y].
+        # Floor objects — visible cells ship [class, X, Y]: the 3D view draws
+        # a picture keyed by class alone, never by proper name or reveal state.
         objects = np.zeros((FLOOR_OBJECT_CAPACITY, 3), dtype=np.uint8)
         if self.objects is not None:
             for index in range(FLOOR_OBJECT_CAPACITY):
@@ -478,10 +504,7 @@ class DaggorathState:
                 cell = (int(entry[3]), int(entry[4]))
                 if cell not in visible:
                     continue
-                specifier = derive_specifier_index(
-                    class_byte, int(entry[1]), int(entry[2])
-                )
-                objects[index] = (specifier, cell[0], cell[1])
+                objects[index] = (class_byte, cell[0], cell[1])
 
         # Map — plane 0 edge bytes, plane 1 feature bytes; 0xFF unseen.
         # A magic door past the magic reach reads as a wall.

@@ -174,6 +174,31 @@ def test_as_perceived():
     assert len(perceived["scalars"]) == len(PERCEIVED_FIELDS)
 
 
+def test_as_perceived_light_gated_to_look():
+    """The light scalars read their values in LOOK and 0 outside LOOK."""
+    field_index = {field.name: index for index, field in enumerate(PERCEIVED_FIELDS)}
+    physical = field_index["effective_light_physical"]
+    magical = field_index["effective_light_magical"]
+
+    look = DaggorathState(_build_frame(
+        display_function=_DISPLAY_LOOK,
+        effective_light_physical=3,
+        effective_light_magical=1,
+    ))
+    scalars = look.as_perceived()["scalars"]
+    assert scalars[physical] == 3
+    assert scalars[magical] == 1
+
+    examine = DaggorathState(_build_frame(
+        display_function=_DISPLAY_EXAMINE,
+        effective_light_physical=3,
+        effective_light_magical=1,
+    ))
+    scalars = examine.as_perceived()["scalars"]
+    assert scalars[physical] == 0
+    assert scalars[magical] == 0
+
+
 # ---- world-channel decoding -------------------------------------------------
 
 def test_decode_maze_shape_and_orientation():
@@ -402,6 +427,19 @@ def test_as_perceived_pack_examine_only():
     assert look.as_perceived()["pack"].tolist() == [0xFF] * PACK_CAPACITY
 
 
+def test_as_perceived_pack_lit_bit():
+    """The lit torch's pack slot carries the highlight bit; others do not."""
+    objects = _build_objects_bytes(
+        pack=((5, 0x0F, 0), (4, 0x11, 0)),  # PINE TORCH, WOODEN SWORD
+        torch=(5, 0x0F, 0, 15, 7, 0),  # the lit PINE TORCH
+    )
+    state = DaggorathState(_build_frame(display_function=_DISPLAY_EXAMINE), objects=objects)
+    perceived = state.as_perceived()
+
+    assert perceived["pack"][0] == 0x80 | 29  # PINE TORCH, lit
+    assert perceived["pack"][1] == 26  # WOODEN SWORD, not lit
+
+
 def test_as_perceived_creature_visibility():
     """Creatures are gated by alive, line-of-sight, and magic reach."""
     frame = _build_frame(
@@ -430,7 +468,7 @@ def test_as_perceived_creature_visibility():
 
 
 def test_as_perceived_floor_object_gating():
-    """Floor objects ship [specifier, X, Y] only at visible cells."""
+    """Floor objects ship [class, X, Y] only at visible cells."""
     frame = _build_frame(
         display_function=_DISPLAY_LOOK,
         effective_light_physical=3,
@@ -450,6 +488,22 @@ def test_as_perceived_floor_object_gating():
     assert perceived["objects"][0].tolist() == [4, 16, 15]
     assert perceived["objects"][1].tolist() == [0, 0, 0]
     assert perceived["objects"][2].tolist() == [0, 0, 0]
+
+
+def test_as_perceived_floor_object_class_only():
+    """A revealed floor object reports its class, never its proper name."""
+    frame = _build_frame(
+        display_function=_DISPLAY_LOOK,
+        effective_light_physical=3,
+        at_cell_x=16,
+        at_cell_y=16,
+        at_heading=DIRECTION_NORTH,
+    )
+    objects = _build_objects_bytes(floor=((4, 0x11, 0, 16, 15),))  # revealed WOODEN SWORD
+    state = DaggorathState(frame, maze=_build_corridor_maze(), objects=objects)
+    perceived = state.as_perceived()
+
+    assert perceived["objects"][0].tolist() == [4, 16, 15]  # class SWORD, not specifier 26
 
 
 def test_as_perceived_map_blackout():
