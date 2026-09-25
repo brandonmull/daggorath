@@ -1,64 +1,90 @@
 # Knowledge Store — Plan
 
-_A pre-build spec for the store: how experiences, questions, and beliefs are stored. The shapes come from [`../1_discussions/knowledge-representation.md`](../1_discussions/knowledge-representation.md)._
+_A spec for building the store. The vocabulary and the reasoning behind it live in [`../1_discussions/knowledge-representation.md`](../1_discussions/knowledge-representation.md); this doc only says what to build._
 
-## What gets stored
+## Scope
 
-The store holds three tiers, each with its own shape.
+Build one embedded DuckDB store with discrete matching in code. No network, no questions tables yet. The first build records experiences, holds facts and beliefs, and searches beliefs backward to find a plan. The point is something playable that the game can correct, not a theory.
 
-- An **experience** is the raw record of one step: the situation, the action, and the changes that followed, in order.
-- A **question** is an investigation still in progress: the anomaly that sparked it, the hypotheses being tested, and the evidence gathered so far.
-- A **belief** is a settled causal claim: a cause node, the situation and action, with edges to its effects carrying value and confidence.
+## The store
 
-## The representation
+One DuckDB file, opened inside the agent's process, no server. All the tables below live in that file. DuckDB's list types carry a scope and the sparse fact lists directly.
 
-The full state is a list of facts, each a name bound to a value.
+## Tables
 
-- The **mask** is the selection over the fact list: which facts a belief reads and which it writes. It is what the belief is indexed by.
-- The **value** is the content a fact holds: what an effect writes and what a precondition matches. Confidence joins the value on an effect edge.
+A sparse fact set is one column of (fact id, value) pairs. The id is the key and the value is the payload, so no name ever enters a record; resolving the id against the fact table gives the name, and the fact's value type says how to read the value.
 
-The selection has three uses:
+**fact** is the global schema, append-only.
+- `id` INTEGER: permanent, from a counter that only increases
+- `name` TEXT: renaming changes this, the id stays
+- `value_type` TEXT: how to read the value
 
-- an **effect** selects the facts a belief writes;
-- a **precondition** selects the facts a belief reads;
-- a **lesson scope** selects the facts a lesson trains on.
+**lesson** is a named scope over the fact list.
+- `id` INTEGER
+- `name` TEXT: the stable handle; a new scope under the same name is a new row
+- `scope` INTEGER[]: ordered fact ids, immutable
 
-The mask is the index and the value is the payload.
+**session** is one run with a goal.
+- `id` INTEGER
+- `goal`: what the session pursues
+- `lesson_id` INTEGER: the lesson the session trains
 
-The data is stored sparse, fact ids as keys, with names never entering the records. The judgment network should stay small, cheap to train and fast at decision time. A network that interprets ids and values directly would have to learn an embedding for every fact, which enlarges it and duplicates what the fact list already knows. So the interpretation should live in code rather than the network. As the fact list grows, the network's input grows with it, and the open question is how to expand it without disturbing the judgment it already has. One candidate is to grow the weight set with each new fact, the new weights defaulting to keep the output stable until they are learned.
+**experience** is the raw record of one step, append-only.
+- `id` INTEGER
+- `session_id` INTEGER
+- `situation`: the facts that held before the action, as sparse pairs
+- `action`: the command
+- `effect`: the facts that changed, as sparse pairs, in order
 
-## Fact list and scope
+**belief** is a settled cause.
+- `id` INTEGER
+- `situation`: the facts the belief reads, as sparse pairs
+- `action`: the command
 
-The fact list is the global schema: one id per fact, permanent and never reused or reordered. Every record references facts by id, a belief's mask, a question's key, an experience's situation and effect, a lesson's scope, so renaming a fact or reordering the list leaves every reference intact. Adding a new fact appends a new id and leaves existing records untouched.
+**belief_effect** holds the facts a belief writes.
+- `belief_id` INTEGER
+- `fact_id` INTEGER
+- `value`: the value written
+- `confidence`: how reliable the effect is
 
-The id is assigned from a counter that only increases, so no id is ever reused. The list is append-only, new facts go to the end, nothing is reordered or deleted, and the name is a field on the entry, so a rename updates the name while the id stays put. The data stores ids, not names, and interpretability comes from resolving each id against the fact list. The fact list ships alongside the data, so any record stays readable by looking its ids up.
+## Operations
 
-A lesson's scope is an ordered subset of the fact list, stored as an array of fact ids on the lesson row. It says which facts the lesson cares about, and every other fact is dropped when the lesson compares situations. Two lessons can share a fact, and that shared fact is the overlap the combination step must reconcile.
+```
+record_experience()
+    → appends one row to experiences
+    → stores the situation and the effect as sparse pairs
+    → writes nothing else: recording makes no judgment
 
-Two things are immutable. Fact ids are permanent. Scopes are immutable: a lesson's scope never changes, and a changed scope is a new lesson row. The name stays the same across those rows, so the name is the stable handle for the concept and the lesson id is the version. The goal is not part of that identity. It is tuned between runs, so it is recorded per session instead of versioned into the lesson.
+settle_belief()
+    → inserts one belief row with its situation and action
+    → inserts one effect row for each fact it writes, with its value and confidence
 
-## Data model
+find_beliefs_writing()
+    → finds the effect rows that name the wanted fact
+    → returns each with its cause and confidence
 
-The store is split by where each tier lives.
+find_satisfied_beliefs()
+    → finds the beliefs whose situation facts are all present in the state
+    → tests each situation value against the state by the discrete rule
+    → returns the beliefs that hold
 
-**Experiences** are rows in SQL: the situation, the action, and the effect, each referencing its session.
+search_backward()
+    → starts from the wanted fact
+    → finds the beliefs that write it
+    → tests each one's situation against the state
+    → recurses on any situation fact the state lacks
+    → returns a chain of beliefs from the state to the goal
+```
 
-**Beliefs** are the JSON graph: a cause node per belief, each effect edge carrying a value and a confidence.
+## Deferred
 
-**Questions** persist alongside, carrying the anomaly, the hypotheses, and the evidence, and the beliefs each settled into.
-
-**Facts** are the global schema, one id per fact. **Lessons** carry the scope over the fact list, and **sessions** carry the goal and own their experiences.
-
-## Storage
-
-The store is split by shape. The fact list is a flat JSON list, one entry per fact: its id, its name, and its value type. The beliefs are a NetworkX graph, serialized as JSON. The questions are their own JSON records, each carrying the anomaly, the hypotheses, and the evidence. Experiences stay in SQL, flat append-only rows, alongside two small tables, a lesson carrying its name and scope, and a session carrying its goal and referencing its lesson. The store is embedded and single-agent, so files fit and a server does not.
+- The questions tier, its tables and lifecycle.
+- Fuzzy matching and a learned judgment. Matching stays discrete until the rules meet the game and show where they break.
+- Archiving old experiences.
 
 ## Open items
 
-- What counts as one fact: the granularity, and where the first facts come from.
-- How the judgment network's input grows with the fact list, and how to keep its judgment stable as it does.
-- What earns an experience a question: the threshold below which an experience is just recorded.
-- How evidence divides when a question splits into several beliefs, or several questions merge into one.
-- How confidence is computed from a question's evidence.
-- How the agent acts on a found plan.
-- Whether a ranked backward search stays tractable at Daggorath's scale.
+- What counts as one fact, and where the first facts come from.
+- The exact DuckDB encoding of a sparse (fact id, value) pair: a list of structs or two aligned lists.
+- How confidence is set on a hand-settled belief before any evidence.
+- Whether the iterative backward search stays tractable at Daggorath's scale.
