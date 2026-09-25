@@ -67,7 +67,7 @@ def test_possessed_objects():
     assert sword.type == "SWORD"
     assert sword.specifier == "WOODEN"
     assert sword.revealed is True
-    assert sword.consumable is True
+    assert sword.consumable is False
     assert sword.consuming is False
 
     assert dead.type == "TORCH"

@@ -15,7 +15,7 @@ Each object the agent possesses, in a hand or the pack, becomes one structure. A
 - `type`: the class, TORCH, SWORD, SHIELD, FLASK, SCROLL, or RING.
 - `specifier`: the proper name, PINE, WOODEN, MITHRIL, and the rest, or null while unrevealed.
 - `revealed`: whether the proper name is shown.
-- `consumable`: whether the object's resource can still be spent.
+- `consumable`: whether the object's resource can still be spent. Torch, flask, and ring only; the other classes have no resource and read false.
 - `consuming`: whether the resource is being spent now. Torch only.
 
 The flags come in that order because it is the lifecycle: know it, have it, spend it. `revealed` first, then `consumable`, then `consuming`, and a later stage holds only after the earlier ones.

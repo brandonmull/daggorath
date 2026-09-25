@@ -66,6 +66,11 @@ _OBJECT_PROPER_NAMES = {
 # a burned-out torch.
 _SPENT_NAMES = frozenset({"EMPTY", "GOLD", "DEAD"})
 
+# The classes whose resource can be consumed: torches burn, flasks are drunk,
+# rings spend strikes. Swords, shields, and scrolls are merely used and carry
+# no consumable flag.
+_CONSUMABLE_CLASSES = frozenset({"TORCH", "FLASK", "RING"})
+
 # The pack highlight: bit 7 marks the lit torch, the specifier sits in the
 # low bits.
 _LIT_BIT = 0x80
@@ -142,7 +147,7 @@ class PerceivedObjectsWrapper:
             consumable = minutes > 0
         else:
             consuming = False
-            consumable = proper not in _SPENT_NAMES
+            consumable = class_name in _CONSUMABLE_CLASSES and proper not in _SPENT_NAMES
         return PerceivedObject(
             type=class_name,
             specifier=proper,
