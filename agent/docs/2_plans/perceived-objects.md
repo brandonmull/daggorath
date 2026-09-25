@@ -57,6 +57,7 @@ One default is an approximation and is called out:
 ## Open questions
 
 - Ship each torch's minutes so consumable is exact for non-lit torches.
+- Ship the torch pointer so the lit bit lands on the right torch when two identical torches sit in the pack.
 
 ## Reference Documents
 
