@@ -1,0 +1,527 @@
+{
+  "session": {
+    "id": 1,
+    "goal": "light the torch"
+  },
+  "experiences": [
+    {
+      "id": 1,
+      "session_id": 1,
+      "situation": {
+        "game_mode": 0,
+        "display_function": 52838,
+        "effective_light_physical": 0,
+        "effective_light_magical": 0,
+        "player_weight": 35,
+        "player_strength": 160,
+        "m0221": 0,
+        "player_fainting": 0,
+        "heart_beat_interval": 46,
+        "evil_wizard_dead": 0,
+        "hands": [
+          null,
+          null
+        ],
+        "pack": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "floor": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      "action": "TURN LEFT",
+      "effects": []
+    },
+    {
+      "id": 2,
+      "session_id": 1,
+      "situation": {
+        "game_mode": 0,
+        "display_function": 52838,
+        "effective_light_physical": 0,
+        "effective_light_magical": 0,
+        "player_weight": 35,
+        "player_strength": 160,
+        "m0221": 0,
+        "player_fainting": 0,
+        "heart_beat_interval": 46,
+        "evil_wizard_dead": 0,
+        "hands": [
+          null,
+          null
+        ],
+        "pack": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "floor": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      "action": "EXAMINE",
+      "effects": [
+        {
+          "display_function": 54421,
+          "pack": [
+            {
+              "type": "SWORD",
+              "specifier": "WOODEN",
+              "revealed": true,
+              "consumable": false,
+              "consuming": false
+            },
+            {
+              "type": "TORCH",
+              "specifier": "PINE",
+              "revealed": true,
+              "consumable": true,
+              "consuming": false
+            },
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "session_id": 1,
+      "situation": {
+        "game_mode": 0,
+        "display_function": 54421,
+        "effective_light_physical": 0,
+        "effective_light_magical": 0,
+        "player_weight": 35,
+        "player_strength": 160,
+        "m0221": 0,
+        "player_fainting": 0,
+        "heart_beat_interval": 46,
+        "evil_wizard_dead": 0,
+        "hands": [
+          null,
+          null
+        ],
+        "pack": [
+          {
+            "type": "SWORD",
+            "specifier": "WOODEN",
+            "revealed": true,
+            "consumable": false,
+            "consuming": false
+          },
+          {
+            "type": "TORCH",
+            "specifier": "PINE",
+            "revealed": true,
+            "consumable": true,
+            "consuming": false
+          },
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "floor": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      "action": "ATTACK LEFT",
+      "effects": []
+    },
+    {
+      "id": 4,
+      "session_id": 1,
+      "situation": {
+        "game_mode": 0,
+        "display_function": 54421,
+        "effective_light_physical": 0,
+        "effective_light_magical": 0,
+        "player_weight": 35,
+        "player_strength": 160,
+        "m0221": 0,
+        "player_fainting": 0,
+        "heart_beat_interval": 46,
+        "evil_wizard_dead": 0,
+        "hands": [
+          null,
+          null
+        ],
+        "pack": [
+          {
+            "type": "SWORD",
+            "specifier": "WOODEN",
+            "revealed": true,
+            "consumable": false,
+            "consuming": false
+          },
+          {
+            "type": "TORCH",
+            "specifier": "PINE",
+            "revealed": true,
+            "consumable": true,
+            "consuming": false
+          },
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "floor": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      "action": "PULL LEFT TORCH",
+      "effects": [
+        {
+          "hands": [
+            {
+              "type": "TORCH",
+              "specifier": "PINE",
+              "revealed": true,
+              "consumable": true,
+              "consuming": false
+            },
+            null
+          ],
+          "pack": [
+            {
+              "type": "SWORD",
+              "specifier": "WOODEN",
+              "revealed": true,
+              "consumable": false,
+              "consuming": false
+            },
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "session_id": 1,
+      "situation": {
+        "game_mode": 0,
+        "display_function": 54421,
+        "effective_light_physical": 0,
+        "effective_light_magical": 0,
+        "player_weight": 35,
+        "player_strength": 160,
+        "m0221": 0,
+        "player_fainting": 0,
+        "heart_beat_interval": 46,
+        "evil_wizard_dead": 0,
+        "hands": [
+          {
+            "type": "TORCH",
+            "specifier": "PINE",
+            "revealed": true,
+            "consumable": true,
+            "consuming": false
+          },
+          null
+        ],
+        "pack": [
+          {
+            "type": "SWORD",
+            "specifier": "WOODEN",
+            "revealed": true,
+            "consumable": false,
+            "consuming": false
+          },
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "floor": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      "action": "USE RIGHT",
+      "effects": []
+    },
+    {
+      "id": 6,
+      "session_id": 1,
+      "situation": {
+        "game_mode": 0,
+        "display_function": 54421,
+        "effective_light_physical": 0,
+        "effective_light_magical": 0,
+        "player_weight": 35,
+        "player_strength": 160,
+        "m0221": 0,
+        "player_fainting": 0,
+        "heart_beat_interval": 46,
+        "evil_wizard_dead": 0,
+        "hands": [
+          {
+            "type": "TORCH",
+            "specifier": "PINE",
+            "revealed": true,
+            "consumable": true,
+            "consuming": false
+          },
+          null
+        ],
+        "pack": [
+          {
+            "type": "SWORD",
+            "specifier": "WOODEN",
+            "revealed": true,
+            "consumable": false,
+            "consuming": false
+          },
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "floor": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      "action": "USE LEFT",
+      "effects": [
+        {
+          "hands": [
+            null,
+            null
+          ],
+          "pack": [
+            {
+              "type": "TORCH",
+              "specifier": "PINE",
+              "revealed": true,
+              "consumable": true,
+              "consuming": true
+            },
+            {
+              "type": "SWORD",
+              "specifier": "WOODEN",
+              "revealed": true,
+              "consumable": false,
+              "consuming": false
+            },
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "session_id": 1,
+      "situation": {
+        "game_mode": 0,
+        "display_function": 54421,
+        "effective_light_physical": 0,
+        "effective_light_magical": 0,
+        "player_weight": 35,
+        "player_strength": 160,
+        "m0221": 0,
+        "player_fainting": 0,
+        "heart_beat_interval": 46,
+        "evil_wizard_dead": 0,
+        "hands": [
+          null,
+          null
+        ],
+        "pack": [
+          {
+            "type": "TORCH",
+            "specifier": "PINE",
+            "revealed": true,
+            "consumable": true,
+            "consuming": true
+          },
+          {
+            "type": "SWORD",
+            "specifier": "WOODEN",
+            "revealed": true,
+            "consumable": false,
+            "consuming": false
+          },
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "floor": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      "action": "MOVE",
+      "effects": [
+        {
+          "m0221": 7,
+          "heart_beat_interval": 40
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "session_id": 1,
+      "situation": {
+        "game_mode": 0,
+        "display_function": 54421,
+        "effective_light_physical": 0,
+        "effective_light_magical": 0,
+        "player_weight": 35,
+        "player_strength": 160,
+        "m0221": 7,
+        "player_fainting": 0,
+        "heart_beat_interval": 40,
+        "evil_wizard_dead": 0,
+        "hands": [
+          null,
+          null
+        ],
+        "pack": [
+          {
+            "type": "TORCH",
+            "specifier": "PINE",
+            "revealed": true,
+            "consumable": true,
+            "consuming": true
+          },
+          {
+            "type": "SWORD",
+            "specifier": "WOODEN",
+            "revealed": true,
+            "consumable": false,
+            "consuming": false
+          },
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "floor": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      "action": "LOOK",
+      "effects": [
+        {
+          "m0221": 6,
+          "heart_beat_interval": 41
+        },
+        {
+          "display_function": 52838,
+          "effective_light_physical": 7,
+          "pack": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        },
+        {
+          "m0221": 5
+        }
+      ]
+    }
+  ]
+}
